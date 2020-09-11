@@ -1,0 +1,24 @@
+[default]
+# 数据库相关配置
+[default.db]
+mongo_host = "localhost"
+mongo_port = 27017
+mongo_url = "@format mongodb://{env[MONGO_USER]}:{env[MONGO_PASSWORD]}@{this.DB.MONGO_HOST}:{this.DB.MONGO_PORT}"
+
+# 数据库表名相关配置
+[default.db.collections]
+account = "pt_account"
+
+# 账户初始参数
+[default.account]
+capital = 1000000.00    # 初始资金
+commission = 0.0003     # 交易佣金
+tax = 0.001             # 印花税
+slippage = 0.01         # 滑点
+
+
+[development]
+
+[production]
+
+[testing]

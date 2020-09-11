@@ -6,11 +6,11 @@
 ::
 
     app
-    ├── models           - 数据模型
-    │   ├── domain       - 主要数据模型
-    │   ├── schemas      - 用于web服务的数据模型
-    │   ├── enums.py     - 枚举数据模型
-    │   ├── mixin.py     - 数据模型MIXIN
-    │   └── rwmodel.py   - 数据模型基类
-    ├── docs             - 项目文档
-    └── tests            - 应用测试
+    ├── models              - 数据模型
+    │   ├── domain          - 主要数据模型
+    │   ├── schemas         - 用于web服务的数据模型
+    │   ├── enums.py        - 枚举数据模型
+    │   ├── mixin.py        - 数据模型MIXIN
+    │   └── rwmodel.py      - 数据模型基类
+    └── settings            - 应用配置
+

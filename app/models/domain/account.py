@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from app.models.rwmodel import RWModel
 from app.models.mixin import DBModelMixin
+from app.models.rwmodel import RWModel
 
 
 class Account(DBModelMixin, RWModel):
