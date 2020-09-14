@@ -12,6 +12,9 @@ motor = "^2.2.0"
 dynaconf = "^3.1.0"
 python-dotenv = "^0.14.0"
 click = "^7.1.2"
+fastapi = "^0.61.1"
+uvicorn = "^0.11.8"
+loguru = "^0.5.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

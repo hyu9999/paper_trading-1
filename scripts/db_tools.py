@@ -9,7 +9,7 @@ from pymongo.errors import CollectionInvalid
 from app import settings
 
 
-async def create_collection(db, collection_name: str):
+async def create_collection(db: AsyncIOMotorClient, collection_name: str):
     """创建表"""
     try:
         await db[settings.db.mongo_db_name].create_collection(collection_name)

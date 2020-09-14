@@ -1,4 +1,9 @@
 [default]
+project_name = "Paper Trading"
+description = "专注于证券市场模拟交易后台服务，交易市场可扩展。"
+version = "2.0.1"
+api_prefix = "/api"
+
     # 数据库相关配置
     [default.db]
     mongo_host = "localhost"
@@ -17,6 +22,15 @@
     tax = 0.001             # 印花税
     slippage = 0.01         # 滑点
 
+    # 日志
+    [default.log]
+    logging_level = 10      # 10 = DEBUG
+    loggers = ["uvicorn.asgi", "uvicorn.access"]
+
+
 [development]
 [production]
+    # 日志
+    [production.log]
+    logging_level = 20      # 20 = INFO
 [testing]
