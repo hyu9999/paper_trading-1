@@ -9,5 +9,10 @@ class UserInCreate(RWSchema):
     desc: str = Field("", description="账户描述")
 
 
+class UserInLogin(RWSchema):
+    id: str = Field(..., description="用户ID")
+
+
 class UserInResponse(RWSchema, User):
-    pass
+    token: str
+

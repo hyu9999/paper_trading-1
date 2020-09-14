@@ -8,10 +8,10 @@ default:
 	@echo "\tmake initdb    初始化数据库"
 
 server:
-	source .env && poetry run uvicorn app.main:app --host=$$PT_HOST --port=$$PT_PORT
+	source .env && poetry run uvicorn app.main:app --host=$$DYNACONF_PT_HOST --port=$$DYNACONF_PT_PORT
 
 debug:
-	source .env && poetry run uvicorn app.main:app --host=$$PT_HOST --port=$$PT_PORT --reload --debug
+	source .env && poetry run uvicorn app.main:app --host=$$DYNACONF_PT_HOST --port=$$DYNACONF_PT_PORT --reload --debug
 
 test:
 	source .env && poetry run pytest

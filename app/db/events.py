@@ -13,6 +13,6 @@ async def connect_to_db(app: FastAPI) -> None:
 
 
 async def close_db_connection(app: FastAPI) -> None:
-    logger.info("关闭数据库连接...")
+    logger.info("关闭数据库连接中...")
     app.state.db.close()
     logger.info("数据库连接已关闭.")

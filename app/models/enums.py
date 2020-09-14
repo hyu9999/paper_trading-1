@@ -9,6 +9,12 @@ class ExchangeEnum(Enum):
 
 
 @unique
+class JWTSubjectEnum(Enum):
+    """JWT 主题"""
+    ACCESS = "access"
+
+
+@unique
 class OrderTypeEnum(Enum):
     """订单类型"""
     BUY = "buy"

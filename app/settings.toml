@@ -3,13 +3,13 @@ project_name = "Paper Trading"
 description = "专注于证券市场模拟交易后台服务，交易市场可扩展。"
 version = "2.0.1"
 api_prefix = "/api"
-base_url = "@format http://{env[PT_HOST]}:{env[PT_PORT]}/"
+base_url = "@format http://{env[DYNACONF_PT_HOST]}:{env[DYNACONF_PT_PORT]}/"
 
     # 数据库相关配置
     [default.db]
     host = "localhost"
     port = 27017
-    url = "@format mongodb://{env[DB_USER]}:{env[DB_PASSWORD]}@{this.DB.HOST}:{this.DB.PORT}"
+    url = "@format mongodb://{env[DYNACONF_DB_USER]}:{env[DYNACONF_DB_PASSWORD]}@{this.DB.HOST}:{this.DB.PORT}"
     name = "paper_trading"
     max_connections = 50
     min_connections = 10

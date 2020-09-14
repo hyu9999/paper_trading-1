@@ -12,8 +12,6 @@ settings = Dynaconf(
     settings_files=["app/settings.toml"],
     environments=True,
     load_dotenv=True,
-    root_path=ROOT_PATH.parent,
+    root_path=ROOT_PATH,
     dotenv_path=".env"
 )
-
-# 日志

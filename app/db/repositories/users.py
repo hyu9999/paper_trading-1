@@ -9,7 +9,7 @@ from app.models.base import PyObjectId
 class UsersRepository(BaseRepository):
     COLLECTION_NAME = settings.db.collections.user
 
-    async def create_user(self, *, capital: float, desc: str) -> User:
+    async def create_user(self, *, capital: float, desc: str = "") -> User:
         user = User(capital=capital, desc=desc, assets=capital, cash=capital)
         user_row = await self.collection.insert_one(user.dict(exclude={"id"}))
         user.id = user_row.inserted_id
@@ -19,4 +19,4 @@ class UsersRepository(BaseRepository):
         user_row = await self.collection.find_one({"_id": _id})
         if user_row:
             return User(**user_row)
-        raise EntityDoesNotExist(f"ID为[{_id}]的用户未找到.")
+        raise EntityDoesNotExist(f"用户`{_id}`不存在.")

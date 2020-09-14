@@ -5,12 +5,14 @@ from fastapi import FastAPI
 
 from app.core.logging import init_logger
 from app.db.events import connect_to_db, close_db_connection
+from app.errors.events import register_exceptions
 
 
 def create_start_app_handler(app: FastAPI) -> Callable:
     async def start_app() -> None:
         await init_logger()
         await connect_to_db(app)
+        await register_exceptions(app)
     return start_app
 
 

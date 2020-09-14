@@ -266,6 +266,19 @@ typing_extensions = ["typing-extensions (>=3.7.2)"]
 
 [[package]]
 category = "main"
+description = "JSON Web Token implementation in Python"
+name = "pyjwt"
+optional = false
+python-versions = "*"
+version = "1.7.1"
+
+[package.extras]
+crypto = ["cryptography (>=1.4)"]
+flake8 = ["flake8", "flake8-import-order", "pep8-naming"]
+test = ["pytest (>=4.0.1,<5.0.0)", "pytest-cov (>=2.6.0,<3.0.0)", "pytest-runner (>=4.2,<5.0.0)"]
+
+[[package]]
+category = "main"
 description = "Python driver for MongoDB <http://www.mongodb.org>"
 name = "pymongo"
 optional = false
@@ -453,7 +466,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "639fe69ab3e161e6a0d380909523a43436225ac23c91e7b056159369cdf9e0a2"
+content-hash = "46f864b55e58dbfe4cdf7ff0dcae83ebc75d7d211ee32afa530ff5c3d1db3017"
 lock-version = "1.0"
 python-versions = "^3.7"
 
@@ -569,6 +582,10 @@ pydantic = [
     {file = "pydantic-1.6.1-cp38-cp38-win_amd64.whl", hash = "sha256:530d7222a2786a97bc59ee0e0ebbe23728f82974b1f1ad9a11cd966143410633"},
     {file = "pydantic-1.6.1-py36.py37.py38-none-any.whl", hash = "sha256:b5b3489cb303d0f41ad4a7390cf606a5f2c7a94dcba20c051cd1c653694cb14d"},
     {file = "pydantic-1.6.1.tar.gz", hash = "sha256:54122a8ed6b75fe1dd80797f8251ad2063ea348a03b77218d73ea9fe19bd4e73"},
+]
+pyjwt = [
+    {file = "PyJWT-1.7.1-py2.py3-none-any.whl", hash = "sha256:5c6eca3c2940464d106b99ba83b00c6add741c9becaec087fb7ccdefea71350e"},
+    {file = "PyJWT-1.7.1.tar.gz", hash = "sha256:8d59a976fb773f3e6a39c85636357c4f0e242707394cadadd9814f5cbaa20e96"},
 ]
 pymongo = [
     {file = "pymongo-3.11.0-cp27-cp27m-macosx_10_15_x86_64.whl", hash = "sha256:7a4a6f5b818988a3917ec4baa91d1143242bdfece8d38305020463955961266a"},
