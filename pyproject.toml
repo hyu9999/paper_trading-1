@@ -15,6 +15,9 @@ click = "^7.1.2"
 fastapi = "^0.61.1"
 uvicorn = "^0.11.8"
 loguru = "^0.5.2"
+httpx = "^0.14.3"
+pytest-asyncio = "^0.14.0"
+asgi-lifespan = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

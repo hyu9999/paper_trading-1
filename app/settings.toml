@@ -3,34 +3,29 @@ project_name = "Paper Trading"
 description = "专注于证券市场模拟交易后台服务，交易市场可扩展。"
 version = "2.0.1"
 api_prefix = "/api"
+base_url = "@format http://{env[PT_HOST]}:{env[PT_PORT]}/"
 
     # 数据库相关配置
     [default.db]
-    mongo_host = "localhost"
-    mongo_port = 27017
-    mongo_url = "@format mongodb://{env[MONGO_USER]}:{env[MONGO_PASSWORD]}@{this.DB.MONGO_HOST}:{this.DB.MONGO_PORT}"
-    mongo_db_name = "paper_trading"
+    host = "localhost"
+    port = 27017
+    url = "@format mongodb://{env[DB_USER]}:{env[DB_PASSWORD]}@{this.DB.HOST}:{this.DB.PORT}"
+    name = "paper_trading"
+    max_connections = 50
+    min_connections = 10
 
     # 数据库表名相关配置
     [default.db.collections]
-    account_name = "pt_account"
-
-    # 账户初始参数
-    [default.account]
-    capital = 1000000.00    # 初始资金
-    commission = 0.0003     # 交易佣金
-    tax = 0.001             # 印花税
-    slippage = 0.01         # 滑点
+    user = "users"
 
     # 日志
     [default.log]
-    logging_level = 10      # 10 = DEBUG
-    loggers = ["uvicorn.asgi", "uvicorn.access"]
+    level = 10      # 10 = DEBUG
 
 
 [development]
 [production]
     # 日志
     [production.log]
-    logging_level = 20      # 20 = INFO
+    level = 20      # 20 = INFO
 [testing]

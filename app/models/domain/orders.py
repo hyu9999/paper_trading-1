@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 
 from pydantic import Field
 
-from app.models.mixin import DBModelMixin
-from app.models.rwmodel import RWModel, PyObjectId, PyDecimal
+from app.models.base import DBModelMixin
+from app.models.domain.rwmodel import RWModel, PyObjectId, PyDecimal
 from app.models.enums import ExchangeEnum, OrderStatusEnum, OrderTypeEnum, PriceTypeEnum, TradeTypeEnum
 
 

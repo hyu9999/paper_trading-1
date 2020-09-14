@@ -1,7 +1,9 @@
 import sys
 import logging
+from pprint import pformat
 
 from loguru import logger
+from loguru._defaults import LOGURU_FORMAT
 
 from app import settings
 
@@ -25,10 +27,28 @@ class InterceptHandler(logging.Handler):
         )
 
 
+def format_record(record: dict) -> str:
+    """
+    Custom format for loguru loggers.
+    Uses pformat for log any data like request/response body during debug.
+    Works with logging if loguru handler it.
+    """
+    format_string = LOGURU_FORMAT
+
+    if record["extra"].get("payload") is not None:
+        record["extra"]["payload"] = pformat(
+            record["extra"]["payload"], indent=4, compact=True, width=88
+        )
+        format_string += "\n<level>{extra[payload]}</level>"
+
+    format_string += "{exception}\n"
+    return format_string
+
+
 async def init_logger():
     """初始化logger"""
     logger.configure(
-        handlers=[{"sink": sys.stdout, "level": settings.log.logging_level}]
+        handlers=[{"sink": sys.stdout, "level": settings.log.level, "format": format_record}]
     )
     # 统一设置uvicorn的处理器为loguru
     loggers = (

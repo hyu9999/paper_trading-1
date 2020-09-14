@@ -3,7 +3,7 @@ from datetime import datetime
 from bson import ObjectId
 from pydantic import BaseModel, Field
 
-from app.models.rwmodel import PyObjectId
+from app.models.domain.rwmodel import PyObjectId
 
 
 class DateTimeModelMixin(BaseModel):

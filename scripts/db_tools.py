@@ -12,7 +12,7 @@ from app import settings
 async def create_collection(db: AsyncIOMotorClient, collection_name: str):
     """创建表"""
     try:
-        await db[settings.db.mongo_db_name].create_collection(collection_name)
+        await db[settings.db.name].create_collection(collection_name)
     except CollectionInvalid as e:
         logging.info(e)
     else:
@@ -36,11 +36,11 @@ def coro(f):
 async def initdb():
     """初始化数据库"""
     if click.confirm("初始化数据库可能会导致原数据丢失，确认要继续吗？"):
-        client = AsyncIOMotorClient(settings.db.mongo_url)
-        await create_collection(client, settings.db.collections.account_name)
-        click.echo("初始化数据库完成!")
+        client = AsyncIOMotorClient(settings.db.url)
+        await create_collection(client, settings.db.collections.user)
+        click.echo("初始化数据库完成.")
     else:
-        click.echo("初始化数据库失败，用户操作中止。")
+        click.echo("初始化数据库失败，用户操作中止.")
 
 
 if __name__ == "__main__":
