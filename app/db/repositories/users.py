@@ -1,3 +1,5 @@
+from typing import List
+
 from app import settings
 from app.db.repositories.base import BaseRepository
 
@@ -20,3 +22,8 @@ class UsersRepository(BaseRepository):
         if user_row:
             return User(**user_row)
         raise EntityDoesNotExist(f"用户`{_id}`不存在.")
+
+    async def get_users_list(self) -> List[User]:
+        users_row = self.collection.find({})
+        if users_row:
+            return [User(**user) async for user in users_row]

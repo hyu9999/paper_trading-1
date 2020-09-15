@@ -9,7 +9,7 @@ from app import settings
 
 
 class InterceptHandler(logging.Handler):
-    def emit(self, record):
+    def emit(self, record) -> None:
         # Get corresponding Loguru level if it exists
         try:
             level = logger.level(record.levelname).name
@@ -45,7 +45,7 @@ def format_record(record: dict) -> str:
     return format_string
 
 
-async def init_logger():
+async def init_logger() -> None:
     """初始化logger"""
     logger.configure(
         handlers=[{"sink": sys.stdout, "level": settings.log.level, "format": format_record}]
@@ -59,5 +59,6 @@ async def init_logger():
     for uvicorn_logger in loggers:
         uvicorn_logger.handlers = []
     logging.getLogger("uvicorn").handlers = [InterceptHandler()]
+    logging.getLogger("uvicorn.access").handlers = [InterceptHandler()]
     logger.info("初始化日志管理器完成.")
 

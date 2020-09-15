@@ -1,12 +1,19 @@
 import pytest
 from fastapi import FastAPI
+from dynaconf import Dynaconf
 from httpx import AsyncClient
 from asgi_lifespan import LifespanManager
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.models.domain.users import User
 
-from app import settings
+from app import settings as base_settings
+from app.models.domain.users import User
 from app.db.repositories.users import UsersRepository
+
+
+@pytest.fixture
+async def settings() -> Dynaconf:
+    base_settings.setenv("testing")
+    return base_settings
 
 
 @pytest.fixture
@@ -22,7 +29,7 @@ async def initialized_app(app: FastAPI) -> FastAPI:
 
 
 @pytest.fixture
-async def client(initialized_app: FastAPI) -> AsyncClient:
+async def client(initialized_app: FastAPI, settings: Dynaconf) -> AsyncClient:
     async with AsyncClient(
         app=initialized_app,
         base_url=settings.base_url,

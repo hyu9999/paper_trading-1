@@ -8,8 +8,7 @@ from app.errors.db import EntityDoesNotExist
 from app.errors.http import InvalidLoginInput
 from app.models.schemas.users import UserInCreate, UserInLogin, UserInResponse
 from app.models.base import PyObjectId
-from app.services import jwt
-
+from app.core import jwt
 
 router = APIRouter()
 

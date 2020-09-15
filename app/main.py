@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from app import settings
 from app.api import router
-from app.core.events import create_start_app_handler, create_stop_app_handler
+from app.core.event import create_start_app_handler, create_stop_app_handler
 
 
 app = FastAPI(title=settings.project_name, description=settings.description, version=settings.version)

@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import Field
 
 from app.models.domain.users import User
@@ -16,3 +18,7 @@ class UserInLogin(RWSchema):
 class UserInResponse(RWSchema, User):
     token: str
 
+
+class ListOfUserInResponse(RWSchema):
+    users: List[User]
+    count: int

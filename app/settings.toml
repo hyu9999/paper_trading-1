@@ -14,18 +14,42 @@ base_url = "@format http://{env[DYNACONF_PT_HOST]}:{env[DYNACONF_PT_PORT]}/"
     max_connections = 50
     min_connections = 10
 
+    # Redis
+    [default.redis]
+    host = "localhost"
+    port = 7379
+    encoding = "utf-8"
+    entrust_db = 1 # 行情库
+    base_url = "@format redis://{this.REDIS.HOST}:{this.REDIS.PORT}"
+    entrust_url = "@format {this.REDIS.BASE_URL}/{this.REDIS.ENTRUST_DB}"
+
     # 数据库表名相关配置
     [default.db.collections]
     user = "users"
 
     # 日志
     [default.log]
-    level = 10      # 10 = DEBUG
+    level = 10  # 10 = DEBUG
+    active = true
+
+    # 引擎
+    [default.engine]
+    event_log = "e_log"
+    event_error = "e_error"
+    persistence_mode = "realtime" # 数据持久化模式
 
 
 [development]
+    # 引擎
+    [development.engine]
+    persistence_mode = "manual" # 数据持久化模式
+
 [production]
     # 日志
     [production.log]
-    level = 20      # 20 = INFO
+    level = 20  # 20 = INFO
+
 [testing]
+    # 数据库相关配置
+    [testing.db]
+    name = "test_paper_trading"
