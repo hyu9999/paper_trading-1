@@ -21,7 +21,7 @@ async def close_db_connection(app: FastAPI) -> None:
 
 async def connect_to_redis(app: FastAPI) -> None:
     logger.info("连接Redis中...")
-    app.state.entrust_db = aioredis.create_redis_pool(
+    app.state.entrust_db = await aioredis.create_redis_pool(
         settings.redis.entrust_url, encoding=settings.redis.encoding
     )
     logger.info("Redis已连接.")

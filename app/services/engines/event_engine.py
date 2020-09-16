@@ -14,15 +14,14 @@ class Event:
     by event engine for distributing event, and a data
     object which contains the real data.
     """
-
     def __init__(self, type: str, data: Any = None) -> None:
-        """"""
         self.type = type
         self.data = data
 
 
 # Defines handler function to be used in event engine.
 HandlerType = Callable[[Event], None]
+import uvicorn.main
 
 
 class EventEngine:
@@ -32,7 +31,6 @@ class EventEngine:
     It also generates timer event by every interval seconds,
     which can be used for timing purpose.
     """
-
     def __init__(self, interval: int = 1) -> None:
         """
         Timer event is generated every 1 second by default, if

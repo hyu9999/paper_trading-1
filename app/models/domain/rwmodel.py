@@ -1,4 +1,5 @@
 import datetime
+from decimal import Decimal, localcontext
 
 from bson import ObjectId, Decimal128
 from pydantic import BaseModel, BaseConfig
@@ -44,7 +45,10 @@ class PyDecimal(Decimal128):
 
     @classmethod
     def validate(cls, v):
-        if not isinstance(v, Decimal128):
-            raise TypeError(f"Not a valid Decimal: {v}")
-        return cls(v)
+        """转化float为Decimal128
+        先将python的二进制浮点数用str方法转化为10进制字符串，再把字符串转化为Decimal128
+        """
+        if not isinstance(v, float):
+            raise TypeError(f"Cannot convert {v} to Decimal128")
+        return cls(str(v))
 

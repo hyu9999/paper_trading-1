@@ -1,15 +1,20 @@
 import socket
+from datetime import datetime
 from time import perf_counter
 from typing import List, Tuple
-from collections import OrderedDict, defaultdict
 
 from pytdx.config.hosts import hq_hosts
 from pytdx.hq import TdxHq_API
 from pytdx.pool.hqpool import TdxHqPool_API
 from pytdx.pool.ippool import AvailableIPPool
 
+from app.errors.service import NotEnoughAvailableAddrError
+from app.services.quotes.base import BaseQuotes
+from app.models.schemas.quotes import Quotes
+from app.models.enums import ExchangeEnum
 
-class TDXQuotes:
+
+class TDXQuotes(BaseQuotes):
     # 测试可用性时用到的socket超时时间
     SOCKET_TIMEOUT = 0.05
     EXCHANGE_MAPPING = {"SH": 1, "SZ": 0}
@@ -27,8 +32,8 @@ class TDXQuotes:
 
     @classmethod
     def get_available_addr(cls) -> List[tuple]:
-        """获取可用的行情源，按可用性排序"""
-        addr_speed_dict = defaultdict(list)
+        """获取可用的行情地址，按可用性排序"""
+        addr_speed_dict = {}
         for addr in hq_hosts:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(cls.SOCKET_TIMEOUT)
@@ -41,29 +46,64 @@ class TDXQuotes:
             except (socket.timeout, ConnectionRefusedError):
                 speed = cls.SOCKET_TIMEOUT
             addr_speed_dict[speed] = addr
+        if len(addr_speed_dict) < 6:
+            raise NotEnoughAvailableAddrError
         return [(v[1], v[2]) for k, v in sorted(addr_speed_dict.items(), key=lambda kv: kv[0])]
 
-    def get_ticks(self, code: str) -> OrderedDict:
-        """
-        获取股票Ticks数据
+    def get_ticks(self, code: str) -> Quotes:
+        """获取股票Ticks数据
 
-        Parameters:
+        Parameters
+        ----------
             code: 600001.SH
         """
         tdx_code = self.format_stock_code(code)
-        data = self.api.get_security_quotes(tdx_code)
-        return data
+        api_quotes = self.api.get_security_quotes(tdx_code)
+        return self._format_quotes(api_quotes[0])
 
     @classmethod
     def format_stock_code(cls, code: str) -> Tuple[int, str]:
-        """
-        转化股票代码为通达信格式
+        """转化股票代码为通达信格式
 
-        Parameters:
+        Parameters
+        ----------
             code: 600001.SH
         """
         symbol, exchange = code.split(".")
         return cls.EXCHANGE_MAPPING[exchange], symbol
+
+    @classmethod
+    def _format_quotes(cls, api_quotes: dict) -> Quotes:
+        return Quotes(
+            exchange=ExchangeEnum.SH if api_quotes["market"] == 1 else ExchangeEnum.SZ,
+            symbol=api_quotes["code"],
+            price=api_quotes["price"],
+            last_close=api_quotes["last_close"],
+            open=api_quotes["open"],
+            high=api_quotes["high"],
+            low=api_quotes["low"],
+            time=datetime.strptime(api_quotes["servertime"], "%H:%M:%S.%f"),
+            bid1_p=api_quotes.get("bid1"),
+            bid2_p=api_quotes.get("bid2"),
+            bid3_p=api_quotes.get("bid3"),
+            bid4_p=api_quotes.get("bid4"),
+            bid5_p=api_quotes.get("bid5"),
+            ask1_p=api_quotes.get("ask1"),
+            ask2_p=api_quotes.get("ask2"),
+            ask3_p=api_quotes.get("ask3"),
+            ask4_p=api_quotes.get("ask4"),
+            ask5_p=api_quotes.get("ask5"),
+            bid1_v=api_quotes.get("bid_vol1"),
+            bid2_v=api_quotes.get("bid_vol2"),
+            bid3_v=api_quotes.get("bid_vol3"),
+            bid4_v=api_quotes.get("bid_vol4"),
+            bid5_v=api_quotes.get("bid_vol5"),
+            ask1_v=api_quotes.get("ask_vol1"),
+            ask2_v=api_quotes.get("ask_vol2"),
+            ask3_v=api_quotes.get("ask_vol3"),
+            ask4_v=api_quotes.get("ask_vol4"),
+            ask5_v=api_quotes.get("ask_vol5"),
+        )
 
     def close(self) -> None:
         self.api.disconnect()

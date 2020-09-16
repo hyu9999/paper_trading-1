@@ -2,12 +2,11 @@ from loguru import logger
 
 from app import settings
 from app.services.engines.base import BaseEngine
-from app.services.engines import MainEngine
 from app.services.engines.event_engine import EventEngine, Event
 
 
 class LogEngine(BaseEngine):
-    def __init__(self, event_engine: EventEngine, main_engine: MainEngine) -> None:
+    def __init__(self, event_engine: EventEngine) -> None:
         super().__init__(event_engine=event_engine)
         self.engine_name = "log"
         if not settings.log.active:
@@ -15,7 +14,7 @@ class LogEngine(BaseEngine):
         self.register_event()
 
     def register_event(self) -> None:
-        self.event_engine.register(settings.engine.event_log, self.process_log_event)
+        self.event_engine.register(settings.service.event_log, self.process_log_event)
 
     @staticmethod
     def process_log_event(event: Event) -> None:

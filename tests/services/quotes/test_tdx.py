@@ -10,6 +10,7 @@ def test_user_can_get_enough_addr():
 def test_user_can_get_stock_ticks():
     tdx = TDXQuotes()
     tdx.connect_pool()
-    data = tdx.get_ticks("601816.SH")
-    assert data
+    quotes = tdx.get_ticks("601816.SH")
     tdx.close()
+    assert quotes.exchange.value == "SH"
+    assert quotes.symbol == "601816"

@@ -1,3 +1,8 @@
+==================================
+Paper Trading
+==================================
+*基于Python的证券市场模拟交易后台服务器*
+
 项目结构
 -----------------
 
@@ -6,19 +11,24 @@
 ::
 
     app
-    ├── api                 - 应用web接口
-    │   ├── dependencies    - 路由定义的依赖项
-    │   └── routes          - web路由
-    ├── core                - 应用核心配置
-    │   ├── events          - 应用启动相关事件
-    │   └── logging         - 日志系统相关配置
-    ├── db                  - 数据库相关方法
-    ├── errors              - 应用错误处理程序
+    ├── api                 - 网络接口
+    │   ├── dependencies    - 路由定义中的依赖项
+    │   └── routes          - 路由
+    ├── core                - 核心配置
+    │   ├── events          - 全局事件配置
+    │   ├── jwt             - JWT鉴权配置
+    │   └── logging         - 日志配置
+    ├── db                  - 数据库
+    │   ├── repositories    - 与数据库交互的相关方法
+    │   └── events          - 数据库相关事件
+    ├── errors              - 错误定义与处理
     ├── models              - 数据模型
-    │   ├── domain          - 主要数据模型
-    │   ├── schemas         - 用于web服务的数据模型
-    │   ├── enums.py        - 枚举数据模型
-    │   ├── mixin.py        - 数据模型MIXIN
-    │   └── rwmodel.py      - 数据模型基类
+    │   ├── domain          - 数据库模型
+    │   ├── schemas         - 数据验证模型
+    │   └── enums.py        - 枚举模型
+    ├── services            - 服务
+    │   ├── engines         - 引擎服务
+    │   ├── markets         - 交易市场服务
+    │   └── quotes          - 行情服务
     └── settings.toml       - 应用全局配置
 

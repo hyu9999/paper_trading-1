@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta, date
 
 from pydantic import Field
 
@@ -9,7 +9,7 @@ from app.models.enums import ExchangeEnum, OrderStatusEnum, OrderTypeEnum, Price
 
 class Order(DBModelMixin, RWModel):
     """订单"""
-    account: PyObjectId = Field(..., description="账户")
+    user: PyObjectId = Field(..., description="账户")
     symbol: str = Field(..., description="股票代码")
     exchange: ExchangeEnum = Field(..., description="股票市场")
     quantity: int = Field(..., description="数量")
@@ -21,5 +21,9 @@ class Order(DBModelMixin, RWModel):
     status: OrderStatusEnum = Field(OrderStatusEnum.WAITING, description="订单状态")
     traded_quantity: int = Field(0, description="已成交数量")
     trade_price: PyDecimal = Field(0, description="交易价格")
-    order_date: datetime.date = Field(..., description="订单日期")
+    order_date: date = Field(..., description="订单日期")
     order_time: timedelta = Field(None, description="订单时长")
+
+    @property
+    def stock_code(self):
+        return f"{self.symbol}.{self.exchange}"
