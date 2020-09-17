@@ -2,41 +2,41 @@ from enum import Enum, unique
 
 
 @unique
-class ExchangeEnum(Enum):
+class ExchangeEnum(str, Enum):
     """股票市场"""
     SH = "SH"
     SZ = "SZ"
 
 
 @unique
-class JWTSubjectEnum(Enum):
-    """JWT 主题"""
+class JWTSubjectEnum(str, Enum):
+    """JWT主题."""
     ACCESS = "access"
 
 
 @unique
-class OrderTypeEnum(Enum):
-    """订单类型"""
+class OrderTypeEnum(str, Enum):
+    """订单类型."""
     BUY = "buy"
     SELL = "sell"
 
 
 @unique
-class PriceTypeEnum(Enum):
-    """价格类型"""
+class PriceTypeEnum(str, Enum):
+    """价格类型."""
     LIMIT = "limit"
     MARKET = "market"
 
 
 @unique
-class TradeTypeEnum(Enum):
-    """交易类型"""
+class TradeTypeEnum(str, Enum):
+    """交易类型."""
     T0 = "T0"
     T1 = "T1"
 
 
 @unique
-class OrderStatusEnum(Enum):
+class OrderStatusEnum(str, Enum):
     """订单状态"""
     WAITING = "等待中"
     PART_FINISHED = "部分成交"

@@ -26,6 +26,7 @@ base_url = "@format http://{env[DYNACONF_PT_HOST]}:{env[DYNACONF_PT_PORT]}/"
     # 数据库表名
     [default.db.collections]
     user = "users"
+    order = "orders"
 
     # 日志
     [default.log]

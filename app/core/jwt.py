@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
 from typing import Dict
+from datetime import datetime, timedelta
 
 import jwt
+from jwt.exceptions import DecodeError
 
 from app import settings
 from app.models.schemas.jwt import JWTMeta
@@ -24,3 +25,10 @@ def create_access_token_for_user(_id: str) -> str:
         jwt_content={"id": _id},
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
     )
+
+
+def get_user_id_from_token(token: str) -> str:
+    try:
+        return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])["id"]
+    except DecodeError as decode_error:
+        raise ValueError("无法解码该 JWT token") from decode_error

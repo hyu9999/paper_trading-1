@@ -1,16 +1,22 @@
 from pydantic import Field
 
 from app.models.base import DBModelMixin
+from app.models.types import PyDecimal
 from app.models.domain.rwmodel import RWModel
 
 
-class User(DBModelMixin, RWModel):
-    """用户"""
-    capital: float = Field(1000000.00, description="初始资金")
-    assets: float = Field(..., description="总资产")
-    cash: float = Field(..., description="现金")
-    securities: float = Field(0.00, description="证券资产")
-    commission: float = Field(0.0003, description="佣金")
-    tax: float = Field(0.001, description="税金")
-    slippage: float = Field(0.01, description="滑点")
+class User(RWModel):
+    capital: PyDecimal = Field(PyDecimal("1000000.00"), description="初始资金")
+    assets: PyDecimal = Field(..., description="总资产")
+    cash: PyDecimal = Field(..., description="现金")
+    securities: PyDecimal = Field(PyDecimal("0.00"), description="证券资产")
+    commission: PyDecimal = Field(PyDecimal("0.0003"), description="佣金")
+    tax: PyDecimal = Field(PyDecimal("0.001"), description="税金")
+    slippage: PyDecimal = Field(PyDecimal("0.01"), description="滑点")
     desc: str = Field("", description="账户描述")
+
+
+class UserInDB(DBModelMixin, User):
+    """用户"""
+    pass
+

@@ -1,6 +1,8 @@
 import sys
 import logging
 from pprint import pformat
+from typing import cast
+from types import FrameType
 
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
@@ -19,7 +21,7 @@ class InterceptHandler(logging.Handler):
         # Find caller from where originated the logged message
         frame, depth = logging.currentframe(), 2
         while frame.f_code.co_filename == logging.__file__:
-            frame = frame.f_back
+            frame = cast(FrameType, frame.f_back)
             depth += 1
 
         logger.opt(depth=depth, exception=record.exc_info).log(
@@ -51,14 +53,6 @@ async def init_logger() -> None:
         handlers=[{"sink": sys.stdout, "level": settings.log.level, "format": format_record}]
     )
     # 统一设置uvicorn的处理器为loguru
-    loggers = (
-        logging.getLogger(name)
-        for name in logging.root.manager.loggerDict
-        if name.startswith("uvicorn.")
-    )
-    for uvicorn_logger in loggers:
-        uvicorn_logger.handlers = []
     logging.getLogger("uvicorn").handlers = [InterceptHandler()]
     logging.getLogger("uvicorn.access").handlers = [InterceptHandler()]
     logger.info("初始化日志管理器完成.")
-

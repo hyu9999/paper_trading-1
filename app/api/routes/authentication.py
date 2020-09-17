@@ -4,17 +4,16 @@ from fastapi import APIRouter, Depends
 
 from app.api.dependencies.database import get_repository
 from app.db.repositories.users import UsersRepository
-from app.errors.db import EntityDoesNotExist
-from app.errors.http import InvalidLoginInput
+from app.exceptions.db import EntityDoesNotExist
+from app.exceptions.http import InvalidUserID
 from app.models.schemas.users import UserInCreate, UserInLogin, UserInResponse
-from app.models.base import PyObjectId
 from app.core import jwt
 
 router = APIRouter()
 
 
 @router.post(
-    "/",
+    "/register",
     status_code=status.HTTP_201_CREATED,
     response_model=UserInResponse,
     name="auth:register"
@@ -39,12 +38,9 @@ async def login(
     users_repo: UsersRepository = Depends(get_repository(UsersRepository))
 ) -> UserInResponse:
     try:
-        user = await users_repo.get_user_by_id(_id=PyObjectId(user_login.id))
-    except InvalidId as InvalidIdError:
-        raise InvalidLoginInput(InvalidIdError)
-    except EntityDoesNotExist as EntityDoesNotExistError:
-        raise InvalidLoginInput(EntityDoesNotExistError)
+        user = await users_repo.get_user_by_id(user_id=user_login.id)
+    except (InvalidId, EntityDoesNotExist):
+        raise InvalidUserID
     else:
         token = jwt.create_access_token_for_user(_id=user_login.id)
         return UserInResponse(**user.dict(), token=token)
-

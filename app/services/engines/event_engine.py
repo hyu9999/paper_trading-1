@@ -21,7 +21,6 @@ class Event:
 
 # Defines handler function to be used in event engine.
 HandlerType = Callable[[Event], None]
-import uvicorn.main
 
 
 class EventEngine:

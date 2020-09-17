@@ -2,15 +2,12 @@ from datetime import datetime
 
 from pydantic import Field
 
-from app.models.enums import ExchangeEnum
-from app.models.domain.rwmodel import PyDecimal
+from app.models.types import PyDecimal
+from app.models.domain.stocks import Stock
 from app.models.schemas.rwschema import RWSchema
 
 
-class Quotes(RWSchema):
-    exchange: ExchangeEnum = Field(..., description="股票市场")
-    symbol: str = Field(..., description="股票代码")
-    price: PyDecimal = Field(..., description="价格")
+class Quotes(RWSchema, Stock):
     last_close: PyDecimal = Field(..., description="上一交易日收盘价")
     open: PyDecimal = Field(..., description="开盘价")
     high: PyDecimal = Field(..., description="当日最高价")
@@ -36,4 +33,3 @@ class Quotes(RWSchema):
     ask3_v: int = Field(0, description="卖1数量")
     ask4_v: int = Field(0, description="卖1数量")
     ask5_v: int = Field(0, description="卖1数量")
-

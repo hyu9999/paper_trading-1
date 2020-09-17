@@ -6,7 +6,7 @@ from asgi_lifespan import LifespanManager
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app import settings as base_settings
-from app.models.domain.users import User
+from app.models.domain.users import UserInDB
 from app.db.repositories.users import UsersRepository
 
 
@@ -44,5 +44,5 @@ async def db(initialized_app: FastAPI) -> AsyncIOMotorDatabase:
 
 
 @pytest.fixture
-async def test_user(db: AsyncIOMotorDatabase) -> User:
+async def test_user(db: AsyncIOMotorDatabase) -> UserInDB:
     return await UsersRepository(db).create_user(capital=10000000)

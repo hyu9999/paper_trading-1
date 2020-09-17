@@ -7,7 +7,7 @@ from app.services.engines.account_engine import AccountEngine
 from app.services.engines.base import BaseEngine
 from app.services.engines.event_engine import EventEngine, Event
 from app.services.engines.log_engine import LogEngine
-from app.services.markets.constant import MARKET_NAME_MAPPING
+# from app.services.markets.constant import MARKET_NAME_MAPPING
 from app.services.quotes.tdx import TDXQuotes
 
 
@@ -52,5 +52,3 @@ class Engine(BaseEngine):
         self.event_engine.stop()
         for engine in self.engines.values():
             engine.close()
-
-

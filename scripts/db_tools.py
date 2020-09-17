@@ -38,6 +38,7 @@ async def initdb():
     if click.confirm("初始化数据库可能会导致原数据丢失，确认要继续吗？"):
         client = AsyncIOMotorClient(settings.db.url)
         await create_collection(client, settings.db.collections.user)
+        await create_collection(client, settings.db.collections.order)
         click.echo("初始化数据库完成.")
     else:
         click.echo("初始化数据库失败，用户操作中止.")

@@ -8,7 +8,7 @@ from pytdx.hq import TdxHq_API
 from pytdx.pool.hqpool import TdxHqPool_API
 from pytdx.pool.ippool import AvailableIPPool
 
-from app.errors.service import NotEnoughAvailableAddrError
+from app.errors.service import NotEnoughAvailableAddr
 from app.services.quotes.base import BaseQuotes
 from app.models.schemas.quotes import Quotes
 from app.models.enums import ExchangeEnum
@@ -20,10 +20,10 @@ class TDXQuotes(BaseQuotes):
     EXCHANGE_MAPPING = {"SH": 1, "SZ": 0}
 
     def __init__(self) -> None:
-        self.api = None
+        self.api: TdxHqPool_API
 
     def connect_pool(self) -> None:
-        """连接到通达信行情池"""
+        """连接到通达信行情池."""
         addr = self.get_available_addr()
         ip_pool = AvailableIPPool(TdxHq_API, addr[:5])
         primary_ip, hot_backup_ip = ip_pool.sync_get_top_n(2)
@@ -32,7 +32,7 @@ class TDXQuotes(BaseQuotes):
 
     @classmethod
     def get_available_addr(cls) -> List[tuple]:
-        """获取可用的行情地址，按可用性排序"""
+        """获取可用的行情地址，按可用性排序."""
         addr_speed_dict = {}
         for addr in hq_hosts:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -47,11 +47,11 @@ class TDXQuotes(BaseQuotes):
                 speed = cls.SOCKET_TIMEOUT
             addr_speed_dict[speed] = addr
         if len(addr_speed_dict) < 6:
-            raise NotEnoughAvailableAddrError
+            raise NotEnoughAvailableAddr
         return [(v[1], v[2]) for k, v in sorted(addr_speed_dict.items(), key=lambda kv: kv[0])]
 
     def get_ticks(self, code: str) -> Quotes:
-        """获取股票Ticks数据
+        """获取股票Ticks数据.
 
         Parameters
         ----------
@@ -63,7 +63,7 @@ class TDXQuotes(BaseQuotes):
 
     @classmethod
     def format_stock_code(cls, code: str) -> Tuple[int, str]:
-        """转化股票代码为通达信格式
+        """转化股票代码为通达信格式.
 
         Parameters
         ----------

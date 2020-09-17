@@ -1,4 +1,4 @@
-from app.models.domain.orders import Order
+from app.models.domain.orders import OrderInDB
 from app.models.enums import OrderTypeEnum, PriceTypeEnum
 from app.services.engines.event_engine import EventEngine
 from app.services.markets.base import BaseMarket
@@ -6,7 +6,7 @@ from app.services.quotes.base import BaseQuotes
 
 
 class ChinaAMarket(BaseMarket):
-    """A股市场"""
+    """A股市场."""
     def __init__(self, event_engine: EventEngine, quotes_api: BaseQuotes) -> None:
         super().__init__(event_engine, quotes_api)
         self.market_name = "china_a_market"     # 交易市场名称
@@ -15,7 +15,7 @@ class ChinaAMarket(BaseMarket):
     def on_match(self) -> None:
         self.write_log(f"{self.market_name}交易市场已开启")
 
-    def on_order_match(self, order: Order) -> None:
+    def on_order_match(self, order: OrderInDB) -> None:
         quotes = self.quotes_api.get_ticks(order.stock_code)
         if order.order_type == OrderTypeEnum.BUY.value:
             # 涨停
