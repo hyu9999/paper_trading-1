@@ -5,7 +5,7 @@ from fastapi import BackgroundTasks, Depends
 from app.models.domain.users import UserInDB
 from app.models.enums import OrderTypeEnum
 from app.api.dependencies.database import get_repository
-from app.db.repositories.users import UsersRepository
+from app.db.repositories.user import UsersRepository
 from app.models.schemas.orders import OrderInCreate
 
 

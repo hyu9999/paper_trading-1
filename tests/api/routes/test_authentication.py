@@ -1,10 +1,11 @@
 import pytest
+from bson import Decimal128
 from fastapi import FastAPI
 from starlette import status
 from httpx import AsyncClient
 
 from app.models.schemas.users import UserInResponse
-from app.models.domain.users import User
+from app.models.domain.users import UserInDB
 
 
 pytestmark = pytest.mark.asyncio
@@ -16,20 +17,17 @@ async def test_user_success_registration(app: FastAPI, client: AsyncClient) -> N
     }
     response = await client.request("POST", app.url_path_for("auth:register"), json=json)
     assert response.status_code == status.HTTP_201_CREATED
-    response.json()["_id"] = response.json().pop("_id")
     user = UserInResponse(**response.json())
-    assert user.capital == 1000000.00
-    assert user.cash == 1000000.00
-    assert user.assets == 1000000.00
+    assert user.capital == Decimal128("1000000.0")
+    assert user.cash == Decimal128("1000000.0")
+    assert user.assets == Decimal128("1000000.0")
 
 
-async def test_user_can_login(app: FastAPI, client: AsyncClient, test_user: User) -> None:
+async def test_user_can_login(app: FastAPI, client: AsyncClient, test_user: UserInDB) -> None:
     json = {"id": str(test_user.id)}
     response = await client.request("POST", app.url_path_for("auth:login"), json=json)
     assert response.status_code == status.HTTP_200_OK
-    response.json()["_id"] = response.json().pop("_id")
-    user = UserInResponse(**response.json())
-    assert str(user.id) == json["id"]
+    assert response.json()["token"]
 
 
 @pytest.mark.parametrize(

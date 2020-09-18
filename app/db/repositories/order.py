@@ -6,7 +6,7 @@ from app.models.types import PyDecimal
 from app.models.enums import ExchangeEnum, OrderTypeEnum, PriceTypeEnum, TradeTypeEnum
 
 
-class OrdersRepository(BaseRepository):
+class OrderRepository(BaseRepository):
     COLLECTION_NAME = settings.db.collections.order
 
     async def create_order(

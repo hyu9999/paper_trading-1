@@ -2,7 +2,7 @@ from starlette import status
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies.database import get_repository
-from app.db.repositories.users import UsersRepository
+from app.db.repositories.user import UserRepository
 from app.models.schemas.users import ListOfUserInResponse
 
 
@@ -16,7 +16,7 @@ router = APIRouter()
     name="users:list-users"
 )
 async def list_users(
-    users_repo: UsersRepository = Depends(get_repository(UsersRepository))
+    users_repo: UserRepository = Depends(get_repository(UserRepository))
 ) -> ListOfUserInResponse:
     users = await users_repo.get_users_list()
     return ListOfUserInResponse(users=users, count=len(users))

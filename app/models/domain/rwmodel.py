@@ -15,5 +15,5 @@ class RWModel(BaseModel):
         json_encoders = {
             datetime.datetime: convert_datetime_to_str,
             ObjectId: lambda x: x.__str__(),
-            Decimal128: lambda x: float(x.__str__())
+            Decimal128: lambda x: float(x.__str__()),
         }

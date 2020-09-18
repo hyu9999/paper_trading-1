@@ -9,7 +9,7 @@ from app import settings
 from app.api.dependencies.database import get_repository
 from app.core import jwt
 from app.models.domain.users import UserInDB
-from app.db.repositories.users import UsersRepository
+from app.db.repositories.user import UserRepository
 from app.exceptions.http import InvalidAuthTokenPrefix, AuthHeaderNotFound, InvalidAuthToken, WrongTokenFormat
 
 HEADER_KEY = "Authorization"
@@ -43,7 +43,7 @@ def get_current_user_authorizer(*, required: bool = True) -> Callable:
 
 
 async def _get_current_user(
-    user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    user_repo: UserRepository = Depends(get_repository(UserRepository)),
     token: str = Depends(_get_authorization_token),
 ) -> UserInDB:
     try:
@@ -54,7 +54,7 @@ async def _get_current_user(
 
 
 async def _get_current_user_optional(
-    user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    user_repo: UserRepository = Depends(get_repository(UserRepository)),
     token: Optional[str] = Depends(_get_authorization_token),
 ) -> Optional[UserInDB]:
     if token:

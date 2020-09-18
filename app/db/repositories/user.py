@@ -5,10 +5,10 @@ from app.db.repositories.base import BaseRepository
 
 from app.exceptions.db import EntityDoesNotExist
 from app.models.domain.users import UserInDB
-from app.models.types import PyObjectId
+from app.models.types import PyObjectId, PyDecimal
 
 
-class UsersRepository(BaseRepository):
+class UserRepository(BaseRepository):
     COLLECTION_NAME = settings.db.collections.user
 
     async def create_user(self, *, capital: float, desc: str = "") -> UserInDB:
@@ -26,6 +26,9 @@ class UsersRepository(BaseRepository):
     async def get_users_list(self) -> List[UserInDB]:
         users_row = self.collection.find({})
         return [UserInDB(**user) async for user in users_row]
+
+    async def update_user_cash_by_id(self, user_id: PyObjectId, cash: PyDecimal):
+        await self.collection.update_one({"_id": user_id}, {"$set": {"cash": cash}})
 
     async def update_user_by_id(
         self,

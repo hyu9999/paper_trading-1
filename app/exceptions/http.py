@@ -16,7 +16,7 @@ class _HTTPException(Exception):
 
 class InvalidUserID(_HTTPException):
     code = 10001
-    detail = "用户ID无效"
+    detail = "该用户ID无效"
 
 
 class InvalidAuthTokenPrefix(_HTTPException):
