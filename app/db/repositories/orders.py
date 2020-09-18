@@ -25,3 +25,16 @@ class OrdersRepository(BaseRepository):
         order_row = await self.collection.insert_one(order.dict(exclude={"id"}))
         order.id = order_row.inserted_id
         return order
+
+    async def update_order(
+        self,
+        *,
+        symbol: str,
+        exchange: ExchangeEnum,
+        quantity: int,
+        price: PyDecimal,
+        order_type: OrderTypeEnum,
+        price_type: PriceTypeEnum,
+        trade_type: TradeTypeEnum,
+    ):
+        pass

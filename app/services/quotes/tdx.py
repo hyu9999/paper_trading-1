@@ -8,7 +8,7 @@ from pytdx.hq import TdxHq_API
 from pytdx.pool.hqpool import TdxHqPool_API
 from pytdx.pool.ippool import AvailableIPPool
 
-from app.errors.service import NotEnoughAvailableAddr
+from app.exceptions.service import NotEnoughAvailableAddr
 from app.services.quotes.base import BaseQuotes
 from app.models.schemas.quotes import Quotes
 from app.models.enums import ExchangeEnum

@@ -26,3 +26,16 @@ class UsersRepository(BaseRepository):
     async def get_users_list(self) -> List[UserInDB]:
         users_row = self.collection.find({})
         return [UserInDB(**user) async for user in users_row]
+
+    async def update_user_by_id(
+        self,
+        capital: float,
+        assets: float,
+        cash: float,
+        securities: float,
+        commission: float,
+        tas: float,
+        slippage: float,
+        desc: str = ""
+    ):
+        pass

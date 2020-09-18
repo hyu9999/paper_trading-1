@@ -39,6 +39,4 @@ class PyDecimal(Decimal128):
 
         先将python的二进制浮点数用str方法显式的转化为10进制浮点数，再把10进制浮点数字符串转化为Decimal128.
         """
-        # if not isinstance(v, float):
-        #     raise TypeError(f"Cannot convert {v} to Decimal128")
         return cls(str(v))

@@ -31,4 +31,4 @@ def get_user_id_from_token(token: str) -> str:
     try:
         return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])["id"]
     except DecodeError as decode_error:
-        raise ValueError("无法解码该 JWT token") from decode_error
+        raise ValueError("无法解码该JWT Token") from decode_error
