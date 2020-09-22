@@ -21,7 +21,7 @@ test:
 	source .env && poetry run pytest
 
 flake8:
-	flake8 $(SRC)
+	poetry run flake8 $(SRC)
 
 mypy:
 	mypy app

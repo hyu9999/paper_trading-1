@@ -9,6 +9,13 @@ from app.models.types import PyObjectId, PyDecimal
 
 
 class UserRepository(BaseRepository):
+    """用户仓库相关方法
+
+    Raises
+    ------
+    EntityDoesNotExist
+        用户不存在时触发
+    """
     COLLECTION_NAME = settings.db.collections.user
 
     async def create_user(self, *, capital: float, desc: str = "") -> UserInDB:

@@ -2,18 +2,18 @@ from typing import Type
 from decimal import Decimal
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from fastapi import BackgroundTasks
 
 from app.models.domain.users import UserInDB
 from app.models.schemas.orders import OrderInCreate
 from app.models.enums import OrderTypeEnum
 from app.models.types import PyDecimal
+from app.services.engines.base import BaseEngine
 from app.services.engines.event_engine import Event, EventEngine
 from app.services.engines.event_constants import USER_UPDATE_EVENT
 from app.services.engines.user_engine import UserEngine
 
 
-class TradeEngine:
+class TradeEngine(BaseEngine):
     def __init__(self, db: AsyncIOMotorClient, event_engine: Type[EventEngine] = None) -> None:
         self.event_engine = event_engine() if event_engine else EventEngine()
         self.db = db
@@ -32,6 +32,7 @@ class TradeEngine:
         pass
 
     async def on_order_arrived(self, order: OrderInCreate, user: UserInDB):
+        """新订单到达"""
         await self.__pre_trade_validation(order, user)
 
     async def __pre_trade_validation(
@@ -64,4 +65,4 @@ class TradeEngine:
         order: OrderInCreate,
     ) -> None:
         """用户持仓检查"""
-        pos_needs = order.quantity
+        pass

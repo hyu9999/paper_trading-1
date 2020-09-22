@@ -16,6 +16,7 @@ HEADER_KEY = "Authorization"
 
 
 class RWAPIKeyHeader(APIKeyHeader):
+    """获取请求头的鉴权字段"""
     async def __call__(
         self,
         request: requests.Request,
@@ -60,7 +61,3 @@ async def _get_current_user_optional(
     if token:
         return await _get_current_user(user_repo, token)
     return None
-
-
-
-

@@ -55,7 +55,7 @@ class TDXQuotes(BaseQuotes):
 
         Parameters
         ----------
-            code: 600001.SH
+        code : 600001.SH
         """
         tdx_code = self.format_stock_code(code)
         api_quotes = self.api.get_security_quotes(tdx_code)
@@ -67,7 +67,7 @@ class TDXQuotes(BaseQuotes):
 
         Parameters
         ----------
-            code: 600001.SH
+        code : 600001.SH
         """
         symbol, exchange = code.split(".")
         return cls.EXCHANGE_MAPPING[exchange], symbol

@@ -19,4 +19,3 @@ class User(RWModel):
 class UserInDB(DBModelMixin, User):
     """用户"""
     pass
-
