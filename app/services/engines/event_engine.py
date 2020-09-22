@@ -30,15 +30,18 @@ class EventEngine:
 
     Examples
     ----------
+    >>> from app.services.engines.event_engine import Event, EventEngine
     >>> event_engine = EventEngine()
     >>> EXAMPLES_EVENT = "example_event"
     >>> example_event = Event(EXAMPLES_EVENT)
     >>> def example_process(event: Event):
     ...     print("This is example process")
-    >>> event_engine.startup()
-    >>> event_engine.register(EXAMPLES_EVENT, example_process)
-    >>> event_engine.put(example_event)
+    ...
+    >>> await event_engine.startup()
+    >>> await event_engine.register(EXAMPLES_EVENT, example_process)
+    >>> await event_engine.put(example_event)
     This is example process
+    >>> await event_engine.shutdown()
     """
     def __init__(self) -> None:
         self._handlers = defaultdict(list)
@@ -56,6 +59,7 @@ class EventEngine:
         loop.create_task(self.main(loop))
 
     async def shutdown(self) -> None:
+        await self._event_queue.join()
         self._should_exit.set()
 
     async def put(self, event: Event) -> None:

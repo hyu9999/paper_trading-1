@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 from fastapi import FastAPI
 from dynaconf import Dynaconf
@@ -10,26 +12,33 @@ from app.models.domain.users import UserInDB
 from app.db.repositories.user import UserRepository
 
 
-@pytest.fixture
+@pytest.yield_fixture(scope='session')
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="session")
 def settings() -> Dynaconf:
     base_settings.setenv("testing")
     return base_settings
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def app() -> FastAPI:
     from app.main import app
     return app
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def initialized_app(app: FastAPI) -> FastAPI:
     async with LifespanManager(app):
         yield app
 
 
-@pytest.fixture
-async def client(initialized_app: FastAPI, settings: Dynaconf) -> AsyncClient:
+@pytest.fixture(scope="session")
+async def client(initialized_app: FastAPI, settings: Dynaconf, event_loop) -> AsyncClient:
     async with AsyncClient(
         app=initialized_app,
         base_url=settings.base_url,

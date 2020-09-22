@@ -3,6 +3,10 @@ Paper Trading
 ==================================
 *基于Python的证券市场模拟交易后台服务器*
 
+|Test Status|
+
+.. |Test Status| image:: https://https://github.com/Chaoyingz/paper_trading/workflows/Test/badge.svg
+
 项目结构
 -----------------
 
