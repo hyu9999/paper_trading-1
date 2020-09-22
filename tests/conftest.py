@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 from fastapi import FastAPI
 from dynaconf import Dynaconf
@@ -9,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app import settings as base_settings
 from app.models.domain.users import UserInDB
-from app.db.repositories.user import UsersRepository
+from app.db.repositories.user import UserRepository
 
 
 @pytest.fixture
@@ -47,4 +45,4 @@ async def db(initialized_app: FastAPI, settings: Dynaconf) -> AsyncIOMotorDataba
 
 @pytest.fixture
 async def test_user(db: AsyncIOMotorDatabase) -> UserInDB:
-    return await UsersRepository(db).create_user(capital=10000000)
+    return await UserRepository(db).create_user(capital=10000000)

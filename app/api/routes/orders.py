@@ -1,5 +1,5 @@
 from starlette import status
-from fastapi import APIRouter, Depends, Body, Request, BackgroundTasks
+from fastapi import APIRouter, Depends, Body, Request
 
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.authentication import get_current_user_authorizer
@@ -17,10 +17,9 @@ router = APIRouter()
 )
 async def create_orders(
     request: Request,
-    background_task: BackgroundTasks,
     order: OrderInCreate = Body(...),
     order_repo: OrderRepository = Depends(get_repository(OrderRepository)),
     user: UserInDB = Depends(get_current_user_authorizer()),
 ):
-    await request.app.state.engine.on_order_arrived(order, user, background_task)
+    await request.app.state.engine.on_order_arrived(order, user)
     return 10

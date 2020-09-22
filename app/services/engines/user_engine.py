@@ -10,11 +10,16 @@ class UserEngine:
     def __init__(self, event_engine: EventEngine, db: AsyncIOMotorClient) -> None:
         self.event_engine = event_engine
         self.user_repo = UserRepository(db[settings.db.name])
-        self.register_event()
 
-    def register_event(self) -> None:
-        self.event_engine.register(USER_UPDATE_EVENT, self.process_update_user)
+    async def startup(self):
+        await self.register_event()
 
-    async def process_update_user(self, event: Event) -> None:
+    async def shutdown(self):
+        pass
+
+    async def register_event(self) -> None:
+        await self.event_engine.register(USER_UPDATE_EVENT, self.process_update_user)
+
+    def process_update_user(self, event: Event) -> None:
         user = event.data
-        await self.user_repo.update_user_cash_by_id(user.id, user.cash)
+        # await self.user_repo.update_user_cash_by_id(user.id, user.cash)

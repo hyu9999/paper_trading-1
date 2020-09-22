@@ -17,24 +17,31 @@ class TradeEngine:
     def __init__(self, db: AsyncIOMotorClient, event_engine: Type[EventEngine] = None) -> None:
         self.event_engine = event_engine() if event_engine else EventEngine()
         self.db = db
-        self.register_event()
         self.user_engine = UserEngine(self.event_engine, self.db)
 
-    def register_event(self) -> None:
+    async def startup(self) -> None:
+        await self.event_engine.startup()
+        await self.register_event()
+        await self.user_engine.startup()
+
+    async def shutdown(self) -> None:
+        await self.event_engine.shutdown()
+        await self.user_engine.shutdown()
+
+    async def register_event(self) -> None:
         pass
 
-    async def on_order_arrived(self, order: OrderInCreate, user: UserInDB, background_task: BackgroundTasks):
-        await self.__pre_trade_validation(order, user, background_task)
+    async def on_order_arrived(self, order: OrderInCreate, user: UserInDB):
+        await self.__pre_trade_validation(order, user)
 
     async def __pre_trade_validation(
         self,
         order: OrderInCreate,
         user: UserInDB,
-        background_task: BackgroundTasks
     ) -> None:
         """订单创建前用户相关验证."""
         if order.order_type == OrderTypeEnum.BUY:
-            return await self.__capital_validation(order, user, background_task)
+            return await self.__capital_validation(order, user)
         else:
             return await self.__position_validation(order)
 
@@ -42,7 +49,6 @@ class TradeEngine:
         self,
         order: OrderInCreate,
         user: UserInDB,
-        background_task: BackgroundTasks
     ) -> None:
         """用户资金校验."""
         cash_needs = Decimal(order.quantity) * order.price.to_decimal() * (1 + user.commission.to_decimal())
@@ -51,7 +57,7 @@ class TradeEngine:
             # 冻结订单需要的现金
             user.cash = PyDecimal(user.cash.to_decimal() - cash_needs)
             event = Event(USER_UPDATE_EVENT, user)
-            await self.event_engine.process(background_task, event)
+            await self.event_engine.put(event)
 
     async def __position_validation(
         self,
