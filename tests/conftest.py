@@ -8,8 +8,9 @@ from asgi_lifespan import LifespanManager
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app import settings as base_settings
-from app.models.domain.users import UserInDB
+from app.core import jwt
 from app.db.repositories.user import UserRepository
+from app.models.domain.users import UserInDB
 
 
 @pytest.yield_fixture(scope='session')
@@ -38,7 +39,8 @@ async def initialized_app(app: FastAPI) -> FastAPI:
 
 
 @pytest.fixture(scope="session")
-async def client(initialized_app: FastAPI, settings: Dynaconf, event_loop) -> AsyncClient:
+async def client(initialized_app: FastAPI, settings: Dynaconf,
+                 event_loop: asyncio.AbstractEventLoop) -> AsyncClient:
     async with AsyncClient(
         app=initialized_app,
         base_url=settings.base_url,
@@ -47,11 +49,27 @@ async def client(initialized_app: FastAPI, settings: Dynaconf, event_loop) -> As
         yield client
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
+def token(test_user: UserInDB, settings: Dynaconf) -> str:
+    return jwt.create_access_token_for_user(str(test_user.id))
+
+
+@pytest.fixture(scope="session")
+def authorized_client(
+    client: AsyncClient, token: str, settings: Dynaconf
+) -> AsyncClient:
+    client.headers = {
+        "Authorization": f"{settings.token_prefix} {token}",
+        **client.headers,
+    }
+    return client
+
+
+@pytest.fixture(scope="session")
 async def db(initialized_app: FastAPI, settings: Dynaconf) -> AsyncIOMotorDatabase:
     return initialized_app.state.db[settings.db.name]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def test_user(db: AsyncIOMotorDatabase) -> UserInDB:
     return await UserRepository(db).create_user(capital=10000000)

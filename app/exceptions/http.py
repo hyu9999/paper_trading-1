@@ -37,3 +37,8 @@ class InvalidAuthToken(_HTTPException):
 class WrongTokenFormat(_HTTPException):
     code = 10004
     detail = "错误的Token格式"
+
+
+class InsufficientAccountFunds(_HTTPException):
+    code = 10005
+    detail = "账户资金不足"

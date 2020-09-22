@@ -1,4 +1,4 @@
-from datetime import timedelta, date
+from datetime import timedelta, datetime
 
 from pydantic import Field
 
@@ -19,11 +19,12 @@ class Order(Stock):
 
 class OrderInDB(DBModelMixin, Order):
     """订单."""
+    order_id: PyObjectId = Field(..., description="订单ID")  # 用于提供给外部系统的订单唯一标识符
     user: PyObjectId = Field(..., description="账户")
     status: OrderStatusEnum = Field(OrderStatusEnum.WAITING, description="订单状态")
     traded_quantity: int = Field(0, description="已成交数量")
     trade_price: PyDecimal = Field(0, description="交易价格")
-    order_date: date = Field(..., description="订单日期")
+    order_date: datetime = Field(..., description="订单日期")
     order_time: timedelta = Field(None, description="订单时长")
 
     @property

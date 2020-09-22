@@ -5,7 +5,7 @@ from collections import defaultdict
 
 class Event:
     def __init__(self, type_: str, data: Any = None) -> None:
-        """事件
+        """事件.
 
         Parameters
         ----------
@@ -20,7 +20,7 @@ HandlerType = Callable[[Event], None]
 
 
 class EventEngine:
-    """事件引擎
+    """事件引擎.
 
     Attributes
     ----------
@@ -33,14 +33,14 @@ class EventEngine:
     >>> from app.services.engines.event_engine import Event, EventEngine
     >>> event_engine = EventEngine()
     >>> EXAMPLES_EVENT = "example_event"
-    >>> example_event = Event(EXAMPLES_EVENT)
+    >>> example_event = Event(EXAMPLES_EVENT, data="Hello Event.")
     >>> def example_process(event: Event):
-    ...     print("This is example process")
+    ...     print(event.data)
     ...
     >>> await event_engine.startup()
     >>> await event_engine.register(EXAMPLES_EVENT, example_process)
     >>> await event_engine.put(example_event)
-    This is example process
+    Hello Event.
     >>> await event_engine.shutdown()
     """
     def __init__(self) -> None:
@@ -59,7 +59,6 @@ class EventEngine:
         loop.create_task(self.main(loop))
 
     async def shutdown(self) -> None:
-        await self._event_queue.join()
         self._should_exit.set()
 
     async def put(self, event: Event) -> None:

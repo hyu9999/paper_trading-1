@@ -5,7 +5,7 @@ Paper Trading
 
 |Test Status|
 
-.. |Test Status| image:: https://https://github.com/Chaoyingz/paper_trading/workflows/Test/badge.svg
+.. |Test Status| image:: https://github.com/Chaoyingz/paper_trading/workflows/Test/badge.svg
 
 项目结构
 -----------------

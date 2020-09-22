@@ -9,7 +9,9 @@ from app.models.types import PyObjectId, PyDecimal
 
 
 class UserRepository(BaseRepository):
-    """用户仓库相关方法
+    """用户仓库相关方法.
+
+    函数名称以process开头的为事件处理专用函数.
 
     Raises
     ------
@@ -34,9 +36,6 @@ class UserRepository(BaseRepository):
         users_row = self.collection.find({})
         return [UserInDB(**user) async for user in users_row]
 
-    async def update_user_cash_by_id(self, user_id: PyObjectId, cash: PyDecimal):
-        await self.collection.update_one({"_id": user_id}, {"$set": {"cash": cash}})
-
     async def update_user_by_id(
         self,
         capital: float,
@@ -49,3 +48,6 @@ class UserRepository(BaseRepository):
         desc: str = ""
     ):
         pass
+
+    def process_update_user_cash_by_id(self, user_id: PyObjectId, cash: PyDecimal) -> None:
+        self.collection.update_one({"_id": user_id}, {"$set": {"cash": cash}})

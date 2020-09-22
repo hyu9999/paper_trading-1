@@ -11,4 +11,5 @@ async def register_exceptions(app: FastAPI):
     app.add_exception_handler(http.AuthHeaderNotFound, http.AuthHeaderNotFound.handler)
     app.add_exception_handler(http.InvalidAuthToken, http.InvalidAuthToken.handler)
     app.add_exception_handler(http.WrongTokenFormat, http.WrongTokenFormat.handler)
+    app.add_exception_handler(http.InsufficientAccountFunds, http.InsufficientAccountFunds.handler)
     logger.info("注册自定义HTTP异常类别完成.")
