@@ -16,12 +16,12 @@ jobs:
     services:
       mongo:
         image: mongo:4.4.0
-          env:
-            MONGO_USER: mongo
-            MONGO_PASSWORD: mongo
-            MONGO_DB: paper_trading
-          ports:
-            - 27017:27017
+        env:
+          MONGO_USER: mongo
+          MONGO_PASSWORD: mongo
+          MONGO_DB: paper_trading
+        ports:
+          - 27017:27017
       redis:
         image: redis
         ports:
@@ -39,11 +39,19 @@ jobs:
         poetry install
     - name: run tests with pytest
       env:
+        DYNACONF_PT_HOST: 127.0.0.1
+        DYNACONF_PT_PORT: 8000
         DYNACONF_SECRET_KEY: secret_key
         DYNACONF_ALGORITHM: HS256
         DYNACONF_ACCESS_TOKEN_EXPIRE_MINUTES: 10080
         DYNACONF_TOKEN_PREFIX: Token
         DYNACONF_ENV_FOR_DYNACONF: production
         DYNACONF_DB_USER: mongo
+        DYNACONF_DB_URL: mongodb://mongo:mongo@localhost:27017"
       run: |
-        poetry run coverage run -m pytest
+        poetry run pytest --cov=app --cov=tests --cov-report=term-missing --cov-report=xml --cov-fail-under=100
+    - name: Upload coverage to Codecov
+      run: bash <(curl -s https://codecov.io/bash) -t $TOKEN -B $REF
+      env:
+        TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        REF: ${{ github.ref }}
