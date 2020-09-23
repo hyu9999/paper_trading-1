@@ -11,9 +11,21 @@ on:
 
 jobs:
   test:
-
+    name: Test
     runs-on: ubuntu-latest
-
+    services:
+      mongo:
+        image: mongo:4.4.0
+          env:
+            MONGO_USER: mongo
+            MONGO_PASSWORD: mongo
+            MONGO_DB: paper_trading
+          ports:
+            - 27017:27017
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.7
@@ -25,6 +37,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry
         poetry install
-    - name: pytest
+    - name: run tests with pytest
+      env:
+        DYNACONF_SECRET_KEY: secret_key
+        DYNACONF_ALGORITHM: HS256
+        DYNACONF_ACCESS_TOKEN_EXPIRE_MINUTES: 10080
+        DYNACONF_TOKEN_PREFIX: Token
+        DYNACONF_ENV_FOR_DYNACONF: production
+        DYNACONF_DB_USER: mongo
       run: |
         poetry run coverage run -m pytest
