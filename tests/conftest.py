@@ -12,10 +12,12 @@ from app.core import jwt
 from app.db.repositories.user import UserRepository
 from app.models.domain.users import UserInDB
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.yield_fixture(scope='session')
 def event_loop():
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    loop = asyncio.get_event_loop()
     yield loop
     loop.close()
 

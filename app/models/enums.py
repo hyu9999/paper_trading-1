@@ -19,6 +19,8 @@ class OrderTypeEnum(str, Enum):
     """订单类型."""
     BUY = "buy"
     SELL = "sell"
+    CANCEL = "cancel"
+    LIQUIDATION = "liquidation"
 
 
 @unique
@@ -38,7 +40,8 @@ class TradeTypeEnum(str, Enum):
 @unique
 class OrderStatusEnum(str, Enum):
     """订单状态"""
-    WAITING = "等待中"
+    SUBMITTING = "提交中"
+    WAITING = "等待处理中"
     PART_FINISHED = "部分成交"
     ALL_FINISHED = "全部成交"
     CANCELED = "已取消"

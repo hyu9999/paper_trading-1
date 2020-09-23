@@ -35,10 +35,15 @@ class InvalidAuthToken(_HTTPException):
 
 
 class WrongTokenFormat(_HTTPException):
-    code = 10004
+    code = 10005
     detail = "错误的Token格式"
 
 
 class InsufficientAccountFunds(_HTTPException):
-    code = 10005
+    code = 10006
     detail = "账户资金不足"
+
+
+class InvalidOrderExchange(_HTTPException):
+    code = 10007
+    detail = "订单指定的交易所无效"

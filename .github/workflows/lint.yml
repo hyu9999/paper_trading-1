@@ -10,7 +10,7 @@ on:
     branches: [ paper_trading_v2 ]
 
 jobs:
-  flake8:
+  lint:
 
     runs-on: ubuntu-latest
 

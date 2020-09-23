@@ -1,13 +1,13 @@
 from starlette import status
-from fastapi import APIRouter, Depends, Body, Request
+from fastapi import APIRouter, Depends, Body
 
-from app.api.dependencies.database import get_repository
+from app.api.dependencies.state import get_engine
 from app.api.dependencies.authentication import get_current_user_authorizer
-from app.db.repositories.order import OrderRepository
-from app.exceptions.service import InsufficientFunds
-from app.exceptions.http import InsufficientAccountFunds
-from app.models.schemas.orders import OrderInCreate
+from app.exceptions.service import InsufficientFunds, InvalidExchange
+from app.exceptions.http import InsufficientAccountFunds, InvalidOrderExchange
 from app.models.domain.users import UserInDB
+from app.models.schemas.orders import OrderInCreate
+from app.services.engines.main_engine import MainEngine
 
 router = APIRouter()
 
@@ -18,12 +18,13 @@ router = APIRouter()
     name="orders:create-order"
 )
 async def create_order(
-    request: Request,
     order: OrderInCreate = Body(...),
-    order_repo: OrderRepository = Depends(get_repository(OrderRepository)),
+    engine: MainEngine = Depends(get_engine),
     user: UserInDB = Depends(get_current_user_authorizer()),
 ):
     try:
-        return await request.app.state.engine.on_order_arrived(order, user)
+        return await engine.on_order_arrived(order, user)
     except InsufficientFunds:
         raise InsufficientAccountFunds
+    except InvalidExchange:
+        raise InvalidOrderExchange

@@ -1,9 +1,7 @@
 from app import settings
 from app.db.repositories.base import BaseRepository
-
+from app.models.types import PyDecimal
 from app.models.domain.orders import OrderInDB
-from app.models.types import PyDecimal, PyObjectId
-from app.models.schemas.orders import OrderInCreate
 from app.models.enums import ExchangeEnum, OrderTypeEnum, PriceTypeEnum, TradeTypeEnum
 
 
@@ -41,7 +39,7 @@ class OrderRepository(BaseRepository):
         order_type: OrderTypeEnum,
         price_type: PriceTypeEnum,
         trade_type: TradeTypeEnum,
-    ):
+    ) -> None:
         pass
 
     def process_create_order(self, order: OrderInDB) -> None:

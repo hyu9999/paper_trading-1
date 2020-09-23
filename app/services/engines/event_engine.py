@@ -47,19 +47,21 @@ class EventEngine:
         self._handlers = defaultdict(list)
         self._event_queue = asyncio.Queue()
         self._should_exit = asyncio.Event()
+        self._main_task = None
 
-    async def main(self, loop: asyncio.AbstractEventLoop) -> None:
+    async def main(self) -> None:
+        loop = asyncio.get_event_loop()
         while not self._should_exit.is_set():
             event = await self._event_queue.get()
             [loop.run_in_executor(None, handler, event) for handler in self._handlers[event.type_]
              if event.type_ in self._handlers]
 
     async def startup(self) -> None:
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.main(loop))
+        self._main_task = asyncio.create_task(self.main())
 
     async def shutdown(self) -> None:
         self._should_exit.set()
+        self._main_task.cancel()
 
     async def put(self, event: Event) -> None:
         await self._event_queue.put(event)

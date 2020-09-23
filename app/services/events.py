@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from loguru import logger
 
-from app.services.engines.trade_engine import TradeEngine
+from app.services.engines.main_engine import MainEngine
 
 
 async def start_engine(app: FastAPI) -> None:
     logger.info("开启模拟交易主引擎中...")
-    app.state.engine = TradeEngine(app.state.db)
+    app.state.engine = MainEngine(app.state.db, app.state.entrust_db)
     await app.state.engine.startup()
     logger.info("模拟交易主引擎已开启.")
 
