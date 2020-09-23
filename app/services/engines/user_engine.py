@@ -9,6 +9,7 @@ from app.models.types import PyDecimal
 from app.models.enums import OrderTypeEnum
 from app.models.domain.users import UserInDB
 from app.models.schemas.orders import OrderInCreate
+from app.models.schemas.event_payload import UserInUpdateCashPayload
 from app.services.engines.base import BaseEngine
 from app.services.engines.event_engine import EventEngine, Event
 from app.services.engines.event_constants import USER_UPDATE_CASH_EVENT
@@ -36,7 +37,7 @@ class UserEngine(BaseEngine):
         await self.event_engine.register(USER_UPDATE_CASH_EVENT, self.process_user_update_cash_event)
 
     def process_user_update_cash_event(self, event: Event) -> None:
-        self.user_repo.process_update_user_cash_by_id(event.data.id, event.data.cash)
+        self.user_repo.process_update_user_cash(event.payload)
 
     async def pre_trade_validation(
         self,
@@ -59,8 +60,9 @@ class UserEngine(BaseEngine):
         # 若用户现金可以满足订单需求
         if user.cash.to_decimal() >= cash_needs:
             # 冻结订单需要的现金
-            user.cash = PyDecimal(user.cash.to_decimal() - cash_needs)
-            event = Event(USER_UPDATE_CASH_EVENT, user)
+            freeze_cash = PyDecimal(user.cash.to_decimal() - cash_needs)
+            payload = UserInUpdateCashPayload(id=user.id, cash=freeze_cash)
+            event = Event(USER_UPDATE_CASH_EVENT, payload)
             await self.event_engine.put(event)
         else:
             raise InsufficientFunds

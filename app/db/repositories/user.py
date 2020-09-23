@@ -4,8 +4,9 @@ from app import settings
 from app.db.repositories.base import BaseRepository
 
 from app.exceptions.db import EntityDoesNotExist
+from app.models.types import PyObjectId
 from app.models.domain.users import UserInDB
-from app.models.types import PyObjectId, PyDecimal
+from app.models.schemas.event_payload import UserInUpdateCashPayload
 
 
 class UserRepository(BaseRepository):
@@ -49,5 +50,5 @@ class UserRepository(BaseRepository):
     ):
         pass
 
-    def process_update_user_cash_by_id(self, user_id: PyObjectId, cash: PyDecimal) -> None:
-        self.collection.update_one({"_id": user_id}, {"$set": {"cash": cash}})
+    def process_update_user_cash(self, user: UserInUpdateCashPayload) -> None:
+        self.collection.update_one({"_id": user.id}, {"$set": {"cash": user.cash}})

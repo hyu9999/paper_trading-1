@@ -11,4 +11,12 @@ class InsufficientFunds(ServiceError):
 
 
 class InvalidExchange(ServiceError):
-    """订单指定的交易所不在于市场引擎规定的交易所列表中时触发"""
+    """订单指定的交易所不在于市场引擎规定的交易所列表中时触发."""
+
+
+class StockLimitUp(ServiceError):
+    """撮合交易时股票涨停触发."""
+
+
+class StockLimitDown(ServiceError):
+    """撮合交易时股票跌停触发."""

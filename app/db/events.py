@@ -29,6 +29,9 @@ async def connect_to_redis(app: FastAPI) -> None:
 
 async def close_redis_connection(app: FastAPI) -> None:
     logger.info("关闭Redis连接中...")
-    app.state.entrust_db.close()
+    try:
+        app.state.entrust_db.close()
+    except aioredis.errors.ConnectionForcedCloseError:
+        pass
     await app.state.entrust_db.wait_closed()
     logger.info("Redis连接已关闭.")

@@ -1,19 +1,21 @@
 import asyncio
-from typing import Any, Callable
+from typing import Callable
 from collections import defaultdict
+
+from app.models.schemas.event_payload import BasePayload
 
 
 class Event:
-    def __init__(self, type_: str, data: Any = None) -> None:
+    def __init__(self, type_: str, payload: BasePayload = None) -> None:
         """事件.
 
         Parameters
         ----------
         type_ : 事件类型
-        data : 用于process的参数
+        payload : 提供给process的数据
         """
         self.type_ = type_
-        self.data = data
+        self.payload = payload
 
 
 HandlerType = Callable[[Event], None]
@@ -31,11 +33,15 @@ class EventEngine:
     Examples
     ----------
     >>> from app.services.engines.event_engine import Event, EventEngine
+    >>> from app.models.schemas.event_payload import BasePayload
+    >>> class FooPayload(BasePayload):
+    >>>     msg: str
     >>> event_engine = EventEngine()
     >>> EXAMPLES_EVENT = "example_event"
-    >>> example_event = Event(EXAMPLES_EVENT, data="Hello Event.")
-    >>> def example_process(event: Event):
-    ...     print(event.data)
+    >>> payload = FooPayload(msg="Hello Event.")
+    >>> example_event = Event(type_=EXAMPLES_EVENT, payload=payload)
+    >>> def example_process(foo_payload: FooPayload):
+    ...     print(foo_payload.msg)
     ...
     >>> await event_engine.startup()
     >>> await event_engine.register(EXAMPLES_EVENT, example_process)
@@ -47,21 +53,19 @@ class EventEngine:
         self._handlers = defaultdict(list)
         self._event_queue = asyncio.Queue()
         self._should_exit = asyncio.Event()
-        self._main_task = None
 
     async def main(self) -> None:
         loop = asyncio.get_event_loop()
         while not self._should_exit.is_set():
             event = await self._event_queue.get()
-            [loop.run_in_executor(None, handler, event) for handler in self._handlers[event.type_]
+            [loop.run_in_executor(None, handler, event.payload) for handler in self._handlers[event.type_]
              if event.type_ in self._handlers]
 
     async def startup(self) -> None:
-        self._main_task = asyncio.create_task(self.main())
+        asyncio.create_task(self.main())
 
     async def shutdown(self) -> None:
         self._should_exit.set()
-        self._main_task.cancel()
 
     async def put(self, event: Event) -> None:
         await self._event_queue.put(event)

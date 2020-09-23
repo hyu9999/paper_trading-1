@@ -2,6 +2,11 @@ from app import settings
 from app.db.repositories.base import BaseRepository
 from app.models.types import PyDecimal
 from app.models.domain.orders import OrderInDB
+from app.models.schemas.event_payload import (
+    OrderInCreatePayload,
+    OrderInUpdatePayload,
+    OrderInUpdateStatusPayload
+)
 from app.models.enums import ExchangeEnum, OrderTypeEnum, PriceTypeEnum, TradeTypeEnum
 
 
@@ -42,5 +47,11 @@ class OrderRepository(BaseRepository):
     ) -> None:
         pass
 
-    def process_create_order(self, order: OrderInDB) -> None:
+    def process_create_order(self, order: OrderInCreatePayload) -> None:
         self.collection.insert_one(order.dict(exclude={"id"}))
+
+    def process_update_order(self, order: OrderInUpdatePayload) -> None:
+        self.collection.update_one({"order_id": order.order_id}, {"$set": order.dict(exclude={"order_id"})})
+
+    def process_update_order_status(self, order: OrderInUpdateStatusPayload) -> None:
+        self.collection.update_one({"_id": order.id}, {"$set": {"status": order.status}})

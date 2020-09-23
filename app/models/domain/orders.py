@@ -27,6 +27,3 @@ class OrderInDB(DBModelMixin, Order):
     order_date: datetime = Field(..., description="订单日期")
     order_time: timedelta = Field(None, description="订单时长")
 
-    @property
-    def stock_code(self) -> str:
-        return f"{self.symbol}.{self.exchange}"
