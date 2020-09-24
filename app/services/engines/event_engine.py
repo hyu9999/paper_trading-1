@@ -2,13 +2,12 @@ import asyncio
 from queue import Queue
 from typing import Callable
 from threading import Thread
+from pydantic import BaseModel
 from collections import defaultdict
-
-from app.models.schemas.event_payload import BasePayload
 
 
 class Event:
-    def __init__(self, type_: str, payload: BasePayload = None) -> None:
+    def __init__(self, type_: str, payload: BaseModel = None) -> None:
         """事件.
 
         Parameters
@@ -34,9 +33,9 @@ class EventEngine:
 
     Examples
     ----------
+    >>> from pydantic import BaseModel
     >>> from app.services.engines.event_engine import Event, EventEngine
-    >>> from app.models.schemas.event_payload import BasePayload
-    >>> class FooPayload(BasePayload):
+    >>> class FooPayload(BaseModel):
     >>>     msg: str
     >>> event_engine = EventEngine()
     >>> EXAMPLES_EVENT = "example_event"

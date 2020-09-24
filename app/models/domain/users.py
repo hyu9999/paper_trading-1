@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from app.models.base import DBModelMixin
 from app.models.types import PyDecimal
+from app.models.base import DBModelMixin
 from app.models.domain.rwmodel import RWModel
 
 
@@ -19,3 +19,4 @@ class User(RWModel):
 class UserInDB(DBModelMixin, User):
     """用户"""
     pass
+

@@ -9,9 +9,13 @@ class _HTTPException(Exception):
     code = 10000
     status_code = status.HTTP_400_BAD_REQUEST
 
+    def __init__(self, *args, **kwargs):
+        self.status_code = kwargs.get("status_code")
+
     @classmethod
     async def handler(cls, request: Request, exc: Exception) -> JSONResponse:
-        return JSONResponse(status_code=cls.status_code, content={"code": cls.code, "detail": cls.detail})
+        return JSONResponse(status_code=exc.__dict__.get("status_code") or cls.status_code,
+                            content={"code": cls.code, "detail": cls.detail})
 
 
 class InvalidUserID(_HTTPException):
@@ -47,3 +51,8 @@ class InsufficientAccountFunds(_HTTPException):
 class InvalidOrderExchange(_HTTPException):
     code = 10007
     detail = "订单指定的交易所无效"
+
+
+class OrderNotFound(_HTTPException):
+    code = 10008
+    detail = "未找到该订单"

@@ -1,7 +1,7 @@
 from loguru import logger
 
 from app import settings
-from app.models.schemas.event_payload import LogPayload
+from app.models.schemas.log import Log
 from app.services.engines.base import BaseEngine
 from app.services.engines.event_engine import EventEngine
 from app.services.engines.event_constants import LOG_EVENT
@@ -9,6 +9,7 @@ from app.services.engines.event_constants import LOG_EVENT
 
 class LogEngine(BaseEngine):
     def __init__(self, event_engine: EventEngine):
+        super().__init__()
         self.level = settings.log.level
         self.event_engine = event_engine
 
@@ -22,5 +23,5 @@ class LogEngine(BaseEngine):
         self.event_engine.register(LOG_EVENT, self.process_log_event)
 
     @staticmethod
-    def process_log_event(payload: LogPayload) -> None:
+    def process_log_event(payload: Log) -> None:
         logger.log(payload.level, payload.content)

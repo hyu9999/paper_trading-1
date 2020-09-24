@@ -15,7 +15,19 @@ class OrderInCreateViewResponse(RWSchema, Order):
     order_id: PyObjectId = Field(..., description="订单ID")
 
 
-class OrderInCache(RWSchema, Order):
-    traded_quantity: int = Field(0, description="已成交数量")
-    trade_price: PyDecimal = Field(0, description="交易价格")
+class OrderInResponse(RWSchema, Order):
+    order_id: PyObjectId = Field(..., description="订单ID")
+    status: OrderStatusEnum = Field(OrderStatusEnum.SUBMITTING, description="订单状态")
+
+
+class OrderInUpdate(RWSchema):
+    order_id: PyObjectId = Field(...)
+    price: PyDecimal = Field(..., description="价格")
+    status: OrderStatusEnum = Field(..., description="订单状态")
+    traded_quantity: int = Field(..., description="已成交数量")
+    trade_price: PyDecimal = Field(..., description="交易价格")
+
+
+class OrderInUpdateStatus(RWSchema):
+    id: PyObjectId = Field(...)
     status: OrderStatusEnum = Field(..., description="订单状态")

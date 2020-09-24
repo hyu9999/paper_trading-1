@@ -5,7 +5,6 @@ from app.api.dependencies.database import get_repository
 from app.db.repositories.user import UserRepository
 from app.models.schemas.users import ListOfUserInResponse
 
-
 router = APIRouter()
 
 
@@ -16,7 +15,7 @@ router = APIRouter()
     name="users:list-users"
 )
 async def list_users(
-    users_repo: UserRepository = Depends(get_repository(UserRepository))
+    user_repo: UserRepository = Depends(get_repository(UserRepository))
 ) -> ListOfUserInResponse:
-    users = await users_repo.get_users_list()
+    users = await user_repo.get_users_list()
     return ListOfUserInResponse(users=users, count=len(users))

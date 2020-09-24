@@ -9,5 +9,5 @@ class Stock(RWModel):
     exchange: ExchangeEnum = Field(..., description="股票市场")
 
     @property
-    def stock_code(self) -> str:
+    def stock_code(self):
         return f"{self.symbol}.{self.exchange}"

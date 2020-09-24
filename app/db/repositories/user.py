@@ -6,7 +6,7 @@ from app.db.repositories.base import BaseRepository
 from app.exceptions.db import EntityDoesNotExist
 from app.models.types import PyObjectId
 from app.models.domain.users import UserInDB
-from app.models.schemas.event_payload import UserInUpdateCashPayload
+from app.models.schemas.users import UserInUpdateCash, UserInUpdate
 
 
 class UserRepository(BaseRepository):
@@ -27,7 +27,7 @@ class UserRepository(BaseRepository):
         user.id = user_row.inserted_id
         return user
 
-    async def get_user_by_id(self, *, user_id: str) -> UserInDB:
+    async def get_user_by_id(self, user_id: str) -> UserInDB:
         user_row = await self.collection.find_one({"_id": PyObjectId(user_id)})
         if user_row:
             return UserInDB(**user_row)
@@ -50,5 +50,8 @@ class UserRepository(BaseRepository):
     ):
         pass
 
-    def process_update_user_cash(self, user: UserInUpdateCashPayload) -> None:
+    def process_update_user_cash(self, user: UserInUpdateCash) -> None:
         self.collection.update_one({"_id": user.id}, {"$set": {"cash": user.cash}})
+
+    def process_update_user(self, user: UserInUpdate) -> None:
+        self.collection.update_one({"_id": user.id}, {"$set": user.dict(exclude={"id"})})

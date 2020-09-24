@@ -4,6 +4,7 @@ from pydantic import Field
 
 from app.models.domain.users import User
 from app.models.schemas.rwschema import RWSchema
+from app.models.types import PyDecimal, PyObjectId
 
 
 class UserInCreate(RWSchema):
@@ -22,3 +23,15 @@ class UserInResponse(RWSchema, User):
 class ListOfUserInResponse(RWSchema):
     users: List[User]
     count: int
+
+
+class UserInUpdateCash(RWSchema):
+    id: PyObjectId = Field(...)
+    cash: PyDecimal = Field(..., description="现金")
+
+
+class UserInUpdate(RWSchema):
+    id: PyObjectId = Field(...)
+    assets: PyDecimal = Field(..., description="总资产")
+    cash: PyDecimal = Field(..., description="现金")
+    securities: PyDecimal = Field(0.00, description="证券资产")

@@ -3,16 +3,13 @@ from queue import Queue
 from threading import Thread
 
 from app.exceptions.service import InvalidExchange
-from app.models.types import PyDecimal
 from app.models.domain.orders import OrderInDB
-from app.models.schemas.orders import OrderInCache
-from app.models.schemas.event_payload import LogPayload
-from app.models.schemas.event_payload import OrderInUpdatePayload
+from app.models.schemas.orders import OrderInUpdate
 from app.models.enums import OrderTypeEnum, PriceTypeEnum, OrderStatusEnum
 from app.services.engines.base import BaseEngine
 from app.services.engines.event_engine import Event, EventEngine
+from app.services.engines.user_engine import UserEngine
 from app.services.engines.event_constants import (
-    LOG_EVENT,
     ORDER_UPDATE_EVENT
 )
 
@@ -25,8 +22,10 @@ class BaseMarket(BaseEngine):
     InvalidExchange
         订单指定的交易所不在于市场引擎规定的交易所列表中时触发
     """
-    def __init__(self, event_engine: EventEngine) -> None:
+    def __init__(self, event_engine: EventEngine, user_engine: UserEngine) -> None:
+        super().__init__()
         self.event_engine = event_engine
+        self.user_engine = user_engine
         self._active = True
         self.market_name = None         # 交易市场名称
         self.exchange_symbols = None    # 交易市场标识
@@ -62,15 +61,15 @@ class BaseMarket(BaseEngine):
                         order.price = quotes.ask1_p
                         order.trade_price = quotes.ask1_p
                         order.traded_quantity = order.quantity
-                        self.update_order(order)
+                        asyncio.run(self.save_order(order))
                         continue
 
                     # 限价成交
                     elif order.price_type == PriceTypeEnum.LIMIT.value:
-                        if PyDecimal(order.order_price) >= quotes.ask1_p:
+                        if order.price.to_decimal() >= quotes.ask1_p.to_decimal():
                             order.trade_price = quotes.ask1_p
                             order.traded_quantity = order.quantity
-                            self.update_order(order)
+                            asyncio.run(self.save_order(order))
                         continue
                 else:
                     # 跌停
@@ -83,38 +82,30 @@ class BaseMarket(BaseEngine):
                         order.price = quotes.ask1_p
                         order.trade_price = quotes.ask1_p
                         order.traded_quantity = order.quantity
-                        self.update_order(order)
+                        asyncio.run(self.save_order(order))
                         continue
                     # 限价成交
                     elif order.price_type == PriceTypeEnum.LIMIT.value:
-                        if PyDecimal(order.order_price) <= quotes.bid1_p:
+                        if order.price.to_decimal() <= quotes.bid1_p.to_decimal():
                             order.trade_price = quotes.bid1_p
-                            order.trade_price = quotes.ask1_p
                             order.traded_quantity = order.quantity
-                            self.update_order(order)
+                            asyncio.run(self.save_order(order))
                         continue
 
-    def update_order(self, order: OrderInCache) -> None:
-        """订单成交后的处理."""
+    async def save_order(self, order: OrderInDB) -> None:
+        """撮合完成后保存订单信息."""
         # 买入处理
         if order.order_type == OrderTypeEnum.BUY.value:
-            # TODO: 买入处理
-            pass
+            await self.user_engine.create_position(order)
         elif order.order_type == OrderTypeEnum.SELL.value:
-            # TODO: 卖出处理
-            pass
+            await self.user_engine.delete_position(order)
         order.status = OrderStatusEnum.ALL_FINISHED.value \
             if order.quantity == order.traded_quantity \
             else OrderStatusEnum.PART_FINISHED.value
-        order_in_update_payload = OrderInUpdatePayload(**dict(order))
+        order_in_update_payload = OrderInUpdate(**dict(order))
         self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
 
-    def write_log(self, content: str, level: str = "INFO") -> None:
-        payload = LogPayload(level=level, content=content)
-        event = Event(LOG_EVENT, payload)
-        self.event_engine.put(event)
-
-    async def exchange_validation(self, order: OrderInDB) -> None:
+    def exchange_validation(self, order: OrderInDB) -> None:
         """交易市场类别检查."""
         if order.exchange not in self.exchange_symbols:
             raise InvalidExchange

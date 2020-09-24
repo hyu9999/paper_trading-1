@@ -1,12 +1,11 @@
+from typing import List
+
 from app import settings
 from app.db.repositories.base import BaseRepository
-from app.models.types import PyDecimal
+from app.exceptions.db import EntityDoesNotExist
 from app.models.domain.orders import OrderInDB
-from app.models.schemas.event_payload import (
-    OrderInCreatePayload,
-    OrderInUpdatePayload,
-    OrderInUpdateStatusPayload
-)
+from app.models.types import PyDecimal, PyObjectId
+from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus
 from app.models.enums import ExchangeEnum, OrderTypeEnum, PriceTypeEnum, TradeTypeEnum
 
 
@@ -14,6 +13,11 @@ class OrderRepository(BaseRepository):
     """订单仓库相关方法.
 
     函数名称以process开头的为事件处理专用函数.
+
+    Raises
+    ------
+    EntityDoesNotExist
+        订单不存在时触发
     """
     COLLECTION_NAME = settings.db.collections.order
 
@@ -34,6 +38,16 @@ class OrderRepository(BaseRepository):
         order.id = order_row.inserted_id
         return order
 
+    async def get_order_by_order_id(self, order_id: PyObjectId) -> OrderInDB:
+        order_row = await self.collection.find_one({"order_id": order_id})
+        if order_row:
+            return OrderInDB(**order_row)
+        raise EntityDoesNotExist(f"订单`{order_id}`不存在.")
+
+    async def get_orders_by_user_id(self, user_id: PyObjectId) -> List[OrderInDB]:
+        order_rows = self.collection.find({"user": user_id})
+        return [OrderInDB(**order) async for order in order_rows]
+
     async def update_order(
         self,
         *,
@@ -47,11 +61,11 @@ class OrderRepository(BaseRepository):
     ) -> None:
         pass
 
-    def process_create_order(self, order: OrderInCreatePayload) -> None:
+    def process_create_order(self, order: OrderInDB) -> None:
         self.collection.insert_one(order.dict(exclude={"id"}))
 
-    def process_update_order(self, order: OrderInUpdatePayload) -> None:
+    def process_update_order(self, order: OrderInUpdate) -> None:
         self.collection.update_one({"order_id": order.order_id}, {"$set": order.dict(exclude={"order_id"})})
 
-    def process_update_order_status(self, order: OrderInUpdateStatusPayload) -> None:
+    def process_update_order_status(self, order: OrderInUpdateStatus) -> None:
         self.collection.update_one({"_id": order.id}, {"$set": {"status": order.status}})

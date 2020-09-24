@@ -2,7 +2,7 @@ from typing import Dict
 from datetime import datetime, timedelta
 
 import jwt
-from jwt.exceptions import DecodeError
+from jwt.exceptions import DecodeError, ExpiredSignatureError
 
 from app import settings
 from app.models.schemas.jwt import JWTMeta
@@ -32,3 +32,5 @@ def get_user_id_from_token(token: str) -> str:
         return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])["id"]
     except DecodeError as decode_error:
         raise ValueError("无法解码该JWT Token") from decode_error
+    except ExpiredSignatureError as expired_signature_error:
+        raise ValueError("该Token已过期") from expired_signature_error
