@@ -1,7 +1,8 @@
 from typing import List
+from datetime import datetime
 
-from starlette import status
-from fastapi import APIRouter, Depends, Body
+from starlette import status as http_status
+from fastapi import APIRouter, Depends, Body, Query
 
 from app.api.dependencies.state import get_engine
 from app.api.dependencies.database import get_repository
@@ -20,7 +21,7 @@ router = APIRouter()
 
 @router.post(
     "/",
-    status_code=status.HTTP_201_CREATED,
+    status_code=http_status.HTTP_201_CREATED,
     name="orders:create-order"
 )
 async def create_order(
@@ -38,7 +39,7 @@ async def create_order(
 
 @router.get(
     "/{order_id}",
-    status_code=status.HTTP_200_OK,
+    status_code=http_status.HTTP_200_OK,
     name="orders:get-order",
     response_model=OrderInResponse
 )
@@ -51,18 +52,21 @@ async def get_order(
         order = await order_repo.get_order_by_order_id(order_id)
         return OrderInResponse(**dict(order))
     except EntityDoesNotExist:
-        raise OrderNotFound(status_code=404)
+        raise OrderNotFound(status_code=http_status.HTTP_404_NOT_FOUND)
 
 
 @router.get(
     "/",
-    status_code=status.HTTP_200_OK,
+    status_code=http_status.HTTP_200_OK,
     name="orders:get-order-list",
     response_model=List[OrderInResponse]
 )
 async def get_order_list(
     order_repo: OrderRepository = Depends(get_repository(OrderRepository)),
     user: UserInDB = Depends(get_current_user_authorizer()),
+    status: str = Query(None, description="订单状态"),
+    start_date: datetime = Query(None, description="开始时间"),
+    end_date: datetime = Query(None, description="结束时间"),
 ):
-    orders = await order_repo.get_orders_by_user_id(user.id)
+    orders = await order_repo.get_orders(user_id=user.id, status=status, start_date=start_date, end_date=end_date)
     return [OrderInResponse(**dict(order)) for order in orders]

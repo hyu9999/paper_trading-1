@@ -1,4 +1,5 @@
 from typing import List
+from datetime import datetime
 
 from app import settings
 from app.db.repositories.base import BaseRepository
@@ -44,8 +45,22 @@ class OrderRepository(BaseRepository):
             return OrderInDB(**order_row)
         raise EntityDoesNotExist(f"订单`{order_id}`不存在.")
 
-    async def get_orders_by_user_id(self, user_id: PyObjectId) -> List[OrderInDB]:
-        order_rows = self.collection.find({"user": user_id})
+    async def get_orders(
+        self,
+        user_id: PyObjectId,
+        status: str = None,
+        start_date: datetime = None,
+        end_date: datetime = None
+    ) -> List[OrderInDB]:
+        query = {
+            "user_id": user_id,
+            "status": status,
+            "order_date": {
+                "$gte": start_date,
+                "$lt": end_date
+            }
+        }
+        order_rows = self.collection.find(query)
         return [OrderInDB(**order) async for order in order_rows]
 
     async def update_order(

@@ -14,9 +14,9 @@ class InvalidExchange(ServiceError):
     """订单指定的交易所不在于市场引擎规定的交易所列表中时触发."""
 
 
-class StockLimitUp(ServiceError):
-    """撮合交易时股票涨停触发."""
+class NoPositionsAvailable(ServiceError):
+    """用户未持有订单指定的股票时触发."""
 
 
-class StockLimitDown(ServiceError):
-    """撮合交易时股票跌停触发."""
+class NotEnoughAvailablePositions(ServiceError):
+    """用户持仓股票可用数量不足时触发."""

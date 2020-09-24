@@ -42,6 +42,8 @@ async def initdb():
         await client[settings.db.name][settings.db.collections.order].create_index("order_id")
         await create_collection(client, settings.db.collections.position)
         await client[settings.db.name][settings.db.collections.position].create_index("user")
+        await client[settings.db.name][settings.db.collections.position].create_index("symbol")
+        await client[settings.db.name][settings.db.collections.position].create_index("exchange")
         click.echo("初始化数据库完成.")
     else:
         click.echo("初始化数据库失败，用户操作中止.")

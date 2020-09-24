@@ -6,7 +6,12 @@ from app.exceptions.db import EntityDoesNotExist
 from app.models.types import PyObjectId
 from app.models.enums import ExchangeEnum
 from app.models.domain.position import PositionInDB
-from app.models.schemas.position import PositionInResponse
+from app.models.schemas.position import (
+    PositionInResponse,
+    PositionInUpdateAvailable,
+    PositionInUpdate,
+    PositionInDelete
+)
 
 
 class PositionRepository(BaseRepository):
@@ -38,3 +43,11 @@ class PositionRepository(BaseRepository):
     def process_create_position(self, position: PositionInDB) -> None:
         self.collection.insert_one(position.dict(exclude={"id"}))
 
+    def process_update_position_available_by_id(self, position: PositionInUpdateAvailable) -> None:
+        self.collection.update_one({"id": position.id}, {"set": {"available_quantity": position.available_quantity}})
+
+    def process_update_position_by_id(self, position: PositionInUpdate) -> None:
+        self.collection.update_one({"id": position.id}, {"set": position.dict(exclude={"id"})})
+
+    def process_delete_position_by_id(self, position: PositionInDelete) -> None:
+        self.collection.delete_one({"id": position.id})
