@@ -1,5 +1,6 @@
 import asyncio
-from logging import INFO
+from queue import Queue
+from threading import Thread
 
 from app.exceptions.service import InvalidExchange
 from app.models.types import PyDecimal
@@ -12,7 +13,6 @@ from app.services.engines.base import BaseEngine
 from app.services.engines.event_engine import Event, EventEngine
 from app.services.engines.event_constants import (
     LOG_EVENT,
-    ORDER_UPDATE_STATUS_EVENT,
     ORDER_UPDATE_EVENT
 )
 
@@ -31,67 +31,70 @@ class BaseMarket(BaseEngine):
         self.market_name = None         # 交易市场名称
         self.exchange_symbols = None    # 交易市场标识
         self.quotes_api = None
-        self.entrust_cache = None
+        self.entrust_queue = Queue()
         self._should_exit = asyncio.Event()
+        self._process = Thread(target=self.matchmaking)
 
-    async def startup(self) -> None:
-        asyncio.create_task(self.matchmaking())
-        await self.write_log(f"{self.market_name}交易市场已开启.")
+    def startup(self) -> None:
+        self.write_log(f"[{self.market_name}]交易市场已开启.")
+        self._process.start()
 
-    async def shutdown(self) -> None:
+    def shutdown(self) -> None:
         self._should_exit.set()
+        self._process.join()
 
-    async def register_event(self) -> None:
+    def register_event(self) -> None:
         pass
 
-    async def matchmaking(self) -> None:
+    def matchmaking(self) -> None:
         while not self._should_exit.is_set():
-            order = await self.entrust_cache.get_entrust()
-            quotes = self.quotes_api.get_ticks(order.stock_code)
-            if order.order_type == OrderTypeEnum.BUY.value:
-                # 涨停
-                if quotes.ask1_p == 0:
-                    await self.entrust_cache.push_entrust(order)
-                    continue
+            if not self.entrust_queue.empty():
+                order = self.entrust_queue.get()
+                quotes = self.quotes_api.get_ticks(order.stock_code)
+                if order.order_type == OrderTypeEnum.BUY.value:
+                    # 涨停
+                    if quotes.ask1_p == 0:
+                        self.entrust_queue.put(order)
+                        continue
 
-                # 市价成交
-                if order.price_type == PriceTypeEnum.MARKET.value:
-                    order.price = quotes.ask1_p
-                    order.trade_price = quotes.ask1_p
-                    order.traded_quantity = order.quantity
-                    await self.update_order(order)
-                    continue
-
-                # 限价成交
-                elif order.price_type == PriceTypeEnum.LIMIT.value:
-                    if PyDecimal(order.order_price) >= quotes.ask1_p:
+                    # 市价成交
+                    if order.price_type == PriceTypeEnum.MARKET.value:
+                        order.price = quotes.ask1_p
                         order.trade_price = quotes.ask1_p
                         order.traded_quantity = order.quantity
-                        await self.update_order(order)
-                    continue
-            else:
-                # 跌停
-                if quotes.bid1_p == 0:
-                    await self.entrust_cache.push_entrust(order)
-                    continue
+                        self.update_order(order)
+                        continue
 
-                # 市价成交
-                if order.price_type == PriceTypeEnum.MARKET.value:
-                    order.price = quotes.ask1_p
-                    order.trade_price = quotes.ask1_p
-                    order.traded_quantity = order.quantity
-                    await self.update_order(order)
-                    continue
-                # 限价成交
-                elif order.price_type == PriceTypeEnum.LIMIT.value:
-                    if PyDecimal(order.order_price) <= quotes.bid1_p:
-                        order.trade_price = quotes.bid1_p
+                    # 限价成交
+                    elif order.price_type == PriceTypeEnum.LIMIT.value:
+                        if PyDecimal(order.order_price) >= quotes.ask1_p:
+                            order.trade_price = quotes.ask1_p
+                            order.traded_quantity = order.quantity
+                            self.update_order(order)
+                        continue
+                else:
+                    # 跌停
+                    if quotes.bid1_p == 0:
+                        self.entrust_queue.put(order)
+                        continue
+
+                    # 市价成交
+                    if order.price_type == PriceTypeEnum.MARKET.value:
+                        order.price = quotes.ask1_p
                         order.trade_price = quotes.ask1_p
                         order.traded_quantity = order.quantity
-                        await self.update_order(order)
-                    continue
+                        self.update_order(order)
+                        continue
+                    # 限价成交
+                    elif order.price_type == PriceTypeEnum.LIMIT.value:
+                        if PyDecimal(order.order_price) <= quotes.bid1_p:
+                            order.trade_price = quotes.bid1_p
+                            order.trade_price = quotes.ask1_p
+                            order.traded_quantity = order.quantity
+                            self.update_order(order)
+                        continue
 
-    async def update_order(self, order: OrderInCache) -> None:
+    def update_order(self, order: OrderInCache) -> None:
         """订单成交后的处理."""
         # 买入处理
         if order.order_type == OrderTypeEnum.BUY.value:
@@ -104,12 +107,12 @@ class BaseMarket(BaseEngine):
             if order.quantity == order.traded_quantity \
             else OrderStatusEnum.PART_FINISHED.value
         order_in_update_payload = OrderInUpdatePayload(**dict(order))
-        await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
+        self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
 
-    async def write_log(self, content: str, level: int = INFO) -> None:
+    def write_log(self, content: str, level: str = "INFO") -> None:
         payload = LogPayload(level=level, content=content)
         event = Event(LOG_EVENT, payload)
-        await self.event_engine.put(event)
+        self.event_engine.put(event)
 
     async def exchange_validation(self, order: OrderInDB) -> None:
         """交易市场类别检查."""

@@ -26,4 +26,3 @@ class OrderInDB(DBModelMixin, Order):
     trade_price: PyDecimal = Field(0, description="交易价格")
     order_date: datetime = Field(..., description="订单日期")
     order_time: timedelta = Field(None, description="订单时长")
-

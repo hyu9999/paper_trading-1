@@ -27,17 +27,17 @@ class UserEngine(BaseEngine):
         self.event_engine = event_engine
         self.user_repo = UserRepository(db[settings.db.name])
 
-    async def startup(self) -> None:
-        await self.register_event()
+    def startup(self) -> None:
+        self.register_event()
 
-    async def shutdown(self) -> None:
+    def shutdown(self) -> None:
         pass
 
-    async def register_event(self) -> None:
-        await self.event_engine.register(USER_UPDATE_CASH_EVENT, self.process_user_update_cash_event)
+    def register_event(self) -> None:
+        self.event_engine.register(USER_UPDATE_CASH_EVENT, self.process_user_update_cash_event)
 
-    def process_user_update_cash_event(self, event: Event) -> None:
-        self.user_repo.process_update_user_cash(event.payload)
+    def process_user_update_cash_event(self, payload: UserInUpdateCashPayload) -> None:
+        self.user_repo.process_update_user_cash(payload)
 
     async def pre_trade_validation(
         self,
@@ -63,7 +63,7 @@ class UserEngine(BaseEngine):
             freeze_cash = PyDecimal(user.cash.to_decimal() - cash_needs)
             payload = UserInUpdateCashPayload(id=user.id, cash=freeze_cash)
             event = Event(USER_UPDATE_CASH_EVENT, payload)
-            await self.event_engine.put(event)
+            self.event_engine.put(event)
         else:
             raise InsufficientFunds
 

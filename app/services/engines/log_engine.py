@@ -12,14 +12,15 @@ class LogEngine(BaseEngine):
         self.level = settings.log.level
         self.event_engine = event_engine
 
-    async def startup(self) -> None:
-        await self.register_event()
+    def startup(self) -> None:
+        self.register_event()
 
-    async def shutdown(self) -> None:
+    def shutdown(self) -> None:
         pass
 
-    async def register_event(self, *args, **kwargs) -> None:
-        await self.event_engine.register(LOG_EVENT, self.process_log_event)
+    def register_event(self, *args, **kwargs) -> None:
+        self.event_engine.register(LOG_EVENT, self.process_log_event)
 
-    def process_log_event(self, payload: LogPayload) -> None:
-        logger.log(self.level, payload.content)
+    @staticmethod
+    def process_log_event(payload: LogPayload) -> None:
+        logger.log(payload.level, payload.content)

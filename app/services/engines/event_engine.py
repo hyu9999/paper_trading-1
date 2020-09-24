@@ -1,5 +1,7 @@
 import asyncio
+from queue import Queue
 from typing import Callable
+from threading import Thread
 from collections import defaultdict
 
 from app.models.schemas.event_payload import BasePayload
@@ -43,39 +45,41 @@ class EventEngine:
     >>> def example_process(foo_payload: FooPayload):
     ...     print(foo_payload.msg)
     ...
-    >>> await event_engine.startup()
-    >>> await event_engine.register(EXAMPLES_EVENT, example_process)
-    >>> await event_engine.put(example_event)
+    >>> event_engine.startup()
+    >>> event_engine.register(EXAMPLES_EVENT, example_process)
+    >>> event_engine.put(example_event)
     Hello Event.
-    >>> await event_engine.shutdown()
+    >>> event_engine.shutdown()
     """
     def __init__(self) -> None:
         self._handlers = defaultdict(list)
-        self._event_queue = asyncio.Queue()
+        self._event_queue = Queue()
+        self._process = Thread(target=self.main)
         self._should_exit = asyncio.Event()
 
-    async def main(self) -> None:
-        loop = asyncio.get_event_loop()
+    def main(self) -> None:
         while not self._should_exit.is_set():
-            event = await self._event_queue.get()
-            [loop.run_in_executor(None, handler, event.payload) for handler in self._handlers[event.type_]
-             if event.type_ in self._handlers]
+            if not self._event_queue.empty():
+                event = self._event_queue.get(block=True, timeout=1)
+                [handler(event.payload) for handler in self._handlers[event.type_]
+                 if event.type_ in self._handlers]
 
-    async def startup(self) -> None:
-        asyncio.create_task(self.main())
+    def startup(self) -> None:
+        self._process.start()
 
-    async def shutdown(self) -> None:
+    def shutdown(self) -> None:
         self._should_exit.set()
+        self._process.join()
 
-    async def put(self, event: Event) -> None:
-        await self._event_queue.put(event)
+    def put(self, event: Event) -> None:
+        self._event_queue.put(event)
 
-    async def register(self, type_: str, handler: callable) -> None:
+    def register(self, type_: str, handler: callable) -> None:
         handler_list = self._handlers[type_]
         if handler not in handler_list:
             handler_list.append(handler)
 
-    async def unregister(self, type_: str, handler: HandlerType) -> None:
+    def unregister(self, type_: str, handler: HandlerType) -> None:
         handler_list = self._handlers[type_]
         if handler in handler_list:
             handler_list.remove(handler)

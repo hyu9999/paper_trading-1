@@ -12,7 +12,7 @@ class BasePayload(RWSchema):
 
 class LogPayload(BasePayload):
     content: str
-    level: int
+    level: str
 
 
 class UserInUpdateCashPayload(BasePayload):
