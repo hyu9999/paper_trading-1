@@ -40,14 +40,17 @@ class PositionRepository(BaseRepository):
         position_rows = self.collection.find({"user": user_id})
         return [PositionInResponse(**position) async for position in position_rows]
 
-    def process_create_position(self, position: PositionInDB) -> None:
-        self.collection.insert_one(position.dict(exclude={"id"}))
+    async def process_create_position(self, position: PositionInDB) -> None:
+        await self.collection.insert_one(position.dict(exclude={"id"}))
 
-    def process_update_position_available_by_id(self, position: PositionInUpdateAvailable) -> None:
-        self.collection.update_one({"id": position.id}, {"set": {"available_quantity": position.available_quantity}})
+    async def process_update_position_available_by_id(self, position: PositionInUpdateAvailable) -> None:
+        await self.collection.update_one(
+            {"id": position.id},
+            {"set": {"available_quantity": position.available_quantity}}
+        )
 
-    def process_update_position_by_id(self, position: PositionInUpdate) -> None:
-        self.collection.update_one({"id": position.id}, {"set": position.dict(exclude={"id"})})
+    async def process_update_position_by_id(self, position: PositionInUpdate) -> None:
+        await self.collection.update_one({"id": position.id}, {"set": position.dict(exclude={"id"})})
 
-    def process_delete_position_by_id(self, position: PositionInDelete) -> None:
-        self.collection.delete_one({"id": position.id})
+    async def process_delete_position_by_id(self, position: PositionInDelete) -> None:
+        await self.collection.delete_one({"id": position.id})

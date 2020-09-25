@@ -10,18 +10,18 @@ class BaseEngine(ABC):
         self.event_engine = None
 
     @abstractmethod
-    def startup(self, *args, **kwargs) -> None:
+    async def startup(self, *args, **kwargs) -> None:
         pass
 
     @abstractmethod
-    def shutdown(self, *args, **kwargs) -> None:
+    async def shutdown(self, *args, **kwargs) -> None:
         pass
 
     @abstractmethod
-    def register_event(self, *args, **kwargs) -> None:
+    async def register_event(self, *args, **kwargs) -> None:
         pass
 
-    def write_log(self, content: str, level: str = "INFO") -> None:
+    async def write_log(self, content: str, level: str = "INFO") -> None:
         payload = Log(level=level, content=content)
         event = Event(LOG_EVENT, payload)
-        self.event_engine.put(event)
+        await self.event_engine.put(event)

@@ -9,9 +9,9 @@ from pytdx.pool.hqpool import TdxHqPool_API
 from pytdx.pool.ippool import AvailableIPPool
 
 from app.exceptions.service import NotEnoughAvailableAddr
-from app.services.quotes.base import BaseQuotes
-from app.models.schemas.quotes import Quotes
 from app.models.enums import ExchangeEnum
+from app.models.schemas.quotes import Quotes
+from app.services.quotes.base import BaseQuotes
 
 
 class TDXQuotes(BaseQuotes):
@@ -20,14 +20,14 @@ class TDXQuotes(BaseQuotes):
     EXCHANGE_MAPPING = {"SH": 1, "SZ": 0}
 
     def __init__(self) -> None:
+        addr = self.get_available_addr()
+        self.ip_pool = AvailableIPPool(TdxHq_API, addr[:5])
+        self.api = TdxHqPool_API(TdxHq_API, self.ip_pool)
         self.api: TdxHqPool_API
 
     def connect_pool(self) -> None:
         """连接到通达信行情池."""
-        addr = self.get_available_addr()
-        ip_pool = AvailableIPPool(TdxHq_API, addr[:5])
-        primary_ip, hot_backup_ip = ip_pool.sync_get_top_n(2)
-        self.api = TdxHqPool_API(TdxHq_API, ip_pool)
+        primary_ip, hot_backup_ip = self.ip_pool.sync_get_top_n(2)
         self.api.connect(primary_ip, hot_backup_ip)
 
     @classmethod
@@ -106,4 +106,7 @@ class TDXQuotes(BaseQuotes):
         )
 
     def close(self) -> None:
-        self.api.disconnect()
+        try:
+            self.api.disconnect()
+        except AttributeError as e:
+            print(e)

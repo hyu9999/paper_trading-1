@@ -1,3 +1,5 @@
+EXIT_ENGINE_EVENT = "exit_engine_event"  # 退出引擎事件
+
 LOG_EVENT = "log_event"
 
 ORDER_CREATE_EVENT = "order_create_event"  # 新建订单

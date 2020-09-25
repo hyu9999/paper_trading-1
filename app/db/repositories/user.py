@@ -50,8 +50,8 @@ class UserRepository(BaseRepository):
     ):
         pass
 
-    def process_update_user_cash(self, user: UserInUpdateCash) -> None:
-        self.collection.update_one({"_id": user.id}, {"$set": {"cash": user.cash}})
+    async def process_update_user_cash(self, user: UserInUpdateCash) -> None:
+        await self.collection.update_one({"_id": user.id}, {"$set": {"cash": user.cash}})
 
-    def process_update_user(self, user: UserInUpdate) -> None:
-        self.collection.update_one({"_id": user.id}, {"$set": user.dict(exclude={"id"})})
+    async def process_update_user(self, user: UserInUpdate) -> None:
+        await self.collection.update_one({"_id": user.id}, {"$set": user.dict(exclude={"id"})})

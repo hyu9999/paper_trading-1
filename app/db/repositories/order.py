@@ -76,11 +76,11 @@ class OrderRepository(BaseRepository):
     ) -> None:
         pass
 
-    def process_create_order(self, order: OrderInDB) -> None:
-        self.collection.insert_one(order.dict(exclude={"id"}))
+    async def process_create_order(self, order: OrderInDB) -> None:
+        await self.collection.insert_one(order.dict(exclude={"id"}))
 
-    def process_update_order(self, order: OrderInUpdate) -> None:
-        self.collection.update_one({"order_id": order.order_id}, {"$set": order.dict(exclude={"order_id"})})
+    async def process_update_order(self, order: OrderInUpdate) -> None:
+        await self.collection.update_one({"order_id": order.order_id}, {"$set": order.dict(exclude={"order_id"})})
 
-    def process_update_order_status(self, order: OrderInUpdateStatus) -> None:
-        self.collection.update_one({"_id": order.id}, {"$set": {"status": order.status}})
+    async def process_update_order_status(self, order: OrderInUpdateStatus) -> None:
+        await self.collection.update_one({"order_id": order.order_id}, {"$set": {"status": order.status}})

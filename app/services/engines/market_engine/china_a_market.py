@@ -1,11 +1,7 @@
-from app.models.domain.orders import OrderInDB
-from app.models.enums import OrderTypeEnum, OrderStatusEnum
-from app.models.schemas.orders import OrderInUpdateStatus
 from app.services.quotes.tdx import TDXQuotes
 from app.services.engines.market_engine.base import BaseMarket
 from app.services.engines.user_engine import UserEngine
-from app.services.engines.event_engine import EventEngine, Event
-from app.services.engines.event_constants import ORDER_UPDATE_STATUS_EVENT
+from app.services.engines.event_engine import EventEngine
 
 
 class ChinaAMarket(BaseMarket):
@@ -16,13 +12,12 @@ class ChinaAMarket(BaseMarket):
         self.exchange_symbols = ["SH", "SZ"]    # 交易市场标识
         self.quotes_api = TDXQuotes()
 
-    def startup(self) -> None:
-        super().startup()
-        self.write_log("初始化行情系统中...")
+    async def startup(self) -> None:
+        await self.write_log("初始化行情系统中...")
         self.quotes_api.connect_pool()
-        self.write_log("初始化行情系统完成.")
+        await self.write_log("初始化行情系统完成.")
+        await super().startup()
 
-    def shutdown(self) -> None:
-        super().shutdown()
+    async def shutdown(self) -> None:
+        await super().shutdown()
         self.quotes_api.close()
-

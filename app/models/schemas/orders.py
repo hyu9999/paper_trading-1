@@ -29,5 +29,5 @@ class OrderInUpdate(RWSchema):
 
 
 class OrderInUpdateStatus(RWSchema):
-    id: PyObjectId = Field(...)
+    order_id: PyObjectId = Field(...)
     status: OrderStatusEnum = Field(..., description="订单状态")

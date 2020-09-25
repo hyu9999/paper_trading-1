@@ -35,32 +35,32 @@ class MainEngine(BaseEngine):
             self.event_engine, self.user_engine
         )
 
-    def startup(self) -> None:
-        self.event_engine.startup()
-        self.log_engine.startup()
-        self.user_engine.startup()
-        self.market_engine.startup()
-        self.register_event()
+    async def startup(self) -> None:
+        await self.event_engine.startup()
+        await self.log_engine.startup()
+        await self.user_engine.startup()
+        await self.market_engine.startup()
+        await self.register_event()
 
-    def shutdown(self) -> None:
-        self.market_engine.shutdown()
-        self.user_engine.shutdown()
-        self.log_engine.shutdown()
-        self.event_engine.shutdown()
+    async def shutdown(self) -> None:
+        await self.market_engine.shutdown()
+        await self.user_engine.shutdown()
+        await self.log_engine.shutdown()
+        await self.event_engine.shutdown()
 
-    def register_event(self) -> None:
-        self.event_engine.register(ORDER_CREATE_EVENT, self.process_order_create)
-        self.event_engine.register(ORDER_UPDATE_EVENT, self.process_order_update)
-        self.event_engine.register(ORDER_UPDATE_STATUS_EVENT, self.process_order_status_update)
+    async def register_event(self) -> None:
+        await self.event_engine.register(ORDER_CREATE_EVENT, self.process_order_create)
+        await self.event_engine.register(ORDER_UPDATE_EVENT, self.process_order_update)
+        await self.event_engine.register(ORDER_UPDATE_STATUS_EVENT, self.process_order_status_update)
 
-    def process_order_create(self, payload: OrderInDB) -> None:
-        self.order_repo.process_create_order(payload)
+    async def process_order_create(self, payload: OrderInDB) -> None:
+        await self.order_repo.process_create_order(payload)
 
-    def process_order_update(self, payload: OrderInUpdate) -> None:
-        self.order_repo.process_update_order(payload)
+    async def process_order_update(self, payload: OrderInUpdate) -> None:
+        await self.order_repo.process_update_order(payload)
 
-    def process_order_status_update(self, payload: OrderInUpdateStatus) -> None:
-        self.order_repo.process_update_order_status(payload)
+    async def process_order_status_update(self, payload: OrderInUpdateStatus) -> None:
+        await self.order_repo.process_update_order_status(payload)
 
     async def on_order_arrived(self, order: OrderInCreate, user: UserInDB) -> OrderInCreateViewResponse:
         """新订单到达."""
@@ -70,24 +70,26 @@ class MainEngine(BaseEngine):
         order_in_db = OrderInDB(**dict(order), user=user.id, order_date=datetime.utcnow(),
                                 order_id=PyObjectId(), turnover=turnover)
         order_create_event = Event(ORDER_CREATE_EVENT, order_in_db)
-        self.event_engine.put(order_create_event)
-        self.put_order(order_in_db)
+        await self.event_engine.put(order_create_event)
+
+        order_in_db.id = None
+        await self.put_order(order_in_db)
         return OrderInCreateViewResponse(**dict(order_in_db))
 
-    def put_order(self, order: OrderInDB) -> None:
+    async def put_order(self, order: OrderInDB) -> None:
         # 取消订单
         if order.order_type == OrderTypeEnum.CANCEL.value:
             # TODO: 从队列中移除该项
-            payload = OrderInUpdateStatus(id=order.id, status=OrderStatusEnum.CANCELED)
+            payload = OrderInUpdateStatus(order_id=order.order_id, status=OrderStatusEnum.CANCELED)
             event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
-            self.event_engine.put(event)
+            await self.event_engine.put(event)
         # 清算订单
         elif order.order_type == OrderTypeEnum.LIQUIDATION.value:
             pass
         else:
-            self.market_engine.exchange_validation(order)
-            payload = OrderInUpdateStatus(id=order.id, status=OrderStatusEnum.WAITING)
+            await self.market_engine.exchange_validation(order)
+            payload = OrderInUpdateStatus(order_id=order.order_id, status=OrderStatusEnum.WAITING)
             event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
-            self.event_engine.put(event)
-            self.write_log(f"收到新订单: [{order.order_id}].")
-            self.market_engine.entrust_queue.put(order)
+            await self.event_engine.put(event)
+            await self.write_log(f"收到新订单: [{order.order_id}].")
+            await self.market_engine.entrust_queue.put(order)

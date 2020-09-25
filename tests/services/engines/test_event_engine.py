@@ -1,6 +1,6 @@
 import pytest
 
-from app.services.engines.event_engine import EventEngine, Event
+# from app.services.engines.event_engine import EventEngine, Event
 
 pytestmark = pytest.mark.asyncio
 
