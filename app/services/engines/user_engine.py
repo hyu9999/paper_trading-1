@@ -147,8 +147,9 @@ class UserEngine(BaseEngine):
             profit = (order.trade_price.to_decimal() - position.current_price.to_decimal()
                       ) * Decimal(position.quantity) + position.profit.to_decimal() - fee
             position_in_update = PositionInUpdate(
+                id=position.id,
                 quantity=quantity,
-                current_price=PyDecimal(current_price),
+                current_price=current_price,
                 cost=PyDecimal(cost),
                 available_quantity=available_quantity,
                 profit=PyDecimal(profit)
@@ -194,8 +195,9 @@ class UserEngine(BaseEngine):
                     (Decimal(order.traded_quantity) * order.trade_price.to_decimal())) / quantity
             available_quantity = position.available_quantity - order.traded_quantity
             position_in_update = PositionInUpdate(
+                id=position.id,
                 quantity=quantity,
-                current_price=PyDecimal(current_price),
+                current_price=current_price,
                 cost=PyDecimal(cost),
                 available_quantity=available_quantity,
                 profit=PyDecimal(profit)

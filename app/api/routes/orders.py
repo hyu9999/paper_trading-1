@@ -1,5 +1,5 @@
 from typing import List
-from datetime import datetime
+from datetime import date
 
 from starlette import status as http_status
 from fastapi import APIRouter, Depends, Body, Query
@@ -12,6 +12,7 @@ from app.exceptions.db import EntityDoesNotExist
 from app.exceptions.service import InsufficientFunds, InvalidExchange
 from app.exceptions.http import InsufficientAccountFunds, InvalidOrderExchange, OrderNotFound
 from app.models.types import PyObjectId
+from app.models.enums import OrderStatusEnum
 from app.models.domain.users import UserInDB
 from app.models.schemas.orders import OrderInCreate, OrderInResponse
 from app.services.engines.main_engine import MainEngine
@@ -64,9 +65,9 @@ async def get_order(
 async def get_order_list(
     order_repo: OrderRepository = Depends(get_repository(OrderRepository)),
     user: UserInDB = Depends(get_current_user_authorizer()),
-    status: str = Query(None, description="订单状态"),
-    start_date: datetime = Query(None, description="开始时间"),
-    end_date: datetime = Query(None, description="结束时间"),
+    status: List[OrderStatusEnum] = Query(None, description="订单状态"),
+    start_date: date = Query(None, description="开始时间"),
+    end_date: date = Query(None, description="结束时间"),
 ):
     orders = await order_repo.get_orders(user_id=user.id, status=status, start_date=start_date, end_date=end_date)
     return [OrderInResponse(**dict(order)) for order in orders]

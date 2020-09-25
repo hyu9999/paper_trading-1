@@ -41,6 +41,7 @@ class MainEngine(BaseEngine):
         await self.user_engine.startup()
         await self.market_engine.startup()
         await self.register_event()
+        await self.load_entrust_orders()
 
     async def shutdown(self) -> None:
         await self.market_engine.shutdown()
@@ -79,7 +80,7 @@ class MainEngine(BaseEngine):
     async def put_order(self, order: OrderInDB) -> None:
         # 取消订单
         if order.order_type == OrderTypeEnum.CANCEL.value:
-            # TODO: 从队列中移除该项
+            await self.market_engine.entrust_queue.delete(order.order_id)
             payload = OrderInUpdateStatus(order_id=order.order_id, status=OrderStatusEnum.CANCELED)
             event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
             await self.event_engine.put(event)
@@ -93,3 +94,13 @@ class MainEngine(BaseEngine):
             await self.event_engine.put(event)
             await self.write_log(f"收到新订单: [{order.order_id}].")
             await self.market_engine.entrust_queue.put(order)
+
+    async def load_entrust_orders(self):
+        """加载当日未完成的委托订单."""
+        entrust_orders = await self.order_repo.get_orders(
+            status=[OrderStatusEnum.WAITING, OrderStatusEnum.PART_FINISHED],
+            start_date=datetime.utcnow().date(),
+            end_date=datetime.utcnow().date(),
+        )
+        for entrust_order in entrust_orders:
+            await self.market_engine.entrust_queue.put(entrust_order)
