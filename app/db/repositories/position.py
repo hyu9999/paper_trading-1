@@ -50,7 +50,7 @@ class PositionRepository(BaseRepository):
         )
 
     async def process_update_position_by_id(self, position: PositionInUpdate) -> None:
-        await self.collection.update_one({"id": position.id}, {"set": position.dict(exclude={"id"})})
+        await self.collection.update_one({"id": position.id}, {"$set": position.dict(exclude={"id"})})
 
     async def process_delete_position_by_id(self, position: PositionInDelete) -> None:
         await self.collection.delete_one({"id": position.id})

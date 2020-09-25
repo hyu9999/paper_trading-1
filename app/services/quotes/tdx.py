@@ -106,7 +106,8 @@ class TDXQuotes(BaseQuotes):
         )
 
     def close(self) -> None:
+        # 当uvicorn处于热重载模式并通过命令行关闭应用时，执行api.close方法会触发此异常
         try:
             self.api.disconnect()
-        except AttributeError as e:
-            print(e)
+        except AttributeError:
+            pass

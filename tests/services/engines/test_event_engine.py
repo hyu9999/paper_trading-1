@@ -42,7 +42,7 @@ async def event_engine():
 async def test_event_engine_can_run(event_engine, event_type, event_payload_msg, event_process):
     """测试event engine是否能正确执行任务.
 
-    任务内容为改变content实例的text值
+    任务内容为改变content实例的text值.
     """
     payload = Payload(msg=event_payload_msg)
     await event_engine.register(event_type, event_process)

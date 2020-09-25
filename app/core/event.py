@@ -1,5 +1,5 @@
 import signal
-import asyncio
+import functools
 from typing import Callable
 
 from loguru import logger
@@ -18,19 +18,16 @@ HANDLED_SIGNALS = (
 
 
 async def install_signal_handlers(app: FastAPI) -> None:
+    # 当开发模式为dev时，添加监听命令行退出的信号
     if settings.env_for_dynaconf == "development":
-        loop = asyncio.get_event_loop()
+        handle_exit_app = functools.partial(handle_exit, app)
         for sig in HANDLED_SIGNALS:
-            loop.add_signal_handler(sig, handle_exit, app)
+            signal.signal(sig, handle_exit_app)
 
 
-def handle_exit(app: FastAPI):
-    pass
-    # print(1, app.state.engine.market_engine.quotes_api.api.ippool)
-    # print(2, app.state.engine.market_engine.quotes_api.api.ippool.worker_thread)
-    # app.state.engine.market_engine.quotes_api.close()
-    # app.state.engine.market_engine.quotes_api.api.ippool.worker_thread.join()
-    # print(3, app.state.engine.market_engine)
+def handle_exit(app: FastAPI, *args):
+    # 关闭行情连接池
+    app.state.engine.market_engine.quotes_api.close()
 
 
 def create_start_app_handler(app: FastAPI) -> Callable:
@@ -40,7 +37,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         await connect_to_redis(app)
         await register_exceptions(app)
         await start_engine(app)
-        # await install_signal_handlers(app)
+        await install_signal_handlers(app)
     return start_app
 
 
