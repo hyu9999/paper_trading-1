@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable
+from typing import Callable, TypeVar, Coroutine
 from collections import defaultdict
 
 from pydantic import BaseModel
@@ -19,7 +19,8 @@ class Event:
         self.payload = payload
 
 
-HandlerType = Callable[[Event], None]
+T = TypeVar("T", bound="BaseModel")
+HandlerType = Callable[[T], Coroutine]
 
 
 class EventEngine:

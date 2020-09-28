@@ -8,6 +8,7 @@ from starlette.exceptions import HTTPException
 from app import settings
 from app.api.dependencies.database import get_repository
 from app.core import jwt
+from app.models.types import PyObjectId
 from app.models.domain.users import UserInDB
 from app.db.repositories.user import UserRepository
 from app.exceptions.http import InvalidAuthTokenPrefix, AuthHeaderNotFound, InvalidAuthToken, WrongTokenFormat
@@ -51,7 +52,7 @@ async def _get_current_user(
         user_id = jwt.get_user_id_from_token(token)
     except ValueError:
         raise InvalidAuthToken
-    return await user_repo.get_user_by_id(user_id=user_id)
+    return await user_repo.get_user_by_id(user_id=PyObjectId(user_id))
 
 
 async def _get_current_user_optional(

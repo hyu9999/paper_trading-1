@@ -1,7 +1,7 @@
 from typing import Type
 from datetime import datetime
 
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app import settings
 from app.db.repositories.order import OrderRepository
@@ -24,12 +24,12 @@ from app.services.engines.event_constants import (
 
 
 class MainEngine(BaseEngine):
-    def __init__(self, db: AsyncIOMotorClient, event_engine: Type[EventEngine] = None) -> None:
+    def __init__(self, db: AsyncIOMotorDatabase, event_engine: Type[EventEngine] = None) -> None:
         super().__init__()
         self.event_engine = event_engine() if event_engine else EventEngine()
         self.db = db
         self.log_engine = LogEngine(self.event_engine)
-        self.order_repo = OrderRepository(db[settings.db.name])
+        self.order_repo = OrderRepository(db)
         self.user_engine = UserEngine(self.event_engine, self.db)
         self.market_engine = MARKET_NAME_MAPPING[settings.service.market](
             self.event_engine, self.user_engine
@@ -65,11 +65,11 @@ class MainEngine(BaseEngine):
 
     async def on_order_arrived(self, order: OrderInCreate, user: UserInDB) -> OrderInCreateViewResponse:
         """新订单到达."""
-        turnover = await self.user_engine.pre_trade_validation(order, user)
+        amount = await self.user_engine.pre_trade_validation(order, user)
         # 根据订单的股票价格确定价格类型
         order.price_type = PriceTypeEnum.MARKET if str(order.price) == "0" else PriceTypeEnum.LIMIT
         order_in_db = OrderInDB(**dict(order), user=user.id, order_date=datetime.utcnow(),
-                                order_id=PyObjectId(), turnover=turnover)
+                                order_id=PyObjectId(), amount=amount)
         order_create_event = Event(ORDER_CREATE_EVENT, order_in_db)
         await self.event_engine.put(order_create_event)
 

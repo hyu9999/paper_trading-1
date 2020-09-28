@@ -25,6 +25,7 @@ class OrderRepository(BaseRepository):
     async def create_order(
         self,
         *,
+        user_id: PyObjectId,
         symbol: str,
         exchange: ExchangeEnum,
         quantity: int,
@@ -32,9 +33,12 @@ class OrderRepository(BaseRepository):
         order_type: OrderTypeEnum,
         price_type: PriceTypeEnum,
         trade_type: TradeTypeEnum,
+        amount: PyDecimal
     ) -> OrderInDB:
-        order = OrderInDB(symbol=symbol, exchange=exchange, quantity=quantity, price=price, order_type=order_type,
-                          price_type=price_type, trade_type=trade_type)
+        order = OrderInDB(symbol=symbol, user=user_id, exchange=exchange, quantity=quantity, price=price,
+                          order_type=order_type, price_type=price_type, trade_type=trade_type, amount=amount,
+                          order_id=PyObjectId(), order_date=datetime.utcnow()
+                          )
         order_row = await self.collection.insert_one(order.dict(exclude={"id"}))
         order.id = order_row.inserted_id
         return order

@@ -27,11 +27,11 @@ class UserRepository(BaseRepository):
         user.id = user_row.inserted_id
         return user
 
-    async def get_user_by_id(self, user_id: str) -> UserInDB:
-        user_row = await self.collection.find_one({"_id": PyObjectId(user_id)})
+    async def get_user_by_id(self, user_id: PyObjectId) -> UserInDB:
+        user_row = await self.collection.find_one({"_id": user_id})
         if user_row:
             return UserInDB(**user_row)
-        raise EntityDoesNotExist(f"用户`{user_id}`不存在.")
+        raise EntityDoesNotExist(f"用户`{str(user_id)}`不存在.")
 
     async def get_users_list(self) -> List[UserInDB]:
         users_row = self.collection.find({})

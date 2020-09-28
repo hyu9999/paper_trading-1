@@ -136,7 +136,7 @@ class BaseMarket(BaseEngine):
         if order.order_type == OrderTypeEnum.BUY.value:
             await self.user_engine.create_position(order)
         elif order.order_type == OrderTypeEnum.SELL.value:
-            await self.user_engine.delete_position(order)
+            await self.user_engine.reduce_position(order)
         order.status = OrderStatusEnum.ALL_FINISHED.value \
             if order.quantity == order.traded_quantity \
             else OrderStatusEnum.PART_FINISHED.value

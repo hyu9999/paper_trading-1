@@ -53,8 +53,18 @@ async def client(initialized_app: FastAPI, settings: Dynaconf,
 
 
 @pytest.fixture(scope="session")
+async def db(initialized_app: FastAPI, settings: Dynaconf) -> AsyncIOMotorDatabase:
+    return initialized_app.state.db[settings.db.name]
+
+
+@pytest.fixture(scope="session")
+async def test_user(db: AsyncIOMotorDatabase) -> UserInDB:
+    return await UserRepository(db).create_user(capital=10000000)
+
+
+@pytest.fixture(scope="session")
 def token(test_user: UserInDB, settings: Dynaconf) -> str:
-    return jwt.create_access_token_for_user(str(test_user.id))
+    return jwt.create_access_token_for_user(test_user.id)
 
 
 @pytest.fixture(scope="session")
@@ -68,18 +78,14 @@ def authorized_client(
     return client
 
 
-@pytest.fixture(scope="session")
-async def db(initialized_app: FastAPI, settings: Dynaconf) -> AsyncIOMotorDatabase:
-    return initialized_app.state.db[settings.db.name]
-
-
-@pytest.fixture(scope="session")
-async def test_user(db: AsyncIOMotorDatabase) -> UserInDB:
+@pytest.fixture
+async def test_user_scope_func(db: AsyncIOMotorDatabase) -> UserInDB:
+    """测试用户, 作用域为func"""
     return await UserRepository(db).create_user(capital=10000000)
 
 
 @pytest.fixture
-async def event_engine():
+async def event_engine() -> EventEngine:
     event_engine = EventEngine()
     await event_engine.startup()
     yield event_engine

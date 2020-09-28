@@ -31,11 +31,15 @@ async def test_user_can_login(app: FastAPI, client: AsyncClient, test_user: User
 
 
 @pytest.mark.parametrize(
-    "user_id",
-    ("5f5f2478483c3123207d62b", "5f5f2478483c3123207d62b2"),
+    "user_id, status_code",
+    [
+        ("5f5f2478483c3123207d62b", status.HTTP_422_UNPROCESSABLE_ENTITY),
+        ("5f5f2478483c3123207d62b2", status.HTTP_400_BAD_REQUEST)
+    ],
 )
-async def test_user_login_error_can_captured(app: FastAPI, client: AsyncClient, user_id: str) -> None:
+async def test_user_login_error_can_captured(
+        app: FastAPI, client: AsyncClient, user_id: str, status_code: status
+) -> None:
     json = {"id": user_id}
     response = await client.request("POST", app.url_path_for("auth:login"), json=json)
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json()["code"] == 10001
+    assert response.status_code == status_code

@@ -13,7 +13,7 @@ class UserInCreate(RWSchema):
 
 
 class UserInLogin(RWSchema):
-    id: str = Field(..., description="用户ID")
+    id: PyObjectId = Field(..., description="用户ID")
 
 
 class UserInResponse(RWSchema, User):

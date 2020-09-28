@@ -5,6 +5,7 @@ import jwt
 from jwt.exceptions import DecodeError, ExpiredSignatureError
 
 from app import settings
+from app.models.types import PyObjectId
 from app.models.schemas.jwt import JWTMeta
 from app.models.enums import JWTSubjectEnum
 
@@ -20,9 +21,9 @@ def create_jwt_token(
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm).decode()
 
 
-def create_access_token_for_user(_id: str) -> str:
+def create_access_token_for_user(user_id: PyObjectId) -> str:
     return create_jwt_token(
-        jwt_content={"id": _id},
+        jwt_content={"id": str(user_id)},
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
     )
 

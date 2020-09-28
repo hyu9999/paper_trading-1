@@ -23,7 +23,7 @@ async def register(
     user_repo: UserRepository = Depends(get_repository(UserRepository)),
 ) -> UserInResponse:
     user = await user_repo.create_user(**user_create.dict())
-    token = jwt.create_access_token_for_user(_id=str(user.id))
+    token = jwt.create_access_token_for_user(user_id=user.id)
     return UserInResponse(**user.dict(), token=token)
 
 
@@ -42,5 +42,5 @@ async def login(
     except (InvalidId, EntityDoesNotExist):
         raise InvalidUserID
     else:
-        token = jwt.create_access_token_for_user(_id=user_login.id)
+        token = jwt.create_access_token_for_user(user_id=user_login.id)
         return UserInResponse(**user.dict(), token=token)
