@@ -11,6 +11,7 @@ from app import settings as base_settings
 from app.core import jwt
 from app.db.repositories.user import UserRepository
 from app.models.domain.users import UserInDB
+from app.services.engines.event_engine import EventEngine
 
 pytestmark = pytest.mark.asyncio
 
@@ -36,7 +37,7 @@ def app() -> FastAPI:
 
 @pytest.fixture(scope="session")
 async def initialized_app(app: FastAPI) -> FastAPI:
-    async with LifespanManager(app):
+    async with LifespanManager(app, startup_timeout=30):
         yield app
 
 
@@ -75,3 +76,11 @@ async def db(initialized_app: FastAPI, settings: Dynaconf) -> AsyncIOMotorDataba
 @pytest.fixture(scope="session")
 async def test_user(db: AsyncIOMotorDatabase) -> UserInDB:
     return await UserRepository(db).create_user(capital=10000000)
+
+
+@pytest.fixture
+async def event_engine():
+    event_engine = EventEngine()
+    await event_engine.startup()
+    yield event_engine
+    await event_engine.shutdown()

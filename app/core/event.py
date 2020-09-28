@@ -1,4 +1,5 @@
 import signal
+import asyncio
 import functools
 from typing import Callable
 
@@ -26,8 +27,8 @@ async def install_signal_handlers(app: FastAPI) -> None:
 
 
 def handle_exit(app: FastAPI, *args):
-    # 关闭行情连接池
-    app.state.engine.market_engine.quotes_api.close()
+    # 关闭引擎
+    asyncio.create_task(close_engine(app))
 
 
 def create_start_app_handler(app: FastAPI) -> Callable:
