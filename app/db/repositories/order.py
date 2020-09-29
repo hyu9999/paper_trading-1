@@ -34,12 +34,12 @@ class OrderRepository(BaseRepository):
         price_type: PriceTypeEnum,
         trade_type: TradeTypeEnum,
         amount: PyDecimal,
-        entrust_id: PyObjectId = PyObjectId(),
+        entrust_id: PyObjectId = None,
         status: OrderStatusEnum = OrderStatusEnum.SUBMITTING
     ) -> OrderInDB:
         order = OrderInDB(symbol=symbol, user=user_id, exchange=exchange, quantity=quantity, price=price,
                           order_type=order_type, price_type=price_type, trade_type=trade_type, amount=amount,
-                          entrust_id=entrust_id, order_date=datetime.utcnow(), status=status)
+                          entrust_id=entrust_id or PyObjectId(), order_date=datetime.utcnow(), status=status)
         order_row = await self.collection.insert_one(order.dict(exclude={"id"}))
         order.id = order_row.inserted_id
         return order
@@ -52,6 +52,12 @@ class OrderRepository(BaseRepository):
         if order_row:
             return OrderInDB(**order_row)
         raise EntityDoesNotExist(f"委托订单`{entrust_id}`不存在.")
+
+    async def get_order_by_id(self, order_id: PyObjectId) -> OrderInDB:
+        order_row = await self.collection.find_one({"_id": order_id})
+        if order_row:
+            return OrderInDB(**order_row)
+        raise EntityDoesNotExist(f"订单`{order_id}`不存在.")
 
     async def get_orders(
         self,

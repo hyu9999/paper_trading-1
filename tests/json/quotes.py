@@ -13,7 +13,7 @@ quotes_json = {
     "bid2_p": 4,
     "bid3_p": 3,
     "bid4_p": 2,
-    "bid6_p": 1,
+    "bid5_p": 1,
     "ask1_p": 6,
     "ask2_p": 7,
     "ask3_p": 8,

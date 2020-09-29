@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from dynaconf import Dynaconf
 from httpx import AsyncClient
 from asgi_lifespan import LifespanManager
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 
 from app import settings as base_settings
 from app.core import jwt
@@ -13,11 +13,11 @@ from app.db.repositories.order import OrderRepository
 from app.db.repositories.user import UserRepository
 from app.models.domain.users import UserInDB
 from app.services.engines.main_engine import MainEngine
+from app.services.engines.market_engine.base import BaseMarket
 from app.services.quotes.tdx import TDXQuotes
 from app.services.quotes.base import BaseQuotes
 from app.services.engines.user_engine import UserEngine
 from app.services.engines.event_engine import EventEngine
-from app.services.engines.market_engine.china_a_market import ChinaAMarket
 from tests.json.order import order_in_create_json
 
 pytestmark = pytest.mark.asyncio
@@ -60,8 +60,12 @@ async def client(initialized_app: FastAPI, settings: Dynaconf,
 
 
 @pytest.fixture(scope="session")
-async def db(initialized_app: FastAPI, settings: Dynaconf) -> AsyncIOMotorDatabase:
-    return initialized_app.state.db[settings.db.name]
+async def db(settings: Dynaconf) -> AsyncIOMotorDatabase:
+    client = AsyncIOMotorClient(
+        settings.db.url, maxPoolSize=settings.db.max_connections, minPoolSize=settings.db.min_connections
+    )
+    yield client[settings.db.name]
+    client.close()
 
 
 @pytest.fixture(scope="session")
@@ -99,7 +103,7 @@ async def event_engine() -> EventEngine:
     await event_engine.shutdown()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def quotes_api() -> BaseQuotes:
     quotes_api = TDXQuotes()
     await quotes_api.connect_pool()
@@ -116,16 +120,19 @@ async def user_engine(event_engine: EventEngine, db: AsyncIOMotorDatabase, quote
 
 
 @pytest.fixture
-async def china_a_market_engine(
-    event_engine: EventEngine, user_engine: UserEngine, quotes_api: BaseQuotes
-) -> ChinaAMarket:
-    china_a_market_engine = ChinaAMarket(event_engine, user_engine, quotes_api)
-    await china_a_market_engine.startup()
-    yield china_a_market_engine
-    await china_a_market_engine.shutdown()
+async def market_engine(db: AsyncIOMotorDatabase) -> BaseMarket:
+    main_engine = MainEngine(db)
+    await main_engine.event_engine.startup()
+    await main_engine.quotes_api.connect_pool()
+    await main_engine.market_engine.startup()
+    await main_engine.register_event()
+    yield main_engine.market_engine
+    await main_engine.market_engine.shutdown()
+    await main_engine.quotes_api.close()
+    await main_engine.event_engine.shutdown()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def main_engine(db: AsyncIOMotorDatabase):
     main_engine = MainEngine(db)
     await main_engine.startup()

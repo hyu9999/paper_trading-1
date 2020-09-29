@@ -65,17 +65,17 @@ class BaseMarket(BaseEngine):
                 await self.event_engine.put(event)
             # 清算委托订单
             elif order.order_type == OrderTypeEnum.LIQUIDATION:
-                continue
+                await self.user_engine.on_liquidation(order)
             else:
                 quotes = await self.quotes_api.get_ticks(order.stock_code)
-                if order.order_type == OrderTypeEnum.BUY.value:
+                if order.order_type == OrderTypeEnum.BUY:
                     # 涨停
                     if quotes.ask1_p == 0:
                         await self._entrust_orders.put(order)
                         continue
 
                     # 市价成交
-                    if order.price_type == PriceTypeEnum.MARKET.value:
+                    if order.price_type == PriceTypeEnum.MARKET:
                         order.price = quotes.ask1_p
                         order.trade_price = quotes.ask1_p
                         order.traded_quantity = order.quantity
@@ -83,7 +83,7 @@ class BaseMarket(BaseEngine):
                         continue
 
                     # 限价成交
-                    elif order.price_type == PriceTypeEnum.LIMIT.value:
+                    elif order.price_type == PriceTypeEnum.LIMIT:
                         if order.price.to_decimal() >= quotes.ask1_p.to_decimal():
                             order.trade_price = quotes.ask1_p
                             order.traded_quantity = order.quantity
@@ -96,14 +96,14 @@ class BaseMarket(BaseEngine):
                         continue
 
                     # 市价成交
-                    if order.price_type == PriceTypeEnum.MARKET.value:
+                    if order.price_type == PriceTypeEnum.MARKET:
                         order.price = quotes.ask1_p
                         order.trade_price = quotes.ask1_p
                         order.traded_quantity = order.quantity
                         await self.save_order(order)
                         continue
                     # 限价成交
-                    elif order.price_type == PriceTypeEnum.LIMIT.value:
+                    elif order.price_type == PriceTypeEnum.LIMIT:
                         if order.price.to_decimal() <= quotes.bid1_p.to_decimal():
                             order.trade_price = quotes.bid1_p
                             order.traded_quantity = order.quantity

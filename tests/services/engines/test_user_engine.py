@@ -62,7 +62,7 @@ async def order_t1(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
 async def order_sell_90(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
     json = {
         **order_in_create_json,
-        **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "quantity": "10",
+        **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "quantity": "90",
            "amount": "900"}
     }
     return await OrderRepository(db).create_order(**json)
@@ -72,7 +72,7 @@ async def order_sell_90(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase
 async def order_sell_100(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
     json = {
         **order_in_create_json,
-        **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "quantity": "10",
+        **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "quantity": "100",
            "amount": "900"}
     }
     return await OrderRepository(db).create_order(**json)

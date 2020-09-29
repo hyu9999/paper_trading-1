@@ -26,6 +26,7 @@ base_url = "@format http://{env[DYNACONF_PT_HOST]}:{env[DYNACONF_PT_PORT]}/"
     # 数据库表名
     [default.db.collections]
     user = "users"
+    user_assets_record = "user_assets_records"
     order = "orders"
     position = "position"
 
@@ -43,16 +44,19 @@ base_url = "@format http://{env[DYNACONF_PT_HOST]}:{env[DYNACONF_PT_PORT]}/"
 
 
 [development]
+dynaconf_merge = true
     # 引擎
     [development.engine]
     persistence_mode = "manual"     # 数据持久化模式
 
 [production]
+dynaconf_merge = true
     # 日志
     [production.log]
     level = 20                      # 20 = INFO
 
 [testing]
+dynaconf_merge = true
     # 数据库相关配置
     [testing.db]
     name = "test_paper_trading"
