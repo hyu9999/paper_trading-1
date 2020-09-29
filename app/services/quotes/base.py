@@ -6,8 +6,8 @@ from app.models.schemas.quotes import Quotes
 class BaseQuotes(ABC):
 
     @abstractmethod
-    def get_ticks(self, code: str) -> Quotes:
+    async def get_ticks(self, code: str) -> Quotes:
         pass
 
-    def connect_pool(self) -> None:
+    async def connect_pool(self) -> None:
         pass

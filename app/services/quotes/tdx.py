@@ -3,6 +3,7 @@ from datetime import datetime
 from time import perf_counter
 from typing import List, Tuple
 
+from loguru import logger
 from pytdx.config.hosts import hq_hosts
 from pytdx.hq import TdxHq_API
 from pytdx.pool.hqpool import TdxHqPool_API
@@ -25,10 +26,12 @@ class TDXQuotes(BaseQuotes):
         self.api = TdxHqPool_API(TdxHq_API, self.ip_pool)
         self.api: TdxHqPool_API
 
-    def connect_pool(self) -> None:
+    async def connect_pool(self) -> None:
         """连接到通达信行情池."""
+        logger.info("连接行情系统中...")
         primary_ip, hot_backup_ip = self.ip_pool.sync_get_top_n(2)
         self.api.connect(primary_ip, hot_backup_ip)
+        logger.info("行情系统连接成功.")
 
     @classmethod
     def get_available_addr(cls) -> List[tuple]:
@@ -50,19 +53,19 @@ class TDXQuotes(BaseQuotes):
             raise NotEnoughAvailableAddr
         return [(v[1], v[2]) for k, v in sorted(addr_speed_dict.items(), key=lambda kv: kv[0])]
 
-    def get_ticks(self, code: str) -> Quotes:
+    async def get_ticks(self, code: str) -> Quotes:
         """获取股票Ticks数据.
 
         Parameters
         ----------
         code : 600001.SH
         """
-        tdx_code = self.format_stock_code(code)
+        tdx_code = await self.format_stock_code(code)
         api_quotes = self.api.get_security_quotes(tdx_code)
-        return self._format_quotes(api_quotes[0])
+        return await self._format_quotes(api_quotes[0])
 
     @classmethod
-    def format_stock_code(cls, code: str) -> Tuple[int, str]:
+    async def format_stock_code(cls, code: str) -> Tuple[int, str]:
         """转化股票代码为通达信格式.
 
         Parameters
@@ -73,7 +76,7 @@ class TDXQuotes(BaseQuotes):
         return cls.EXCHANGE_MAPPING[exchange], symbol
 
     @classmethod
-    def _format_quotes(cls, api_quotes: dict) -> Quotes:
+    async def _format_quotes(cls, api_quotes: dict) -> Quotes:
         return Quotes(
             exchange=ExchangeEnum.SH if api_quotes["market"] == 1 else ExchangeEnum.SZ,
             symbol=api_quotes["code"],
@@ -105,7 +108,7 @@ class TDXQuotes(BaseQuotes):
             ask5_v=api_quotes.get("ask_vol5"),
         )
 
-    def close(self) -> None:
+    async def close(self) -> None:
         # 当uvicorn处于热重载模式并通过命令行关闭应用时，执行api.close方法会触发此异常
         try:
             self.api.disconnect()

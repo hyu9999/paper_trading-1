@@ -193,7 +193,7 @@ async def test_can_frozen_user_position(
     expected_exception: Optional[Exception],
     position_in_create: PositionInDB
 ):
-    """测试提交卖单时是否能正确冻结账户可用仓位
+    """测试提交卖单时是否能正确冻结账户可用仓位.
 
     测试对象为: UserEngine.__position_validation.
     """

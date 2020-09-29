@@ -3,7 +3,7 @@ from enum import Enum, unique
 
 @unique
 class ExchangeEnum(str, Enum):
-    """股票市场"""
+    """股票市场."""
     SH = "SH"
     SZ = "SZ"
 
@@ -39,10 +39,17 @@ class TradeTypeEnum(str, Enum):
 
 @unique
 class OrderStatusEnum(str, Enum):
-    """订单状态"""
+    """订单状态."""
     SUBMITTING = "提交中"
     WAITING = "等待处理中"
     PART_FINISHED = "部分成交"
     ALL_FINISHED = "全部成交"
     CANCELED = "已取消"
     REJECTED = "已拒单"
+
+
+@unique
+class EntrustOrdersMode(str, Enum):
+    """委托单模式"""
+    TIME_PRIORITY = "时间优先"
+    PRICE_PRIORITY = "价格优先"

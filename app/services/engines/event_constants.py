@@ -1,6 +1,6 @@
 EXIT_ENGINE_EVENT = "exit_engine_event"  # 退出引擎事件
 
-LOG_EVENT = "log_event"
+LOG_EVENT = "log_event"  # 推送日志
 
 ORDER_CREATE_EVENT = "order_create_event"  # 新建订单
 ORDER_UPDATE_EVENT = "order_update_event"  # 更新订单

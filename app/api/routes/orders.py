@@ -14,6 +14,7 @@ from app.exceptions.http import InsufficientAccountFunds, InvalidOrderExchange, 
 from app.models.types import PyObjectId
 from app.models.enums import OrderStatusEnum
 from app.models.domain.users import UserInDB
+from app.models.schemas.http import HttpMessage
 from app.models.schemas.orders import OrderInCreate, OrderInResponse
 from app.services.engines.main_engine import MainEngine
 
@@ -71,3 +72,23 @@ async def get_order_list(
 ):
     orders = await order_repo.get_orders(user_id=user.id, status=status, start_date=start_date, end_date=end_date)
     return [OrderInResponse(**dict(order)) for order in orders]
+
+
+@router.delete(
+    "/entrust_orders/{order_id}",
+    status_code=http_status.HTTP_200_OK,
+    name="orders:delete-entrust-order",
+    response_model=OrderInResponse
+)
+async def delete_entrust_order(
+    order_id: PyObjectId,
+    engine: MainEngine = Depends(get_engine),
+    order_repo: OrderRepository = Depends(get_repository(OrderRepository)),
+    user: UserInDB = Depends(get_current_user_authorizer()),
+):
+    try:
+        order = await order_repo.get_order_by_order_id(order_id)
+        await engine.market_engine.put(order)
+        return HttpMessage(text="取消委托订单成功.")
+    except EntityDoesNotExist:
+        raise OrderNotFound(status_code=http_status.HTTP_404_NOT_FOUND)

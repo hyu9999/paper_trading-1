@@ -13,6 +13,7 @@ from app.models.schemas.orders import OrderInCreate
 from app.models.enums import OrderTypeEnum, TradeTypeEnum
 from app.models.schemas.users import UserInUpdateCash, UserInUpdate
 from app.models.schemas.position import PositionInCreate, PositionInUpdateAvailable, PositionInUpdate
+from app.services.quotes.base import BaseQuotes
 from app.services.engines.base import BaseEngine
 from app.services.engines.event_engine import EventEngine, Event
 from app.services.engines.event_constants import (
@@ -36,9 +37,10 @@ class UserEngine(BaseEngine):
     NotEnoughAvailablePositions
         用户持仓股票可用数量不够买单指定的数量时触发
     """
-    def __init__(self, event_engine: EventEngine, db: AsyncIOMotorDatabase) -> None:
+    def __init__(self, event_engine: EventEngine, db: AsyncIOMotorDatabase, quotes_api: BaseQuotes) -> None:
         super().__init__()
         self.event_engine = event_engine
+        self.quotes_api = quotes_api
         self.user_repo = UserRepository(db)
         self.position_repo = PositionRepository(db)
 

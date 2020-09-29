@@ -1,4 +1,8 @@
+import pytest
+
 from app.services.quotes.tdx import TDXQuotes
+
+pytestmark = pytest.mark.asyncio
 
 
 def test_user_can_get_enough_addr():
@@ -7,10 +11,10 @@ def test_user_can_get_enough_addr():
     assert len(addr_list) > 5
 
 
-def test_user_can_get_stock_ticks():
+async def test_user_can_get_stock_ticks():
     tdx = TDXQuotes()
-    tdx.connect_pool()
-    quotes = tdx.get_ticks("601816.SH")
-    tdx.close()
+    await tdx.connect_pool()
+    quotes = await tdx.get_ticks("601816.SH")
+    await tdx.close()
     assert quotes.exchange.value == "SH"
     assert quotes.symbol == "601816"
