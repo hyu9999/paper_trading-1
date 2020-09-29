@@ -12,16 +12,16 @@ class OrderInCreate(RWSchema, Order):
 
 
 class OrderInCreateViewResponse(RWSchema, Order):
-    order_id: PyObjectId = Field(..., description="订单ID")
+    entrust_id: PyObjectId = Field(..., description="委托订单ID")
 
 
 class OrderInResponse(RWSchema, Order):
-    order_id: PyObjectId = Field(..., description="订单ID")
+    entrust_id: PyObjectId = Field(..., description="委托订单ID")
     status: OrderStatusEnum = Field(OrderStatusEnum.SUBMITTING, description="订单状态")
 
 
 class OrderInUpdate(RWSchema):
-    order_id: PyObjectId = Field(...)
+    entrust_id: PyObjectId = Field(...)
     price: PyDecimal = Field(..., description="价格")
     status: OrderStatusEnum = Field(..., description="订单状态")
     traded_quantity: int = Field(..., description="已成交数量")
@@ -29,5 +29,5 @@ class OrderInUpdate(RWSchema):
 
 
 class OrderInUpdateStatus(RWSchema):
-    order_id: PyObjectId = Field(...)
+    entrust_id: PyObjectId = Field(...)
     status: OrderStatusEnum = Field(..., description="订单状态")

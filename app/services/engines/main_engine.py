@@ -73,7 +73,7 @@ class MainEngine(BaseEngine):
         # 根据订单的股票价格确定价格类型
         order.price_type = PriceTypeEnum.MARKET if str(order.price) == "0" else PriceTypeEnum.LIMIT
         order_in_db = OrderInDB(**dict(order), user=user.id, order_date=datetime.utcnow(),
-                                order_id=PyObjectId(), amount=amount)
+                                entrust_id=PyObjectId(), amount=amount)
         order_create_event = Event(ORDER_CREATE_EVENT, order_in_db)
         await self.event_engine.put(order_create_event)
         order_in_db.id = None

@@ -9,9 +9,16 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app import settings as base_settings
 from app.core import jwt
+from app.db.repositories.order import OrderRepository
 from app.db.repositories.user import UserRepository
 from app.models.domain.users import UserInDB
+from app.services.engines.main_engine import MainEngine
+from app.services.quotes.tdx import TDXQuotes
+from app.services.quotes.base import BaseQuotes
+from app.services.engines.user_engine import UserEngine
 from app.services.engines.event_engine import EventEngine
+from app.services.engines.market_engine.china_a_market import ChinaAMarket
+from tests.json.order import order_in_create_json
 
 pytestmark = pytest.mark.asyncio
 
@@ -90,3 +97,57 @@ async def event_engine() -> EventEngine:
     await event_engine.startup()
     yield event_engine
     await event_engine.shutdown()
+
+
+@pytest.fixture(scope="session")
+async def quotes_api() -> BaseQuotes:
+    quotes_api = TDXQuotes()
+    await quotes_api.connect_pool()
+    yield quotes_api
+    await quotes_api.close()
+
+
+@pytest.fixture
+async def user_engine(event_engine: EventEngine, db: AsyncIOMotorDatabase, quotes_api: BaseQuotes) -> UserEngine:
+    user_engine = UserEngine(event_engine, db, quotes_api)
+    await user_engine.startup()
+    yield user_engine
+    await user_engine.shutdown()
+
+
+@pytest.fixture
+async def china_a_market_engine(
+    event_engine: EventEngine, user_engine: UserEngine, quotes_api: BaseQuotes
+) -> ChinaAMarket:
+    china_a_market_engine = ChinaAMarket(event_engine, user_engine, quotes_api)
+    await china_a_market_engine.startup()
+    yield china_a_market_engine
+    await china_a_market_engine.shutdown()
+
+
+@pytest.fixture
+async def main_engine(db: AsyncIOMotorDatabase):
+    main_engine = MainEngine(db)
+    await main_engine.startup()
+    yield main_engine
+    await main_engine.shutdown()
+
+
+@pytest.fixture
+async def order_buy_type(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
+    json = {**order_in_create_json, **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000"}}
+    return await OrderRepository(db).create_order(**json)
+
+
+@pytest.fixture
+async def order_sell_type(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
+    json = {**order_in_create_json, **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000",
+                                       "order_type": "sell"}}
+    return await OrderRepository(db).create_order(**json)
+
+
+@pytest.fixture
+async def order_cancel_type(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
+    json = {**order_in_create_json, **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000",
+                                       "order_type": "cancel"}}
+    return await OrderRepository(db).create_order(**json)

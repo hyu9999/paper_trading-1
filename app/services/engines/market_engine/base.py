@@ -1,52 +1,19 @@
 import asyncio
-from typing import Union
-from collections import OrderedDict, deque
 
 from app.exceptions.service import InvalidExchange
 from app.models.domain.orders import OrderInDB
 from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus
-from app.models.enums import OrderTypeEnum, PriceTypeEnum, OrderStatusEnum, EntrustOrdersMode
+from app.models.enums import OrderTypeEnum, PriceTypeEnum, OrderStatusEnum
 from app.services.quotes.base import BaseQuotes
 from app.services.engines.base import BaseEngine
-from app.services.engines.event_engine import Event, EventEngine
 from app.services.engines.user_engine import UserEngine
+from app.services.engines.event_engine import Event, EventEngine
+from app.services.engines.market_engine.entrust_orders import EntrustOrders
 from app.services.engines.event_constants import (
     ORDER_UPDATE_EVENT,
     EXIT_ENGINE_EVENT,
-    ORDER_UPDATE_STATUS_EVENT)
-
-
-class EntrustOrders(OrderedDict):
-    def __init__(self, mode: EntrustOrdersMode = EntrustOrdersMode.TIME_PRIORITY):
-        super().__init__()
-        # Futures.
-        self._waiters = deque()
-        self.mode = mode
-        self.loop = asyncio.get_event_loop()
-
-    def empty(self):
-        return not self
-
-    def _wakeup_next(self):
-        while self._waiters:
-            waiter = self._waiters.popleft()
-            if not waiter.done():
-                waiter.set_result(None)
-                break
-
-    async def get(self, *args, **kwargs) -> Union[OrderInDB, Event]:
-        while self.empty():
-            waiter = self.loop.create_future()
-            self._waiters.append(waiter)
-            await waiter
-        return self.popitem(last=False)[1]
-
-    async def put(self, item: Union[OrderInDB, Event]) -> None:
-        if isinstance(item, OrderInDB):
-            self[item.order_id] = item
-        else:
-            self["event"] = item
-        self._wakeup_next()
+    ORDER_UPDATE_STATUS_EVENT
+)
 
 
 class BaseMarket(BaseEngine):
@@ -80,10 +47,10 @@ class BaseMarket(BaseEngine):
 
     async def put(self, order: OrderInDB) -> None:
         await self.exchange_validation(order)
-        payload = OrderInUpdateStatus(order_id=order.order_id, status=OrderStatusEnum.WAITING)
+        payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.WAITING)
         event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
         await self.event_engine.put(event)
-        await self.write_log(f"收到新订单: [{order.order_id}].")
+        await self.write_log(f"收到新订单: [{order.entrust_id}].")
         await self._entrust_orders.put(order)
 
     async def matchmaking(self) -> None:
@@ -93,7 +60,7 @@ class BaseMarket(BaseEngine):
                 continue
             # 取消委托订单
             if order.order_type == OrderTypeEnum.CANCEL:
-                payload = OrderInUpdateStatus(order_id=order.order_id, status=OrderStatusEnum.CANCELED)
+                payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.CANCELED)
                 event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
                 await self.event_engine.put(event)
             # 清算委托订单

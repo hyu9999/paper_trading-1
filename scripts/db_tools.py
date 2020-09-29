@@ -39,7 +39,7 @@ async def initdb():
         client = AsyncIOMotorClient(settings.db.url)
         await create_collection(client, settings.db.collections.user)
         await create_collection(client, settings.db.collections.order)
-        await client[settings.db.name][settings.db.collections.order].create_index("order_id")
+        await client[settings.db.name][settings.db.collections.order].create_index("entrust_id")
         await create_collection(client, settings.db.collections.position)
         await client[settings.db.name][settings.db.collections.position].create_index("user")
         await client[settings.db.name][settings.db.collections.position].create_index("symbol")

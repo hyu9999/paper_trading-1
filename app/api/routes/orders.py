@@ -12,9 +12,9 @@ from app.exceptions.db import EntityDoesNotExist
 from app.exceptions.service import InsufficientFunds, InvalidExchange
 from app.exceptions.http import InsufficientAccountFunds, InvalidOrderExchange, OrderNotFound
 from app.models.types import PyObjectId
-from app.models.enums import OrderStatusEnum
 from app.models.domain.users import UserInDB
 from app.models.schemas.http import HttpMessage
+from app.models.enums import OrderStatusEnum, OrderTypeEnum
 from app.models.schemas.orders import OrderInCreate, OrderInResponse
 from app.services.engines.main_engine import MainEngine
 
@@ -40,18 +40,18 @@ async def create_order(
 
 
 @router.get(
-    "/{order_id}",
+    "/{entrust_id}",
     status_code=http_status.HTTP_200_OK,
     name="orders:get-order",
     response_model=OrderInResponse
 )
 async def get_order(
-    order_id: PyObjectId,
+    entrust_id: PyObjectId,
     order_repo: OrderRepository = Depends(get_repository(OrderRepository)),
     user: UserInDB = Depends(get_current_user_authorizer()),
 ):
     try:
-        order = await order_repo.get_order_by_order_id(order_id)
+        order = await order_repo.get_order_by_entrust_id(entrust_id)
         return OrderInResponse(**dict(order))
     except EntityDoesNotExist:
         raise OrderNotFound(status_code=http_status.HTTP_404_NOT_FOUND)
@@ -75,20 +75,22 @@ async def get_order_list(
 
 
 @router.delete(
-    "/entrust_orders/{order_id}",
+    "/entrust_orders/{entrust_id}",
     status_code=http_status.HTTP_200_OK,
     name="orders:delete-entrust-order",
     response_model=OrderInResponse
 )
 async def delete_entrust_order(
-    order_id: PyObjectId,
+    entrust_id: PyObjectId,
     engine: MainEngine = Depends(get_engine),
     order_repo: OrderRepository = Depends(get_repository(OrderRepository)),
     user: UserInDB = Depends(get_current_user_authorizer()),
 ):
     try:
-        order = await order_repo.get_order_by_order_id(order_id)
-        await engine.market_engine.put(order)
-        return HttpMessage(text="取消委托订单成功.")
+        order = await order_repo.get_order_by_entrust_id(entrust_id)
     except EntityDoesNotExist:
         raise OrderNotFound(status_code=http_status.HTTP_404_NOT_FOUND)
+    else:
+        await order_repo.create_order(**order.dict(), order_type=OrderTypeEnum.CANCEL)
+        await engine.market_engine.put(order)
+        return HttpMessage(text="取消委托订单成功.")

@@ -18,7 +18,7 @@ debug:
 	source .env && poetry run uvicorn app.main:app --host=$$DYNACONF_PT_HOST --port=$$DYNACONF_PT_PORT --reload --debug
 
 test:
-	source .env && poetry run pytest --cov=app --cov=tests --cov-report=term-missing
+	source .env && poetry run pytest --cov=app --cov=tests --cov-report=term-missing --cov-report html
 
 flake8:
 	poetry run flake8 $(SRC)

@@ -23,4 +23,4 @@ TEST_ORDER_1 = {
 async def test_user_can_create_order(app: FastAPI, authorized_client: AsyncClient, order: dict) -> None:
     response = await authorized_client.request("POST", app.url_path_for("orders:create-order"), json=order)
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json()["order_id"]
+    assert response.json()["entrust_id"]

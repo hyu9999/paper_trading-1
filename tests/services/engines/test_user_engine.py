@@ -17,27 +17,9 @@ from app.models.schemas.orders import OrderInCreate
 from app.models.domain.position import PositionInDB
 from app.models.schemas.position import PositionInCreate
 from app.services.engines.user_engine import UserEngine
-from app.services.engines.event_engine import EventEngine
+from tests.json.order import order_in_create_json
 
 pytestmark = pytest.mark.asyncio
-
-
-@pytest.fixture
-async def user_engine(event_engine: EventEngine, db: AsyncIOMotorDatabase):
-    user_engine = UserEngine(event_engine, db)
-    await user_engine.startup()
-    yield user_engine
-    await user_engine.shutdown()
-
-
-order_in_create_json = {
-    "symbol": "601816",
-    "exchange": "SH",
-    "quantity": 10,
-    "price": 10,
-    "order_type": "buy",
-    "trade_type": "T0",
-}
 
 
 @pytest.fixture
@@ -306,4 +288,4 @@ async def test_can_update_user(
     await user_engine.update_user(order, Decimal(100))
     await asyncio.sleep(1)
     user_after_task = await user_engine.user_repo.get_user_by_id(order.user)
-    assert user_after_task.securities == PyDecimal("100")
+    assert user_after_task.securities == PyDecimal("100.00")

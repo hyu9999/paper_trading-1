@@ -33,21 +33,25 @@ class OrderRepository(BaseRepository):
         order_type: OrderTypeEnum,
         price_type: PriceTypeEnum,
         trade_type: TradeTypeEnum,
-        amount: PyDecimal
+        amount: PyDecimal,
+        entrust_id: PyObjectId = PyObjectId(),
+        status: OrderStatusEnum = OrderStatusEnum.SUBMITTING
     ) -> OrderInDB:
         order = OrderInDB(symbol=symbol, user=user_id, exchange=exchange, quantity=quantity, price=price,
                           order_type=order_type, price_type=price_type, trade_type=trade_type, amount=amount,
-                          order_id=PyObjectId(), order_date=datetime.utcnow()
-                          )
+                          entrust_id=entrust_id, order_date=datetime.utcnow(), status=status)
         order_row = await self.collection.insert_one(order.dict(exclude={"id"}))
         order.id = order_row.inserted_id
         return order
 
-    async def get_order_by_order_id(self, order_id: PyObjectId) -> OrderInDB:
-        order_row = await self.collection.find_one({"order_id": order_id})
+    async def get_order_by_entrust_id(self, entrust_id: PyObjectId) -> OrderInDB:
+        order_row = await self.collection.find_one({
+            "entrust_id": entrust_id,
+            "order_type": {"$nin": [OrderTypeEnum.CANCEL.value, OrderTypeEnum.LIQUIDATION.value]}
+        })
         if order_row:
             return OrderInDB(**order_row)
-        raise EntityDoesNotExist(f"订单`{order_id}`不存在.")
+        raise EntityDoesNotExist(f"委托订单`{entrust_id}`不存在.")
 
     async def get_orders(
         self,
@@ -101,7 +105,10 @@ class OrderRepository(BaseRepository):
         await self.collection.insert_one(order.dict(exclude={"id"}))
 
     async def process_update_order(self, order: OrderInUpdate) -> None:
-        await self.collection.update_one({"order_id": order.order_id}, {"$set": order.dict(exclude={"order_id"})})
+        await self.collection.update_many(
+            {"entrust_id": order.entrust_id},
+            {"$set": order.dict(exclude={"entrust_id"})}
+        )
 
     async def process_update_order_status(self, order: OrderInUpdateStatus) -> None:
-        await self.collection.update_one({"order_id": order.order_id}, {"$set": {"status": order.status}})
+        await self.collection.update_one({"entrust_id": order.entrust_id}, {"$set": {"status": order.status}})

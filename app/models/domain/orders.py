@@ -20,7 +20,7 @@ class Order(Stock):
 
 class OrderInDB(DBModelMixin, Order):
     """订单."""
-    order_id: PyObjectId = Field(..., description="订单ID")  # 用于提供给外部系统的订单唯一标识符
+    entrust_id: PyObjectId = Field(..., description="委托订单ID")  # 用于提供给外部系统的订单唯一标识符
     user: PyObjectId = Field(..., description="账户")
     status: OrderStatusEnum = Field(OrderStatusEnum.SUBMITTING, description="订单状态")
     traded_quantity: int = Field(0, description="已成交数量")

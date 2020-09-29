@@ -1,0 +1,32 @@
+from datetime import datetime
+
+
+quotes_json = {
+    "symbol": "601816",
+    "exchange": "SH",
+    "last_close": 5,
+    "open": 5,
+    "high": 5,
+    "low": 5,
+    "time": datetime.utcnow(),
+    "bid1_p": 5,
+    "bid2_p": 4,
+    "bid3_p": 3,
+    "bid4_p": 2,
+    "bid6_p": 1,
+    "ask1_p": 6,
+    "ask2_p": 7,
+    "ask3_p": 8,
+    "ask4_p": 9,
+    "ask5_p": 10,
+    "bid1_v": 1000,
+    "bid2_v": 1000,
+    "bid3_v": 1000,
+    "bid4_v": 1000,
+    "bid5_v": 1000,
+    "ask1_v": 1000,
+    "ask2_v": 1000,
+    "ask3_v": 1000,
+    "ask4_v": 1000,
+    "ask5_v": 1000,
+}
