@@ -19,13 +19,13 @@ Paper Trading
     │   ├── dependencies    - 路由定义中的依赖项
     │   └── routes          - 路由
     ├── core                - 核心配置
-    │   ├── events          - 全局事件配置
+    │   ├── event           - 全局事件配置
     │   ├── jwt             - JWT鉴权配置
     │   └── logging         - 日志配置
     ├── db                  - 数据库
     │   ├── repositories    - 与数据库交互的相关方法
     │   └── events          - 数据库相关事件
-    ├── errors              - 异常的定义与处理
+    ├── exceptions          - 异常的定义与处理
     ├── models              - 数据模型
     │   ├── domain          - 数据模型基类与数据库模型
     │   ├── schemas         - 数据验证模型

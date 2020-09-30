@@ -14,13 +14,18 @@ from app.db.repositories.user import UserRepository
 from app.models.domain.users import UserInDB
 from app.services.engines.main_engine import MainEngine
 from app.services.engines.market_engine.base import BaseMarket
-from app.services.quotes.tdx import TDXQuotes
 from app.services.quotes.base import BaseQuotes
 from app.services.engines.user_engine import UserEngine
 from app.services.engines.event_engine import EventEngine
 from tests.json.order import order_in_create_json
+from tests.mock.tdx import TDXQuotesMocker
 
 pytestmark = pytest.mark.asyncio
+
+
+@pytest.fixture(scope='session', autouse=True)
+def mock(session_mocker):
+    session_mocker.patch("app.services.engines.main_engine.TDXQuotes", side_effect=TDXQuotesMocker)
 
 
 @pytest.yield_fixture(scope='session')
@@ -105,7 +110,7 @@ async def event_engine() -> EventEngine:
 
 @pytest.fixture
 async def quotes_api() -> BaseQuotes:
-    quotes_api = TDXQuotes()
+    quotes_api = TDXQuotesMocker()
     await quotes_api.connect_pool()
     yield quotes_api
     await quotes_api.close()

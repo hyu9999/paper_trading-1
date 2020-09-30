@@ -11,15 +11,24 @@ on:
 
 jobs:
   test:
+    env:
+      DYNACONF_PT_HOST: 127.0.0.1
+      DYNACONF_PT_PORT: 8000
+      DYNACONF_SECRET_KEY: secret_key
+      DYNACONF_ALGORITHM: HS256
+      DYNACONF_ACCESS_TOKEN_EXPIRE_MINUTES: 10080
+      DYNACONF_TOKEN_PREFIX: Token
+      DYNACONF_ENV_FOR_DYNACONF: production
+      DYNACONF_DB_USER: mongo
+      DYNACONF_DB_PASSWORD: mongo
     name: Test
     runs-on: ubuntu-latest
     services:
       mongo:
         image: mongo:4.4.0
         env:
-          MONGO_USER: mongo
-          MONGO_PASSWORD: mongo
-          MONGO_DB: paper_trading
+          MONGO_INITDB_ROOT_USERNAME: mongo
+          MONGO_INITDB_ROOT_PASSWORD: mongo
         ports:
           - 27017:27017
       redis:
@@ -37,19 +46,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry
         poetry install
-    - name: run tests with pytest
-      env:
-        DYNACONF_PT_HOST: 127.0.0.1
-        DYNACONF_PT_PORT: 8000
-        DYNACONF_SECRET_KEY: secret_key
-        DYNACONF_ALGORITHM: HS256
-        DYNACONF_ACCESS_TOKEN_EXPIRE_MINUTES: 10080
-        DYNACONF_TOKEN_PREFIX: Token
-        DYNACONF_ENV_FOR_DYNACONF: production
-        DYNACONF_DB_USER: mongo
-        DYNACONF_DB_URL: mongodb://mongo:mongo@localhost:27017"
+    - name: Init DB
       run: |
-        poetry run pytest --cov=app --cov=tests --cov-report=term-missing --cov-report=xml --cov-fail-under=100
+        echo 'y' | make initdb
+    - name: Run tests with pytest
+      run: |
+        poetry run pytest --cov=app --cov=tests --cov-report=term-missing --cov-config=setup.cfg \
+        --cov-report=xml --cov-fail-under=90
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -t $TOKEN -B $REF
       env:

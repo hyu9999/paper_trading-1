@@ -139,7 +139,6 @@ class UserEngine(BaseEngine):
     async def create_position(self, order: OrderInDB) -> None:
         """新建持仓."""
         position = await self.position_repo.get_position(order.user, order.symbol, order.exchange)
-        print("user:", order.user)
         user = await self.user_repo.get_user_by_id(order.user)
         # 根据交易类别判断持仓股票可用数量
         order_available_quantity = order.traded_quantity if order.trade_type == TradeTypeEnum.T0 else 0
