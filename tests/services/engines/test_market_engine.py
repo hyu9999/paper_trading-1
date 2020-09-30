@@ -50,7 +50,5 @@ async def test_market_engine_can_matchmaking(
     order_after_update = await OrderRepository(db).get_order_by_id(order_in_db.id)
     if order_in_db.order_type == OrderTypeEnum.CANCEL:
         assert order_after_update.status == OrderStatusEnum.CANCELED
-    elif order_in_db.order_type == OrderTypeEnum.LIQUIDATION:
-        pass
     else:
         assert order_after_update.status == OrderStatusEnum.ALL_FINISHED

@@ -13,3 +13,4 @@ class UserAssetsRecordInDB(DBModelMixin, RWModel):
     cash: PyDecimal = Field(..., description="现金")
     securities: PyDecimal = Field(..., description="证券资产")
     date: datetime = Field(..., description="日期")
+    check_time: datetime = Field(default_factory=datetime.utcnow, description="检查时间")

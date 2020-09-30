@@ -1,6 +1,8 @@
 from typing import List
 from datetime import date, datetime
 
+from bson import Decimal128
+
 from app import settings
 from app.db.repositories.base import BaseRepository
 from app.exceptions.db import EntityDoesNotExist
@@ -33,7 +35,7 @@ class OrderRepository(BaseRepository):
         order_type: OrderTypeEnum,
         price_type: PriceTypeEnum,
         trade_type: TradeTypeEnum,
-        amount: PyDecimal,
+        amount: PyDecimal = Decimal128("0"),
         entrust_id: PyObjectId = None,
         status: OrderStatusEnum = OrderStatusEnum.SUBMITTING
     ) -> OrderInDB:
@@ -68,8 +70,9 @@ class OrderRepository(BaseRepository):
     ) -> List[OrderInDB]:
         query = {
             "user_id": user_id,
-            "status": {"$in": [s.value for s in status if s]},
         }
+        if status:
+            query["status"] = {"$in": [s.value for s in status if s]}
         if start_date:
             start_date = datetime.combine(start_date, datetime.min.time())
         if end_date:
@@ -117,4 +120,4 @@ class OrderRepository(BaseRepository):
         )
 
     async def process_update_order_status(self, order: OrderInUpdateStatus) -> None:
-        await self.collection.update_one({"entrust_id": order.entrust_id}, {"$set": {"status": order.status}})
+        await self.collection.update_many({"entrust_id": order.entrust_id}, {"$set": {"status": order.status}})

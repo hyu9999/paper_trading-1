@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get(
     "/",
     status_code=status.HTTP_200_OK,
-    name="orders:get-position-list",
+    name="position:get-position-list",
     response_model=List[PositionInResponse]
 )
 async def get_position_list(
