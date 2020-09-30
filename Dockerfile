@@ -1,4 +1,5 @@
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.7
+FROM ubuntu:latest
+FROM mongo:latest
 
 WORKDIR /paper_trading
 
@@ -7,10 +8,15 @@ COPY ./tests tests
 COPY ./Makefile ./
 COPY ./pyproject.toml ./poetry.lock* ./
 
+# Install Pip
+RUN apt-get update && apt-get install -y libzmq3-dev python3-pip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Install Poetry
-RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | POETRY_HOME=/opt/poetry python && \
-    cd /usr/local/bin && \
-    ln -s /opt/poetry/bin/poetry && \
-    poetry config virtualenvs.create false
+RUN pip3 install poetry \
+    && poetry config virtualenvs.create false
+
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo "Asia/Shanghai" > /etc/timezone
 
 RUN poetry install

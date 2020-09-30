@@ -1,6 +1,6 @@
 SRC = app scripts tests
 
-.PHONY: server debug test initdb flake8 mypy
+.PHONY: server debug test initdb flake8 mypy install
 
 default:
 	@echo "帮助:"
@@ -28,3 +28,6 @@ mypy:
 
 initdb:
 	poetry run sh -c "PYTHONPATH=. python ./scripts/db_tools.py initdb"
+
+install:
+    docker image build -t pt . && docker container run -p 8000:3000 -it pt /bin/bash

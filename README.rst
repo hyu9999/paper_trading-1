@@ -3,9 +3,13 @@ Paper Trading
 ==================================
 *基于Python的证券市场模拟交易后台服务器*
 
-|Test Status|
+|Test Status| |Codecov Status| |License|
 
 .. |Test Status| image:: https://github.com/Chaoyingz/paper_trading/workflows/Test/badge.svg
+
+.. |Codecov Status| image:: https://codecov.io/gh/Chaoyingz/paper_trading/branch/paper_trading_v2/graph/badge.svg
+
+.. |License| image:: https://img.shields.io/github/license/Naereen/StrapDown.js.svg
 
 项目结构
 -----------------
