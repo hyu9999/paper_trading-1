@@ -198,7 +198,7 @@ class UserEngine(BaseEngine):
         old_spent = Decimal(position.volume) * position.cost.to_decimal()
         new_spent = Decimal(order.traded_volume) * order.sold_price.to_decimal() * \
             (Decimal(1) - user.commission.to_decimal() - user.tax_rate.to_decimal())
-        cost = (old_spent - new_spent) / volume if volume else 0
+        cost = (old_spent - new_spent) / volume if volume else "0"
         position_in_update = PositionInUpdate(
             id=position.id,
             volume=volume,

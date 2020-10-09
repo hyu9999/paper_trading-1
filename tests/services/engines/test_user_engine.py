@@ -47,14 +47,20 @@ async def order_create_with_sell():
 
 @pytest.fixture
 async def order_t0(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
-    json = {**order_in_create_json, **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000"}}
+    json = {
+        **order_in_create_json,
+        **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "sold_price": "10"}
+    }
     return await OrderRepository(db).create_order(**json)
 
 
 @pytest.fixture
 async def order_t1(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
-    json = {**order_in_create_json,
-            **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "trade_type": "T1"}}
+    json = {
+        **order_in_create_json,
+        **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "trade_type": "T1",
+           "sold_price": "10"}
+    }
     return await OrderRepository(db).create_order(**json)
 
 
@@ -63,7 +69,7 @@ async def order_sell_90(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase
     json = {
         **order_in_create_json,
         **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "volume": "90",
-           "amount": "900"}
+           "amount": "900", "sold_price": "10"}
     }
     return await OrderRepository(db).create_order(**json)
 
@@ -73,7 +79,7 @@ async def order_sell_100(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabas
     json = {
         **order_in_create_json,
         **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "volume": "100",
-           "amount": "900"}
+           "amount": "900", "sold_price": "10"}
     }
     return await OrderRepository(db).create_order(**json)
 
@@ -268,7 +274,7 @@ async def test_can_reduce_position(
     await user_engine.reduce_position(order_sell)
     await asyncio.sleep(1)
     position_after_task = await user_engine.position_repo.get_position_by_id(position_in_create_available_100.id)
-    assert position_after_task.volume == position_in_create_available_100.volume - order_sell.quantity
+    assert position_after_task.volume == position_in_create_available_100.volume - order_sell.volume
     if position_after_task.volume == 0:
         assert position_after_task.last_sell_date
 
