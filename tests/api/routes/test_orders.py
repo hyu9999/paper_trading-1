@@ -12,7 +12,7 @@ pytestmark = pytest.mark.asyncio
 TEST_ORDER_1 = {
     "symbol": "601816",
     "exchange": "SH",
-    "quantity": 10,
+    "volume": 10,
     "price": 0,
     "order_type": "buy",
     "trade_type": "T0",

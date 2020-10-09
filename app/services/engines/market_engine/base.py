@@ -84,16 +84,16 @@ class BaseMarket(BaseEngine):
                     # 市价成交
                     if order.price_type == PriceTypeEnum.MARKET:
                         order.price = quotes.ask1_p
-                        order.trade_price = quotes.ask1_p
-                        order.traded_quantity = order.quantity
+                        order.sold_price = quotes.ask1_p
+                        order.traded_volume = order.volume
                         await self.save_order(order)
                         continue
 
                     # 限价成交
                     elif order.price_type == PriceTypeEnum.LIMIT:
                         if order.price.to_decimal() >= quotes.ask1_p.to_decimal():
-                            order.trade_price = quotes.ask1_p
-                            order.traded_quantity = order.quantity
+                            order.sold_price = quotes.ask1_p
+                            order.traded_volume = order.volume
                             await self.save_order(order)
                         continue
                 else:
@@ -105,15 +105,15 @@ class BaseMarket(BaseEngine):
                     # 市价成交
                     if order.price_type == PriceTypeEnum.MARKET:
                         order.price = quotes.ask1_p
-                        order.trade_price = quotes.ask1_p
-                        order.traded_quantity = order.quantity
+                        order.sold_price = quotes.ask1_p
+                        order.traded_volume = order.volume
                         await self.save_order(order)
                         continue
                     # 限价成交
                     elif order.price_type == PriceTypeEnum.LIMIT:
                         if order.price.to_decimal() <= quotes.bid1_p.to_decimal():
-                            order.trade_price = quotes.bid1_p
-                            order.traded_quantity = order.quantity
+                            order.sold_price = quotes.bid1_p
+                            order.traded_volume = order.volume
                             await self.save_order(order)
                         continue
 
@@ -125,7 +125,7 @@ class BaseMarket(BaseEngine):
         elif order.order_type == OrderTypeEnum.SELL.value:
             await self.user_engine.reduce_position(order)
         order.status = OrderStatusEnum.ALL_FINISHED.value \
-            if order.quantity == order.traded_quantity \
+            if order.volume == order.traded_volume \
             else OrderStatusEnum.PART_FINISHED.value
         order_in_update_payload = OrderInUpdate(**dict(order))
         await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))

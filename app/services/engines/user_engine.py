@@ -102,7 +102,7 @@ class UserEngine(BaseEngine):
         user: UserInDB,
     ) -> PyDecimal:
         """用户资金校验."""
-        cash_needs = Decimal(order.quantity) * order.price.to_decimal() * (1 + user.commission.to_decimal())
+        cash_needs = Decimal(order.volume) * order.price.to_decimal() * (1 + user.commission.to_decimal())
         # 若用户现金可以满足订单需求
         if user.cash.to_decimal() >= cash_needs:
             # 冻结订单需要的现金
@@ -122,16 +122,16 @@ class UserEngine(BaseEngine):
         """用户持仓检查."""
         position = await self.position_repo.get_position(user.id, order.symbol, order.exchange)
         if position:
-            if position.available_quantity >= order.quantity:
+            if position.available_volume >= order.volume:
                 event = Event(
                     POSITION_UPDATE_AVAILABLE_EVENT,
                     PositionInUpdateAvailable(
                         id=position.id,
-                        available_quantity=position.available_quantity-order.quantity
+                        available_volume=position.available_volume-order.volume
                     )
                 )
                 await self.event_engine.put(event)
-                return Decimal(order.quantity) * order.price.to_decimal()
+                return Decimal(order.volume) * order.price.to_decimal()
             raise NotEnoughAvailablePositions
         else:
             raise NoPositionsAvailable
@@ -141,26 +141,26 @@ class UserEngine(BaseEngine):
         position = await self.position_repo.get_position(order.user, order.symbol, order.exchange)
         user = await self.user_repo.get_user_by_id(order.user)
         # 根据交易类别判断持仓股票可用数量
-        order_available_quantity = order.traded_quantity if order.trade_type == TradeTypeEnum.T0 else 0
+        order_available_volume = order.traded_volume if order.trade_type == TradeTypeEnum.T0 else 0
         # 交易费用
-        fee = Decimal(order.quantity) * order.price.to_decimal() * user.commission.to_decimal()
+        fee = Decimal(order.volume) * order.price.to_decimal() * user.commission.to_decimal()
         # 增持股票
         if position:
-            quantity = position.quantity + order.traded_quantity
-            current_price = order.trade_price
+            volume = position.volume + order.traded_volume
+            current_price = order.sold_price
             # 持仓成本 = ((原持仓数 * 原持仓成本) + (订单交易数 * 订单交易价格)) / 持仓总量
-            cost = ((Decimal(position.quantity) * position.cost.to_decimal()) +
-                    (Decimal(order.traded_quantity) * order.trade_price.to_decimal())) / quantity
-            available_quantity = position.available_quantity + order_available_quantity
+            cost = ((Decimal(position.volume) * position.cost.to_decimal()) +
+                    (Decimal(order.traded_volume) * order.sold_price.to_decimal())) / volume
+            available_volume = position.available_volume + order_available_volume
             # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持有数量 + 原利润 - 交易费用
-            profit = (order.trade_price.to_decimal() - position.current_price.to_decimal()
-                      ) * Decimal(position.quantity) + position.profit.to_decimal() - fee
+            profit = (order.sold_price.to_decimal() - position.current_price.to_decimal()
+                      ) * Decimal(position.volume) + position.profit.to_decimal() - fee
             position_in_update = PositionInUpdate(
                 id=position.id,
-                quantity=quantity,
+                volume=volume,
                 current_price=current_price,
                 cost=PyDecimal(cost),
-                available_quantity=available_quantity,
+                available_volume=available_volume,
                 profit=PyDecimal(profit)
             )
             event = Event(POSITION_UPDATE_EVENT, position_in_update)
@@ -172,43 +172,43 @@ class UserEngine(BaseEngine):
                 user=order.user,
                 symbol=order.symbol,
                 exchange=order.exchange,
-                quantity=order.traded_quantity,
-                available_quantity=order_available_quantity,
-                cost=order.trade_price,
-                current_price=order.trade_price,
+                volume=order.traded_volume,
+                available_volume=order_available_volume,
+                cost=order.sold_price,
+                current_price=order.sold_price,
                 profit=-fee,
                 first_buy_date=datetime.utcnow()
             )
             await self.event_engine.put(Event(POSITION_CREATE_EVENT, position_in_create))
-            await self.update_user(order, position_in_create.quantity * position_in_create.current_price.to_decimal())
+            await self.update_user(order, position_in_create.volume * position_in_create.current_price.to_decimal())
 
     async def reduce_position(self, order: OrderInDB) -> None:
         """减仓."""
         position = await self.position_repo.get_position(order.user, order.symbol, order.exchange)
         user = await self.user_repo.get_user_by_id(order.user)
-        fee = Decimal(order.quantity) * order.price.to_decimal() * user.commission.to_decimal()
-        quantity = position.quantity - order.traded_quantity
-        current_price = order.trade_price
-        tax = Decimal(order.quantity) * order.trade_price.to_decimal() * user.tax.to_decimal()
+        fee = Decimal(order.volume) * order.price.to_decimal() * user.commission.to_decimal()
+        volume = position.volume - order.traded_volume
+        current_price = order.sold_price
+        tax_rate = Decimal(order.volume) * order.sold_price.to_decimal() * user.tax_rate.to_decimal()
         # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持仓数量 + 原持仓利润 - 交易费用 - 印花税
-        profit = (order.trade_price.to_decimal() - position.current_price.to_decimal()
-                  ) * Decimal(position.quantity) + position.profit.to_decimal() - fee - tax
-        available_quantity = position.available_quantity - order.traded_quantity
+        profit = (order.sold_price.to_decimal() - position.current_price.to_decimal()
+                  ) * Decimal(position.volume) + position.profit.to_decimal() - fee - tax_rate
+        available_volume = position.available_volume - order.traded_volume
         # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
-        old_spent = Decimal(position.quantity) * position.cost.to_decimal()
-        new_spent = Decimal(order.traded_quantity) * order.trade_price.to_decimal() * \
-            (Decimal(1) - user.commission.to_decimal() - user.tax.to_decimal())
-        cost = (old_spent - new_spent) / quantity if quantity else 0
+        old_spent = Decimal(position.volume) * position.cost.to_decimal()
+        new_spent = Decimal(order.traded_volume) * order.sold_price.to_decimal() * \
+            (Decimal(1) - user.commission.to_decimal() - user.tax_rate.to_decimal())
+        cost = (old_spent - new_spent) / volume if volume else 0
         position_in_update = PositionInUpdate(
             id=position.id,
-            quantity=quantity,
+            volume=volume,
             current_price=current_price,
             cost=PyDecimal(cost),
-            available_quantity=available_quantity,
+            available_volume=available_volume,
             profit=PyDecimal(profit)
         )
         # 清仓
-        if quantity == 0:
+        if volume == 0:
             position_in_update.last_sell_date = datetime.utcnow()
         event = Event(POSITION_UPDATE_EVENT, position_in_update)
         await self.event_engine.put(event)
@@ -216,7 +216,7 @@ class UserEngine(BaseEngine):
     async def update_user(self, order: OrderInDB, securities_diff: Decimal) -> None:
         """订单成交后更新用户信息."""
         user = await self.user_repo.get_user_by_id(order.user)
-        cost = Decimal(order.quantity) * order.trade_price.to_decimal() * (1 + user.commission.to_decimal())
+        cost = Decimal(order.volume) * order.sold_price.to_decimal() * (1 + user.commission.to_decimal())
         # 可用现金 = 原现金 + 预先冻结的现金 + 减实际花费的现金
         cash = user.cash.to_decimal() + order.amount.to_decimal() - cost
         # 证券资产 = 原证券资产 + 证券资产的变化值

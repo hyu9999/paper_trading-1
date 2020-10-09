@@ -17,13 +17,13 @@ class PositionInResponse(RWSchema, Position):
 
 class PositionInUpdateAvailable(RWSchema):
     id: PyObjectId = Field(..., description="ID")
-    available_quantity: int = Field(..., description="可卖数量")
+    available_volume: int = Field(..., description="可卖数量")
 
 
 class PositionInUpdate(RWSchema):
     id: PyObjectId = Field(..., description="ID")
-    quantity: int = Field(..., description="持仓数量")
-    available_quantity: int = Field(..., description="可卖数量")
+    volume: int = Field(..., description="持仓数量")
+    available_volume: int = Field(..., description="可卖数量")
     cost: PyDecimal = Field(..., description="持仓成本")
     current_price: PyDecimal = Field(..., description="当前价格")
     profit: PyDecimal = Field(..., description="利润")

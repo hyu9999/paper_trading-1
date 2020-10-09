@@ -24,8 +24,8 @@ class OrderInUpdate(RWSchema):
     entrust_id: PyObjectId = Field(...)
     price: PyDecimal = Field(..., description="价格")
     status: OrderStatusEnum = Field(..., description="订单状态")
-    traded_quantity: int = Field(..., description="已成交数量")
-    trade_price: PyDecimal = Field(..., description="交易价格")
+    traded_volume: int = Field(..., description="已成交数量")
+    sold_price: PyDecimal = Field(..., description="交易价格")
 
 
 class OrderInUpdateStatus(RWSchema):

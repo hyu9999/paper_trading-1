@@ -35,7 +35,7 @@ async def order_create_with_buy_no_price():
 
 @pytest.fixture
 async def order_create_with_buy_big_amount():
-    order_in_create_json_buy_price_0 = {**order_in_create_json, **{"quantity": "10000", "price": "100000"}}
+    order_in_create_json_buy_price_0 = {**order_in_create_json, **{"volume": "10000", "price": "100000"}}
     return OrderInCreate(**order_in_create_json_buy_price_0)
 
 
@@ -62,7 +62,7 @@ async def order_t1(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
 async def order_sell_90(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
     json = {
         **order_in_create_json,
-        **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "quantity": "90",
+        **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "volume": "90",
            "amount": "900"}
     }
     return await OrderRepository(db).create_order(**json)
@@ -72,7 +72,7 @@ async def order_sell_90(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase
 async def order_sell_100(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
     json = {
         **order_in_create_json,
-        **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "quantity": "100",
+        **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "volume": "100",
            "amount": "900"}
     }
     return await OrderRepository(db).create_order(**json)
@@ -81,8 +81,8 @@ async def order_sell_100(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabas
 position_in_create_json = {
     "symbol": "601816",
     "exchange": "SH",
-    "quantity": 100,
-    "available_quantity": 0,
+    "volume": 100,
+    "available_volume": 0,
     "cost": "10",
     "current_price": "10",
     "profit": "0",
@@ -104,7 +104,7 @@ async def position_in_create_no_available(db: AsyncIOMotorDatabase, test_user_sc
 
 @pytest.fixture
 async def position_in_create_available_100(db: AsyncIOMotorDatabase, test_user_scope_func: UserInDB):
-    json = {**position_in_create_json, **{"user": test_user_scope_func.id, "available_quantity": 100}}
+    json = {**position_in_create_json, **{"user": test_user_scope_func.id, "available_volume": 100}}
     return await PositionRepository(db).create_position(**PositionInCreate(**json).dict())
 
 
@@ -139,7 +139,7 @@ async def test_can_frozen_user_cash(
     else:
         user_after_task = await user_engine.user_repo.get_user_by_id(test_user_scope_func.id)
         # 订单拟定交易额
-        amount = Decimal(order_in_create.quantity) * \
+        amount = Decimal(order_in_create.volume) * \
             order_in_create.price.to_decimal() * (1 + test_user_scope_func.commission.to_decimal())
         # 判断冻结金额是否正确
         assert frozen_cash == PyDecimal(test_user_scope_func.cash.to_decimal() - amount)
@@ -190,7 +190,7 @@ async def test_can_frozen_user_position(
         exception = NotEnoughAvailablePositions
     else:
         position = await user_engine.position_repo.get_position_by_id(position_in_create.id)
-        assert position.available_quantity == position_in_create.available_quantity - order_in_create.quantity
+        assert position.available_volume == position_in_create.available_volume - order_in_create.volume
     finally:
         assert exception == expected_exception
 
@@ -213,9 +213,9 @@ async def test_can_create_position(
     await asyncio.sleep(1)
     position = await user_engine.position_repo.get_position(order_in_db.user, order_in_db.symbol, order_in_db.exchange)
     if order_in_db.trade_type.value == "TO":
-        assert position.available_quantity == order_in_db.traded_quantity
+        assert position.available_volume == order_in_db.traded_volume
     else:
-        assert position.available_quantity == 0
+        assert position.available_volume == 0
 
 
 @pytest.mark.parametrize(
@@ -232,8 +232,8 @@ async def test_can_add_position(
 ):
     """测试能否正确加仓."""
     mocker.patch("app.services.engines.user_engine.UserEngine.update_user", mock_update_user)
-    order_in_db.trade_price = order_in_db.price
-    order_in_db.traded_quantity = order_in_db.quantity
+    order_in_db.sold_price = order_in_db.price
+    order_in_db.traded_volume = order_in_db.volume
     # 建仓
     await user_engine.create_position(order_in_db)
     await asyncio.sleep(1)
@@ -241,12 +241,12 @@ async def test_can_add_position(
     await user_engine.create_position(order_in_db)
     await asyncio.sleep(1)
     position = await user_engine.position_repo.get_position(order_in_db.user, order_in_db.symbol, order_in_db.exchange)
-    assert position.quantity == 2 * order_in_db.traded_quantity
-    assert position.cost == order_in_db.trade_price
+    assert position.volume == 2 * order_in_db.traded_volume
+    assert position.cost == order_in_db.sold_price
     if order_in_db.trade_type.value == "T1":
-        assert position.available_quantity == 0
+        assert position.available_volume == 0
     else:
-        assert position.available_quantity == 2 * order_in_db.traded_quantity
+        assert position.available_volume == 2 * order_in_db.traded_volume
 
 
 @pytest.mark.parametrize(
@@ -264,12 +264,12 @@ async def test_can_reduce_position(
 ):
     """测试能否正确减仓."""
     mocker.patch("app.services.engines.user_engine.UserEngine.update_user", mock_update_user)
-    order_sell.traded_quantity = order_sell.quantity
+    order_sell.traded_volume = order_sell.volume
     await user_engine.reduce_position(order_sell)
     await asyncio.sleep(1)
     position_after_task = await user_engine.position_repo.get_position_by_id(position_in_create_available_100.id)
-    assert position_after_task.quantity == position_in_create_available_100.quantity - order_sell.quantity
-    if position_after_task.quantity == 0:
+    assert position_after_task.volume == position_in_create_available_100.volume - order_sell.quantity
+    if position_after_task.volume == 0:
         assert position_after_task.last_sell_date
 
 

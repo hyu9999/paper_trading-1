@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any, Dict, Union
 
 from bson import ObjectId, Decimal128
@@ -34,7 +35,7 @@ class PyDecimal(Decimal128):
         field_schema.update(type='number', format='json-number')
 
     @classmethod
-    def validate(cls, v: Union[float, int]) -> Any:
+    def validate(cls, v: Union[float, int, Decimal]) -> Any:
         """转化float为Decimal128.
 
         先将python的二进制浮点数用str方法显式的转化为10进制浮点数，再把10进制浮点数字符串转化为Decimal128.

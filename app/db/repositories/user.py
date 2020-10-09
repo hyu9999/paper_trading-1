@@ -1,11 +1,12 @@
-from typing import List
+from typing import List, Union
+
+from bson import Decimal128
 
 from app import settings
 from app.db.repositories.base import BaseRepository
-
 from app.exceptions.db import EntityDoesNotExist
+from app.models.types import PyObjectId
 from app.models.domain.users import UserInDB
-from app.models.types import PyObjectId, PyDecimal
 from app.models.schemas.users import UserInUpdateCash, UserInUpdate
 
 
@@ -21,7 +22,7 @@ class UserRepository(BaseRepository):
     """
     COLLECTION_NAME = settings.db.collections.user
 
-    async def create_user(self, *, capital: PyDecimal, desc: str = "") -> UserInDB:
+    async def create_user(self, *, capital: Union[Decimal128, float, str, int], desc: str = "") -> UserInDB:
         user = UserInDB(capital=capital, desc=desc, assets=capital, cash=capital)
         user_row = await self.collection.insert_one(user.dict(exclude={"id"}))
         user.id = user_row.inserted_id

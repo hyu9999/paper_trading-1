@@ -33,16 +33,16 @@ class PositionRepository(BaseRepository):
         user: PyObjectId,
         symbol: str,
         exchange: ExchangeEnum,
-        quantity: int,
-        available_quantity: int,
+        volume: int,
+        available_volume: int,
         cost: PyDecimal,
         current_price: PyDecimal,
         profit: PyDecimal,
         first_buy_date: datetime,
         last_sell_date: Optional[datetime]
     ) -> PositionInDB:
-        position = PositionInDB(user=user, symbol=symbol, exchange=exchange, quantity=quantity,
-                                available_quantity=available_quantity, cost=cost, current_price=current_price,
+        position = PositionInDB(user=user, symbol=symbol, exchange=exchange, volume=volume,
+                                available_volume=available_volume, cost=cost, current_price=current_price,
                                 profit=profit, first_buy_date=first_buy_date)
         position_row = await self.collection.insert_one(position.dict(exclude={"id"}))
         position.id = position_row.inserted_id
@@ -73,7 +73,7 @@ class PositionRepository(BaseRepository):
     async def process_update_position_available_by_id(self, position: PositionInUpdateAvailable) -> None:
         await self.collection.update_one(
             {"_id": position.id},
-            {"$set": {"available_quantity": position.available_quantity}}
+            {"$set": {"available_volume": position.available_volume}}
         )
 
     async def process_update_position_by_id(self, position: PositionInUpdate) -> None:

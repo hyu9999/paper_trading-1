@@ -13,7 +13,8 @@ pytestmark = pytest.mark.asyncio
 
 async def test_user_success_registration(app: FastAPI, client: AsyncClient) -> None:
     json = {
-        "capital": 1000000.00
+        "capital": 1000000.00,
+        "desc": None
     }
     response = await client.request("POST", app.url_path_for("auth:register"), json=json)
     assert response.status_code == status.HTTP_201_CREATED

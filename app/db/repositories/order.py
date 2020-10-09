@@ -30,7 +30,7 @@ class OrderRepository(BaseRepository):
         user_id: PyObjectId,
         symbol: str,
         exchange: ExchangeEnum,
-        quantity: int,
+        volume: int,
         price: PyDecimal,
         order_type: OrderTypeEnum,
         price_type: PriceTypeEnum,
@@ -39,7 +39,7 @@ class OrderRepository(BaseRepository):
         entrust_id: PyObjectId = None,
         status: OrderStatusEnum = OrderStatusEnum.SUBMITTING
     ) -> OrderInDB:
-        order = OrderInDB(symbol=symbol, user=user_id, exchange=exchange, quantity=quantity, price=price,
+        order = OrderInDB(symbol=symbol, user=user_id, exchange=exchange, volume=volume, price=price,
                           order_type=order_type, price_type=price_type, trade_type=trade_type, amount=amount,
                           entrust_id=entrust_id or PyObjectId(), order_date=datetime.utcnow(), status=status)
         order_row = await self.collection.insert_one(order.dict(exclude={"id"}))
@@ -96,19 +96,6 @@ class OrderRepository(BaseRepository):
             query.update({"order_date": date_query})
         order_rows = self.collection.find(query)
         return [OrderInDB(**order) async for order in order_rows]
-
-    async def update_order(
-        self,
-        *,
-        symbol: str,
-        exchange: ExchangeEnum,
-        quantity: int,
-        price: PyDecimal,
-        order_type: OrderTypeEnum,
-        price_type: PriceTypeEnum,
-        trade_type: TradeTypeEnum,
-    ) -> None:
-        pass
 
     async def process_create_order(self, order: OrderInDB) -> None:
         await self.collection.insert_one(order.dict(exclude={"id"}))
