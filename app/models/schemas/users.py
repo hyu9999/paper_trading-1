@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 
@@ -8,8 +8,8 @@ from app.models.types import PyDecimal, PyObjectId
 
 
 class UserInCreate(RWSchema):
-    capital: float = Field(..., description="初始资金")
-    desc: str = Field("", description="账户描述")
+    capital: PyDecimal = Field(..., description="初始资金")
+    desc: Optional[str] = Field(description="账户描述")
 
 
 class UserInLogin(RWSchema):

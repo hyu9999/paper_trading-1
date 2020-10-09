@@ -194,11 +194,16 @@ class UserEngine(BaseEngine):
         profit = (order.trade_price.to_decimal() - position.current_price.to_decimal()
                   ) * Decimal(position.quantity) + position.profit.to_decimal() - fee - tax
         available_quantity = position.available_quantity - order.traded_quantity
+        # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
+        old_spent = Decimal(position.quantity) * position.cost.to_decimal()
+        new_spent = Decimal(order.traded_quantity) * order.trade_price.to_decimal() * \
+            (Decimal(1) - user.commission.to_decimal() - user.tax.to_decimal())
+        cost = (old_spent - new_spent) / quantity if quantity else 0
         position_in_update = PositionInUpdate(
             id=position.id,
             quantity=quantity,
             current_price=current_price,
-            cost=position.cost,
+            cost=PyDecimal(cost),
             available_quantity=available_quantity,
             profit=PyDecimal(profit)
         )

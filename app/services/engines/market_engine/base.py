@@ -53,8 +53,15 @@ class BaseMarket(BaseEngine):
         await self.write_log(f"收到新订单: [{order.entrust_id}].")
         await self._entrust_orders.put(order)
 
+    @staticmethod
+    def is_trading_time() -> bool:
+        pass
+
     async def matchmaking(self) -> None:
         while not self._should_exit.is_set():
+            if not self.is_trading_time():
+                await self.shutdown()
+
             order = await self._entrust_orders.get()
             if order == EXIT_ENGINE_EVENT:
                 continue

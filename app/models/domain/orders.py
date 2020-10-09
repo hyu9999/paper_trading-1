@@ -1,7 +1,6 @@
 from datetime import timedelta, datetime
 
 from pydantic import Field
-from bson import Decimal128
 
 from app.models.base import DBModelMixin
 from app.models.domain.stocks import Stock
@@ -24,7 +23,7 @@ class OrderInDB(DBModelMixin, Order):
     user: PyObjectId = Field(..., description="账户")
     status: OrderStatusEnum = Field(OrderStatusEnum.SUBMITTING, description="订单状态")
     traded_quantity: int = Field(0, description="已成交数量")
-    trade_price: PyDecimal = Field(Decimal128("0"), description="交易价格")
+    trade_price: PyDecimal = Field("0", description="交易价格")
     order_date: datetime = Field(..., description="订单日期")
     order_time: timedelta = Field(None, description="订单时长")
-    amount: PyDecimal = Field(Decimal128("0"), description="交易额")
+    amount: PyDecimal = Field("0", description="交易额")

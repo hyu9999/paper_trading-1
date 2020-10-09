@@ -1,6 +1,6 @@
 [default]
 project_name = "Paper Trading"
-description = "专注于证券市场模拟交易后台服务，交易市场可扩展。"
+description = "基于Python的证券市场模拟交易后台服务器."
 version = "2.0.1"
 api_prefix = "/api"
 base_url = "@format http://{env[DYNACONF_PT_HOST]}:{env[DYNACONF_PT_PORT]}/"
