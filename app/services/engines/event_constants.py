@@ -16,3 +16,5 @@ POSITION_CLEAR_EVENT = "position_clear_event"  # 清仓
 
 USER_ASSETS_RECORD_CREATE_EVENT = "user_assets_record_create_event"  # 创建用户资产记录
 USER_ASSETS_RECORD_UPDATE_EVENT = "user_assets_record_update_event"  # 更新用户资产记录
+
+MARKET_CLOSE_EVENT = "market_close_event"  # 股市收盘事件

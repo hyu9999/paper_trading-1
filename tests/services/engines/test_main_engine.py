@@ -25,10 +25,10 @@ async def order_submitting_status(test_user_scope_func: UserInDB, db: AsyncIOMot
 
 
 @pytest.fixture
-async def order_waiting_status(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
+async def order_not_done_status(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
     json = {
         **order_in_create_json,
-        **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "status": "等待处理中"}
+        **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "status": "未成交"}
     }
     return await OrderRepository(db).create_order(**json)
 
@@ -72,13 +72,13 @@ async def order_reject_status(test_user_scope_func: UserInDB, db: AsyncIOMotorDa
 @pytest.fixture
 async def order_list(
     order_submitting_status: OrderInDB,
-    order_waiting_status: OrderInDB,
+    order_not_done_status: OrderInDB,
     order_part_finished_status: OrderInDB,
     order_all_finished_status: OrderInDB,
     order_cancel_status: OrderInDB,
     order_reject_status: OrderInDB,
 ) -> set:
-    return {order_submitting_status.id, order_waiting_status.id, order_part_finished_status.id,
+    return {order_submitting_status.id, order_not_done_status.id, order_part_finished_status.id,
             order_all_finished_status.id, order_cancel_status.id, order_reject_status.id}
 
 entrust_orders = set()

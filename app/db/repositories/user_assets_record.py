@@ -2,6 +2,7 @@ from datetime import datetime
 
 from app import settings
 from app.db.repositories.base import BaseRepository
+from app.models.base import get_utc_now
 from app.models.domain.user_assets_records import UserAssetsRecordInDB
 from app.models.schemas.user_assets_records import UserAssetsRecordInCreate, UserAssetsRecordInUpdate
 
@@ -15,9 +16,10 @@ class UserAssetsRecordRepository(BaseRepository):
 
     async def get_user_assets_record_today(self):
         record_row = await self.collection.find_one(
-            {"datetime": datetime.combine(datetime.utcnow(), datetime.min.time())}
+            {"datetime": datetime.combine(get_utc_now(), datetime.min.time())}
         )
-        return UserAssetsRecordInDB(**record_row)
+        if record_row:
+            return UserAssetsRecordInDB(**record_row)
 
     async def process_create_user_assets_record(self, record: UserAssetsRecordInCreate):
         record_in_db = UserAssetsRecordInDB(

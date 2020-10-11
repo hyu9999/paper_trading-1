@@ -41,7 +41,7 @@ class TradeTypeEnum(str, Enum):
 class OrderStatusEnum(str, Enum):
     """订单状态."""
     SUBMITTING = "提交中"
-    WAITING = "等待处理中"
+    NOT_DONE = "未成交"
     PART_FINISHED = "部分成交"
     ALL_FINISHED = "全部成交"
     CANCELED = "已取消"

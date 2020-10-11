@@ -1,13 +1,11 @@
-from typing import List, Union
-
-from bson import Decimal128
+from typing import List
 
 from app import settings
 from app.db.repositories.base import BaseRepository
 from app.exceptions.db import EntityDoesNotExist
 from app.models.types import PyObjectId
 from app.models.domain.users import UserInDB
-from app.models.schemas.users import UserInUpdateCash, UserInUpdate
+from app.models.schemas.users import UserInUpdateCash, UserInUpdate, UserInCreate
 
 
 class UserRepository(BaseRepository):
@@ -22,8 +20,8 @@ class UserRepository(BaseRepository):
     """
     COLLECTION_NAME = settings.db.collections.user
 
-    async def create_user(self, *, capital: Union[Decimal128, float, str, int], desc: str = "") -> UserInDB:
-        user = UserInDB(capital=capital, desc=desc, assets=capital, cash=capital)
+    async def create_user(self, user_in_create: UserInCreate) -> UserInDB:
+        user = UserInDB(**user_in_create.dict())
         user_row = await self.collection.insert_one(user.dict(exclude={"id"}))
         user.id = user_row.inserted_id
         return user
@@ -35,7 +33,7 @@ class UserRepository(BaseRepository):
         raise EntityDoesNotExist(f"用户`{str(user_id)}`不存在.")
 
     async def get_users_list(self) -> List[UserInDB]:
-        users_row = self.collection.find({})
+        users_row = self.collection.find()
         return [UserInDB(**user) async for user in users_row]
 
     async def update_user_by_id(

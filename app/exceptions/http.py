@@ -35,7 +35,7 @@ class AuthHeaderNotFound(_HTTPException):
 
 class InvalidAuthToken(_HTTPException):
     code = 10004
-    detail = "该Token无效"
+    detail = "无效的Token"
 
 
 class WrongTokenFormat(_HTTPException):
@@ -43,16 +43,21 @@ class WrongTokenFormat(_HTTPException):
     detail = "错误的Token格式"
 
 
-class InsufficientAccountFunds(_HTTPException):
+class InvalidAuthMode(_HTTPException):
     code = 10006
+    detail = "无效的认证模式"
+
+
+class InsufficientAccountFunds(_HTTPException):
+    code = 10021
     detail = "账户资金不足"
 
 
 class InvalidOrderExchange(_HTTPException):
-    code = 10007
+    code = 10022
     detail = "订单指定的交易所无效"
 
 
 class OrderNotFound(_HTTPException):
-    code = 10008
+    code = 10023
     detail = "未找到该订单"

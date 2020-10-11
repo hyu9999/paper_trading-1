@@ -1,5 +1,4 @@
-from datetime import datetime
-
+from app.models.base import get_utc_now
 
 quotes_json = {
     "symbol": "601816",
@@ -8,7 +7,7 @@ quotes_json = {
     "open": 5,
     "high": 5,
     "low": 5,
-    "time": datetime.utcnow(),
+    "time": get_utc_now(),
     "bid1_p": 5,
     "bid2_p": 4,
     "bid3_p": 3,

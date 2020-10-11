@@ -9,9 +9,10 @@ from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 
 from app import settings as base_settings
 from app.core import jwt
-from app.db.repositories.order import OrderRepository
 from app.db.repositories.user import UserRepository
+from app.db.repositories.order import OrderRepository
 from app.models.domain.users import UserInDB
+from app.models.schemas.users import UserInCreate
 from app.services.engines.main_engine import MainEngine
 from app.services.engines.market_engine.base import BaseMarket
 from app.services.quotes.base import BaseQuotes
@@ -77,12 +78,18 @@ async def db(settings: Dynaconf) -> AsyncIOMotorDatabase:
 
 @pytest.fixture(scope="session")
 async def test_user(db: AsyncIOMotorDatabase) -> UserInDB:
-    return await UserRepository(db).create_user(capital=10000000)
+    user_in_create = UserInCreate(capital=10000000)
+    return await UserRepository(db).create_user(user_in_create)
 
 
 @pytest.fixture(scope="session")
 def token(test_user: UserInDB, settings: Dynaconf) -> str:
-    return jwt.create_access_token_for_user(test_user.id)
+    if settings.auth_mode == "JWT":
+        return jwt.create_access_token_for_user(test_user.id)
+    elif settings.auth_mode == "UID":
+        return str(test_user.id)
+    else:
+        raise ValueError("请设置可用的认证模式.")
 
 
 @pytest.fixture(scope="session")
@@ -99,7 +106,8 @@ def authorized_client(
 @pytest.fixture
 async def test_user_scope_func(db: AsyncIOMotorDatabase) -> UserInDB:
     """测试用户, 作用域为func"""
-    return await UserRepository(db).create_user(capital=10000000)
+    user_in_create = UserInCreate(capital=10000000)
+    return await UserRepository(db).create_user(user_in_create)
 
 
 @pytest.fixture

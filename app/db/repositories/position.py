@@ -3,7 +3,6 @@ from datetime import datetime
 
 from app import settings
 from app.db.repositories.base import BaseRepository
-from app.exceptions.db import EntityDoesNotExist
 from app.models.types import PyObjectId, PyDecimal
 from app.models.enums import ExchangeEnum
 from app.models.domain.position import PositionInDB
@@ -51,12 +50,6 @@ class PositionRepository(BaseRepository):
     async def get_position_by_id(self, position_id: PyObjectId) -> PositionInDB:
         position_row = await self.collection.find_one({"_id": position_id})
         return PositionInDB(**position_row)
-
-    async def get_position_by_user_id(self, user_id: PyObjectId) -> PositionInDB:
-        position_row = await self.collection.find_one({"user": user_id})
-        if position_row:
-            return PositionInDB(**position_row)
-        raise EntityDoesNotExist(f"用户`{user_id}`无持仓记录.")
 
     async def get_position(self, user_id: PyObjectId, symbol: str, exchange: ExchangeEnum) -> PositionInDB:
         position_row = await self.collection.find_one({"user": user_id, "symbol": symbol, "exchange": exchange.value})

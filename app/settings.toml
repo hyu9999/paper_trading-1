@@ -4,6 +4,7 @@ description = "基于Python的证券市场模拟交易后台服务器."
 version = "2.0.1"
 api_prefix = "/api"
 base_url = "@format http://{env[DYNACONF_PT_HOST]}:{env[DYNACONF_PT_PORT]}/"
+allowed_origins = ["*"]
 
     # 数据库相关配置
     [default.db]

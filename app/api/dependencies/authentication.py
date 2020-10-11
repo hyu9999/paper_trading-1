@@ -1,5 +1,6 @@
 from typing import Callable, Optional
 
+from bson.errors import InvalidId
 from fastapi import Depends, Security
 from fastapi.security import APIKeyHeader
 from starlette import requests
@@ -8,10 +9,12 @@ from starlette.exceptions import HTTPException
 from app import settings
 from app.api.dependencies.database import get_repository
 from app.core import jwt
+from app.exceptions.db import EntityDoesNotExist
 from app.models.types import PyObjectId
 from app.models.domain.users import UserInDB
 from app.db.repositories.user import UserRepository
-from app.exceptions.http import InvalidAuthTokenPrefix, AuthHeaderNotFound, InvalidAuthToken, WrongTokenFormat
+from app.exceptions.http import InvalidAuthTokenPrefix, AuthHeaderNotFound, InvalidAuthToken, WrongTokenFormat, \
+    InvalidAuthMode, InvalidUserID
 
 HEADER_KEY = "Authorization"
 
@@ -48,11 +51,23 @@ async def _get_current_user(
     user_repo: UserRepository = Depends(get_repository(UserRepository)),
     token: str = Depends(_get_authorization_token),
 ) -> UserInDB:
+    if settings.auth_mode == "JWT":
+        try:
+            user_id = jwt.get_user_id_from_token(token)
+        except ValueError:
+            raise InvalidAuthToken
+    elif settings.auth_mode == "UID":
+        user_id = token
+    else:
+        raise InvalidAuthMode
     try:
-        user_id = jwt.get_user_id_from_token(token)
-    except ValueError:
+        user_object_id = PyObjectId(user_id)
+    except InvalidId:
         raise InvalidAuthToken
-    return await user_repo.get_user_by_id(user_id=PyObjectId(user_id))
+    try:
+        return await user_repo.get_user_by_id(user_id=user_object_id)
+    except EntityDoesNotExist:
+        raise InvalidUserID
 
 
 async def _get_current_user_optional(

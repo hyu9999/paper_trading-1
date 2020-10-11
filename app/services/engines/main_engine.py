@@ -1,11 +1,10 @@
 from typing import Type
-from datetime import datetime
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app import settings
 from app.db.repositories.order import OrderRepository
-from app.models.base import PyObjectId
+from app.models.base import PyObjectId, get_utc_now
 from app.models.enums import PriceTypeEnum, OrderStatusEnum
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
@@ -72,7 +71,7 @@ class MainEngine(BaseEngine):
         amount = await self.user_engine.pre_trade_validation(order, user)
         # 根据订单的股票价格确定价格类型
         order.price_type = PriceTypeEnum.MARKET if str(order.price) == "0" else PriceTypeEnum.LIMIT
-        order_in_db = OrderInDB(**dict(order), user=user.id, order_date=datetime.utcnow(),
+        order_in_db = OrderInDB(**dict(order), user=user.id, order_date=get_utc_now(),
                                 entrust_id=PyObjectId(), amount=amount)
         order_create_event = Event(ORDER_CREATE_EVENT, order_in_db)
         await self.event_engine.put(order_create_event)
@@ -83,9 +82,9 @@ class MainEngine(BaseEngine):
     async def load_entrust_orders(self):
         """加载当日未完成的委托订单."""
         entrust_orders = await self.order_repo.get_orders(
-            status=[OrderStatusEnum.WAITING, OrderStatusEnum.PART_FINISHED],
-            start_date=datetime.utcnow().date(),
-            end_date=datetime.utcnow().date(),
+            status=[OrderStatusEnum.NOT_DONE, OrderStatusEnum.PART_FINISHED],
+            start_date=get_utc_now().date(),
+            end_date=get_utc_now().date(),
         )
         for entrust_order in entrust_orders:
             await self.market_engine.put(entrust_order)

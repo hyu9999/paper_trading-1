@@ -10,7 +10,7 @@ class BaseEngine(ABC):
         self.event_engine = None
 
     @abstractmethod
-    async def startup(self, *args, **kwargs) -> None:
+    def startup(self, *args, **kwargs) -> None:
         pass
 
     @abstractmethod

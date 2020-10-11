@@ -1,10 +1,11 @@
 from typing import Dict
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import jwt
 from jwt.exceptions import DecodeError, ExpiredSignatureError
 
 from app import settings
+from app.models.base import get_utc_now
 from app.models.types import PyObjectId
 from app.models.schemas.jwt import JWTMeta
 from app.models.enums import JWTSubjectEnum
@@ -16,7 +17,7 @@ def create_jwt_token(
     expires_delta: timedelta,
 ) -> str:
     to_encode = jwt_content.copy()
-    expire = datetime.utcnow() + expires_delta
+    expire = get_utc_now() + expires_delta
     to_encode.update(JWTMeta(exp=expire, subject=JWTSubjectEnum.ACCESS.value).dict())
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm).decode()
 

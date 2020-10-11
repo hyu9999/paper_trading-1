@@ -95,4 +95,4 @@ async def delete_entrust_order(
         order_cancel.order_type = OrderTypeEnum.CANCEL
         await order_repo.create_order(**order_cancel.dict(), **{"user_id": user.id})
         await engine.market_engine.put(order)
-        return HttpMessage(text="取消委托发送成功.")
+        return HttpMessage(text="成功提交取消委托订单请求.")

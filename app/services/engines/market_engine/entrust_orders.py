@@ -25,6 +25,9 @@ class EntrustOrders(OrderedDict):
                 waiter.set_result(None)
                 break
 
+    def get_all(self):
+        return self.values()
+
     async def get(self, *args, **kwargs) -> Union[OrderInDB, Event]:
         while self.empty():
             waiter = self.loop.create_future()
@@ -34,7 +37,7 @@ class EntrustOrders(OrderedDict):
 
     async def put(self, item: Union[OrderInDB, Event]) -> None:
         if isinstance(item, OrderInDB):
-            self[item.entrust_id] = item
+            self[str(item.entrust_id)] = item
         else:
             self["event"] = item
         self._wakeup_next()

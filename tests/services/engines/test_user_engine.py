@@ -1,7 +1,6 @@
 import asyncio
 from typing import Optional
 from decimal import Decimal
-from datetime import datetime
 
 import pytest
 from pytest_mock import MockerFixture
@@ -10,6 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.repositories.order import OrderRepository
 from app.db.repositories.position import PositionRepository
 from app.exceptions.service import InsufficientFunds, NoPositionsAvailable, NotEnoughAvailablePositions
+from app.models.base import get_utc_now
 from app.models.types import PyDecimal
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
@@ -92,7 +92,7 @@ position_in_create_json = {
     "cost": "10",
     "current_price": "10",
     "profit": "0",
-    "first_buy_date": datetime.utcnow()
+    "first_buy_date": get_utc_now()
 }
 
 

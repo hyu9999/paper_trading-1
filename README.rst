@@ -36,7 +36,6 @@ Paper Trading
     │   └── enums.py        - 枚举模型
     ├── services            - 服务
     │   ├── engines         - 引擎服务
-    │   ├── markets         - 交易市场服务
     │   └── quotes          - 行情服务
     └── settings.toml       - 应用全局配置
 

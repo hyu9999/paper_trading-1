@@ -12,7 +12,8 @@ from app.services.engines.market_engine.entrust_orders import EntrustOrders
 from app.services.engines.event_constants import (
     ORDER_UPDATE_EVENT,
     EXIT_ENGINE_EVENT,
-    ORDER_UPDATE_STATUS_EVENT
+    ORDER_UPDATE_STATUS_EVENT,
+    MARKET_CLOSE_EVENT
 )
 
 
@@ -35,6 +36,7 @@ class BaseMarket(BaseEngine):
         self._should_exit = asyncio.Event()
 
     async def startup(self) -> None:
+        await self.register_event()
         asyncio.create_task(self.matchmaking())
         await self.write_log(f"[{self.market_name}]交易市场已开启.")
 
@@ -42,12 +44,18 @@ class BaseMarket(BaseEngine):
         self._should_exit.set()
         await self._entrust_orders.put(EXIT_ENGINE_EVENT)
 
+    async def refuse_entrust_orders(self, *args) -> None:
+        """将待处理订单列表中的订单状态设置为拒单."""
+        orders = self._entrust_orders.get_all()
+        for order in orders:
+            await self.refuse_order(order)
+
     async def register_event(self) -> None:
-        pass
+        await self.event_engine.register(MARKET_CLOSE_EVENT, self.refuse_entrust_orders)
 
     async def put(self, order: OrderInDB) -> None:
-        await self.exchange_validation(order)
-        payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.WAITING)
+        self.exchange_validation(order)
+        payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.NOT_DONE)
         event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
         await self.event_engine.put(event)
         await self.write_log(f"收到新订单: [{order.entrust_id}].")
@@ -61,7 +69,9 @@ class BaseMarket(BaseEngine):
         while not self._should_exit.is_set():
             if not self.is_trading_time():
                 await self.shutdown()
-
+                market_close_event = Event(MARKET_CLOSE_EVENT)
+                await self.event_engine.put(market_close_event)
+                await self.write_log(f"[{self.market_name}]交易市场已收盘.")
             order = await self._entrust_orders.get()
             if order == EXIT_ENGINE_EVENT:
                 continue
@@ -70,9 +80,6 @@ class BaseMarket(BaseEngine):
                 payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.CANCELED)
                 event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
                 await self.event_engine.put(event)
-            # 清算委托订单
-            elif order.order_type == OrderTypeEnum.LIQUIDATION:
-                await self.user_engine.on_liquidation(order)
             else:
                 quotes = await self.quotes_api.get_ticks(order.stock_code)
                 if order.order_type == OrderTypeEnum.BUY:
@@ -130,7 +137,13 @@ class BaseMarket(BaseEngine):
         order_in_update_payload = OrderInUpdate(**dict(order))
         await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
 
-    async def exchange_validation(self, order: OrderInDB) -> None:
+    async def refuse_order(self, order: OrderInDB) -> None:
+        """设置订单状态为拒单."""
+        order.status = OrderStatusEnum.REJECTED
+        order_in_update_payload = OrderInUpdate(**dict(order))
+        await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
+
+    def exchange_validation(self, order: OrderInDB) -> None:
         """交易市场类别检查."""
         if order.exchange not in self.exchange_symbols:
             raise InvalidExchange

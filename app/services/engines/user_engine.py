@@ -1,5 +1,4 @@
 from decimal import Decimal
-from datetime import datetime
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -7,6 +6,7 @@ from app.db.repositories.user import UserRepository
 from app.db.repositories.position import PositionRepository
 from app.db.repositories.user_assets_record import UserAssetsRecordRepository
 from app.exceptions.service import InsufficientFunds, NoPositionsAvailable, NotEnoughAvailablePositions
+from app.models.base import get_utc_now
 from app.models.types import PyDecimal
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
@@ -25,7 +25,8 @@ from app.services.engines.event_constants import (
     POSITION_UPDATE_EVENT,
     POSITION_UPDATE_AVAILABLE_EVENT,
     USER_ASSETS_RECORD_CREATE_EVENT,
-    USER_ASSETS_RECORD_UPDATE_EVENT
+    USER_ASSETS_RECORD_UPDATE_EVENT,
+    MARKET_CLOSE_EVENT,
 )
 
 
@@ -63,6 +64,7 @@ class UserEngine(BaseEngine):
         await self.event_engine.register(POSITION_UPDATE_EVENT, self.process_position_update)
         await self.event_engine.register(USER_ASSETS_RECORD_CREATE_EVENT, self.process_user_assets_record_create)
         await self.event_engine.register(USER_ASSETS_RECORD_UPDATE_EVENT, self.process_user_assets_record_update)
+        await self.event_engine.register(MARKET_CLOSE_EVENT, self.process_market_close)
 
     async def process_user_update_cash_event(self, payload: UserInUpdateCash) -> None:
         await self.user_repo.process_update_user_cash(payload)
@@ -70,20 +72,27 @@ class UserEngine(BaseEngine):
     async def process_position_create_event(self, payload: PositionInCreate) -> None:
         await self.position_repo.process_create_position(payload)
 
-    async def process_user_update_event(self, payload: UserInUpdate):
+    async def process_user_update_event(self, payload: UserInUpdate) -> None:
         await self.user_repo.process_update_user(payload)
 
-    async def process_position_update_available(self, payload: PositionInUpdateAvailable):
+    async def process_position_update_available(self, payload: PositionInUpdateAvailable) -> None:
         await self.position_repo.process_update_position_available_by_id(payload)
 
-    async def process_position_update(self, payload: PositionInUpdate):
+    async def process_position_update(self, payload: PositionInUpdate) -> None:
         await self.position_repo.process_update_position_by_id(payload)
 
-    async def process_user_assets_record_create(self, payload: UserAssetsRecordInCreate):
+    async def process_user_assets_record_create(self, payload: UserAssetsRecordInCreate) -> None:
         await self.user_assets_record_repo.process_create_user_assets_record(payload)
 
-    async def process_user_assets_record_update(self, payload: UserAssetsRecordInUpdate):
+    async def process_user_assets_record_update(self, payload: UserAssetsRecordInUpdate) -> None:
         await self.user_assets_record_repo.process_update_user_assets_record(payload)
+
+    async def process_market_close(self, *args) -> None:
+        users = await self.user_repo.get_users_list()
+        for user in users:
+            await self.liquidate_user_position(user)
+            await self.liquidate_user_profit(user)
+            await self.update_user_assets_record(user)
 
     async def pre_trade_validation(
         self,
@@ -177,7 +186,7 @@ class UserEngine(BaseEngine):
                 cost=order.sold_price,
                 current_price=order.sold_price,
                 profit=-fee,
-                first_buy_date=datetime.utcnow()
+                first_buy_date=get_utc_now()
             )
             await self.event_engine.put(Event(POSITION_CREATE_EVENT, position_in_create))
             await self.update_user(order, position_in_create.volume * position_in_create.current_price.to_decimal())
@@ -189,10 +198,10 @@ class UserEngine(BaseEngine):
         fee = Decimal(order.volume) * order.price.to_decimal() * user.commission.to_decimal()
         volume = position.volume - order.traded_volume
         current_price = order.sold_price
-        tax_rate = Decimal(order.volume) * order.sold_price.to_decimal() * user.tax_rate.to_decimal()
+        tax = Decimal(order.volume) * order.sold_price.to_decimal() * user.tax_rate.to_decimal()
         # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持仓数量 + 原持仓利润 - 交易费用 - 印花税
         profit = (order.sold_price.to_decimal() - position.current_price.to_decimal()
-                  ) * Decimal(position.volume) + position.profit.to_decimal() - fee - tax_rate
+                  ) * Decimal(position.volume) + position.profit.to_decimal() - fee - tax
         available_volume = position.available_volume - order.traded_volume
         # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
         old_spent = Decimal(position.volume) * position.cost.to_decimal()
@@ -209,7 +218,7 @@ class UserEngine(BaseEngine):
         )
         # 清仓
         if volume == 0:
-            position_in_update.last_sell_date = datetime.utcnow()
+            position_in_update.last_sell_date = get_utc_now()
         event = Event(POSITION_UPDATE_EVENT, position_in_update)
         await self.event_engine.put(event)
 
@@ -227,10 +236,9 @@ class UserEngine(BaseEngine):
                                       assets=PyDecimal(assets))
         await self.event_engine.put(Event(USER_UPDATE_EVENT, user_in_update))
 
-    async def on_liquidation(self, order: OrderInDB) -> None:
-        """清算用户数据."""
+    async def update_user_assets_record(self, user: UserInDB) -> None:
+        """更新用户资产时点数据."""
         record = await self.user_assets_record_repo.get_user_assets_record_today()
-        user = await self.user_repo.get_user_by_id(order.user)
         if record:
             record_in_update = UserAssetsRecordInUpdate(
                 id=record.id, assets=user.assets, cash=user.cash, securities=user.securities
@@ -239,10 +247,33 @@ class UserEngine(BaseEngine):
             await self.event_engine.put(event)
         else:
             record_in_create = UserAssetsRecordInCreate(
-                user=user.id, assets=user.assets, cash=user.cash, securities=user.securities, date=datetime.utcnow()
+                user=user.id, assets=user.assets, cash=user.cash, securities=user.securities, date=get_utc_now()
             )
             event = Event(USER_ASSETS_RECORD_CREATE_EVENT, record_in_create)
             await self.event_engine.put(event)
 
-    async def on_position_liquidation(self) -> None:
-        pass
+    async def liquidate_user_position(self, user: UserInDB) -> None:
+        """清算用户持仓数据."""
+        user_position = await self.position_repo.get_positions_by_user_id(user_id=user.id)
+        for position in user_position:
+            quotes = await self.quotes_api.get_ticks(position.stock_code)
+            current_price = quotes.ask1_p
+            position_in_update = PositionInUpdate(**position.dict())
+            position_in_update.current_price = current_price
+            profit = (current_price.to_decimal() - position.cost.to_decimal()) * Decimal(position.volume) \
+                + position.profit.to_decimal()
+            position_in_update.profit = PyDecimal(profit)
+            await self.position_repo.process_update_position_by_id(position_in_update)
+
+    async def liquidate_user_profit(self, user: UserInDB) -> UserInUpdate:
+        """清算用户个人数据."""
+        user_position = await self.position_repo.get_positions_by_user_id(user_id=user.id)
+        securities = sum([position.current_price.to_decimal() * Decimal(position.volume)
+                          for position in user_position])
+        assets = user.cash.to_decimal() + securities
+        user_in_update = UserInUpdate(**user.dict())
+        if securities != Decimal(0):
+            user_in_update.securities = PyDecimal(securities)
+        user_in_update.assets = PyDecimal(assets)
+        await self.user_repo.process_update_user(user_in_update)
+        return user_in_update

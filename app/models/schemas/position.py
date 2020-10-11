@@ -4,14 +4,14 @@ from pydantic import Field
 
 from app.models.types import PyObjectId, PyDecimal
 from app.models.schemas.rwschema import RWSchema
-from app.models.domain.position import Position
+from app.models.domain.position import Position, PositionInDB
 
 
 class PositionInCreate(RWSchema, Position):
     user: PyObjectId = Field(..., description="用户ID")
 
 
-class PositionInResponse(RWSchema, Position):
+class PositionInResponse(RWSchema, PositionInDB):
     pass
 
 

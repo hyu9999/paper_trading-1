@@ -11,6 +11,7 @@ async def register_exceptions(app: FastAPI):
     app.add_exception_handler(http.AuthHeaderNotFound, http.AuthHeaderNotFound.handler)
     app.add_exception_handler(http.InvalidAuthToken, http.InvalidAuthToken.handler)
     app.add_exception_handler(http.WrongTokenFormat, http.WrongTokenFormat.handler)
+    app.add_exception_handler(http.InvalidAuthMode, http.InvalidAuthMode.handler)
     app.add_exception_handler(http.InsufficientAccountFunds, http.InsufficientAccountFunds.handler)
     app.add_exception_handler(http.InvalidOrderExchange, http.InvalidOrderExchange.handler)
     app.add_exception_handler(http.OrderNotFound, http.OrderNotFound.handler)

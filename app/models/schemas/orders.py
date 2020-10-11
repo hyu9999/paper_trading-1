@@ -1,8 +1,10 @@
+from typing import Optional
+
 from pydantic import Field
 
 from app.models.base import PyObjectId
 from app.models.types import PyDecimal
-from app.models.domain.orders import Order
+from app.models.domain.orders import Order, OrderInDB
 from app.models.schemas.rwschema import RWSchema
 from app.models.enums import PriceTypeEnum, OrderStatusEnum
 
@@ -15,9 +17,8 @@ class OrderInCreateViewResponse(RWSchema, Order):
     entrust_id: PyObjectId = Field(..., description="委托订单ID")
 
 
-class OrderInResponse(RWSchema, Order):
-    entrust_id: PyObjectId = Field(..., description="委托订单ID")
-    status: OrderStatusEnum = Field(OrderStatusEnum.SUBMITTING, description="订单状态")
+class OrderInResponse(RWSchema, OrderInDB):
+    pass
 
 
 class OrderInUpdate(RWSchema):
@@ -25,7 +26,7 @@ class OrderInUpdate(RWSchema):
     price: PyDecimal = Field(..., description="价格")
     status: OrderStatusEnum = Field(..., description="订单状态")
     traded_volume: int = Field(..., description="已成交数量")
-    sold_price: PyDecimal = Field(..., description="交易价格")
+    sold_price: Optional[PyDecimal] = Field(..., description="交易价格")
 
 
 class OrderInUpdateStatus(RWSchema):

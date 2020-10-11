@@ -6,6 +6,7 @@ from bson import Decimal128
 from app import settings
 from app.db.repositories.base import BaseRepository
 from app.exceptions.db import EntityDoesNotExist
+from app.models.base import get_utc_now
 from app.models.domain.orders import OrderInDB
 from app.models.types import PyDecimal, PyObjectId
 from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus
@@ -42,7 +43,7 @@ class OrderRepository(BaseRepository):
     ) -> OrderInDB:
         order = OrderInDB(symbol=symbol, user=user_id, exchange=exchange, volume=volume, price=price,
                           order_type=order_type, price_type=price_type, trade_type=trade_type, amount=amount,
-                          entrust_id=entrust_id or PyObjectId(), order_date=datetime.utcnow(), status=status,
+                          entrust_id=entrust_id or PyObjectId(), order_date=get_utc_now(), status=status,
                           sold_price=sold_price)
         order_row = await self.collection.insert_one(order.dict(exclude={"id"}))
         order.id = order_row.inserted_id
@@ -70,9 +71,9 @@ class OrderRepository(BaseRepository):
         start_date: date = None,
         end_date: date = None,
     ) -> List[OrderInDB]:
-        query = {
-            "user_id": user_id,
-        }
+        query = {}
+        if user_id:
+            query["user"] = user_id
         if status:
             query["status"] = {"$in": [s.value for s in status if s]}
         if start_date:
