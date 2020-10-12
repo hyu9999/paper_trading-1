@@ -42,7 +42,7 @@ class PositionRepository(BaseRepository):
     ) -> PositionInDB:
         position = PositionInDB(user=user, symbol=symbol, exchange=exchange, volume=volume,
                                 available_volume=available_volume, cost=cost, current_price=current_price,
-                                profit=profit, first_buy_date=first_buy_date)
+                                profit=profit, first_buy_date=first_buy_date, last_sell_date=last_sell_date)
         position_row = await self.collection.insert_one(position.dict(exclude={"id"}))
         position.id = position_row.inserted_id
         return position
@@ -69,5 +69,5 @@ class PositionRepository(BaseRepository):
             {"$set": {"available_volume": position.available_volume}}
         )
 
-    async def process_update_position_by_id(self, position: PositionInUpdate) -> None:
+    async def process_update_position(self, position: PositionInUpdate) -> None:
         await self.collection.update_one({"_id": position.id}, {"$set": position.dict(exclude={"id"})})

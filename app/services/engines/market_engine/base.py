@@ -13,7 +13,8 @@ from app.services.engines.event_constants import (
     ORDER_UPDATE_EVENT,
     EXIT_ENGINE_EVENT,
     ORDER_UPDATE_STATUS_EVENT,
-    MARKET_CLOSE_EVENT
+    MARKET_CLOSE_EVENT,
+    UNFREEZE_EVENT,
 )
 
 
@@ -49,6 +50,7 @@ class BaseMarket(BaseEngine):
         orders = self._entrust_orders.get_all()
         for order in orders:
             await self.refuse_order(order)
+            await self.event_engine.put(Event(UNFREEZE_EVENT, order))
 
     async def register_event(self) -> None:
         await self.event_engine.register(MARKET_CLOSE_EVENT, self.refuse_entrust_orders)
@@ -78,8 +80,10 @@ class BaseMarket(BaseEngine):
             # 取消委托订单
             if order.order_type == OrderTypeEnum.CANCEL:
                 payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.CANCELED)
-                event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
-                await self.event_engine.put(event)
+                update_order_status_event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
+                await self.event_engine.put(update_order_status_event)
+                unfreeze_event = Event(UNFREEZE_EVENT, order)
+                await self.event_engine.put(unfreeze_event)
             else:
                 quotes = await self.quotes_api.get_ticks(order.stock_code)
                 if order.order_type == OrderTypeEnum.BUY:
@@ -126,7 +130,6 @@ class BaseMarket(BaseEngine):
 
     async def save_order(self, order: OrderInDB) -> None:
         """撮合完成后保存订单信息."""
-        # 买入处理
         if order.order_type == OrderTypeEnum.BUY.value:
             await self.user_engine.create_position(order)
         elif order.order_type == OrderTypeEnum.SELL.value:

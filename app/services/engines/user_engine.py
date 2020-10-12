@@ -1,3 +1,4 @@
+from typing import Union
 from decimal import Decimal
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -27,6 +28,7 @@ from app.services.engines.event_constants import (
     USER_ASSETS_RECORD_CREATE_EVENT,
     USER_ASSETS_RECORD_UPDATE_EVENT,
     MARKET_CLOSE_EVENT,
+    UNFREEZE_EVENT,
 )
 
 
@@ -65,6 +67,7 @@ class UserEngine(BaseEngine):
         await self.event_engine.register(USER_ASSETS_RECORD_CREATE_EVENT, self.process_user_assets_record_create)
         await self.event_engine.register(USER_ASSETS_RECORD_UPDATE_EVENT, self.process_user_assets_record_update)
         await self.event_engine.register(MARKET_CLOSE_EVENT, self.process_market_close)
+        await self.event_engine.register(UNFREEZE_EVENT, self.process_unfreeze)
 
     async def process_user_update_cash_event(self, payload: UserInUpdateCash) -> None:
         await self.user_repo.process_update_user_cash(payload)
@@ -79,7 +82,7 @@ class UserEngine(BaseEngine):
         await self.position_repo.process_update_position_available_by_id(payload)
 
     async def process_position_update(self, payload: PositionInUpdate) -> None:
-        await self.position_repo.process_update_position_by_id(payload)
+        await self.position_repo.process_update_position(payload)
 
     async def process_user_assets_record_create(self, payload: UserAssetsRecordInCreate) -> None:
         await self.user_assets_record_repo.process_create_user_assets_record(payload)
@@ -94,11 +97,25 @@ class UserEngine(BaseEngine):
             await self.liquidate_user_profit(user)
             await self.update_user_assets_record(user)
 
+    async def process_unfreeze(self, payload: OrderInDB) -> None:
+        """解除预先冻结的资金或持仓股票数量."""
+        if payload.frozen_amount:
+            user = await self.user_repo.get_user_by_id(payload.user)
+            user_in_update = UserInUpdate(**user.dict())
+            user_in_update.cash = PyDecimal(payload.frozen_amount.to_decimal() + user.cash.to_decimal())
+            await self.user_repo.process_update_user(user_in_update)
+        if payload.frozen_stock_volume:
+            position = await self.position_repo.get_position(user_id=payload.user, symbol=payload.symbol,
+                                                             exchange=payload.exchange)
+            position_in_update = PositionInUpdate(**position.dict())
+            position_in_update.available_volume += payload.frozen_stock_volume
+            await self.position_repo.process_update_position(position_in_update)
+
     async def pre_trade_validation(
         self,
         order: OrderInCreate,
         user: UserInDB,
-    ) -> PyDecimal:
+    ) -> Union[PyDecimal, int]:
         """订单创建前用户相关验证."""
         if order.order_type == OrderTypeEnum.BUY:
             return await self.__capital_validation(order, user)
@@ -127,20 +144,21 @@ class UserEngine(BaseEngine):
         self,
         order: OrderInCreate,
         user: UserInDB,
-    ) -> PyDecimal:
+    ) -> int:
         """用户持仓检查."""
         position = await self.position_repo.get_position(user.id, order.symbol, order.exchange)
         if position:
             if position.available_volume >= order.volume:
+                frozen_stock_volume = position.available_volume - order.volume
                 event = Event(
                     POSITION_UPDATE_AVAILABLE_EVENT,
                     PositionInUpdateAvailable(
                         id=position.id,
-                        available_volume=position.available_volume-order.volume
+                        available_volume=frozen_stock_volume
                     )
                 )
                 await self.event_engine.put(event)
-                return Decimal(order.volume) * order.price.to_decimal()
+                return frozen_stock_volume
             raise NotEnoughAvailablePositions
         else:
             raise NoPositionsAvailable
@@ -153,6 +171,8 @@ class UserEngine(BaseEngine):
         order_available_volume = order.traded_volume if order.trade_type == TradeTypeEnum.T0 else 0
         # 交易费用
         fee = Decimal(order.volume) * order.price.to_decimal() * user.commission.to_decimal()
+        # 交易金额
+        securities_diff = Decimal(order.traded_volume) * order.sold_price.to_decimal()
         # 增持股票
         if position:
             volume = position.volume + order.traded_volume
@@ -189,7 +209,7 @@ class UserEngine(BaseEngine):
                 first_buy_date=get_utc_now()
             )
             await self.event_engine.put(Event(POSITION_CREATE_EVENT, position_in_create))
-            await self.update_user(order, position_in_create.volume * position_in_create.current_price.to_decimal())
+            await self.update_user(order, securities_diff)
 
     async def reduce_position(self, order: OrderInDB) -> None:
         """减仓."""
@@ -202,7 +222,8 @@ class UserEngine(BaseEngine):
         # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持仓数量 + 原持仓利润 - 交易费用 - 印花税
         profit = (order.sold_price.to_decimal() - position.current_price.to_decimal()
                   ) * Decimal(position.volume) + position.profit.to_decimal() - fee - tax
-        available_volume = position.available_volume - order.traded_volume
+        # 可用持仓 = 原持仓数 + 冻结的股票数量 - 交易成功的股票数量
+        available_volume = position.available_volume + order.frozen_stock_volume - order.traded_volume
         # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
         old_spent = Decimal(position.volume) * position.cost.to_decimal()
         new_spent = Decimal(order.traded_volume) * order.sold_price.to_decimal() * \
@@ -227,7 +248,7 @@ class UserEngine(BaseEngine):
         user = await self.user_repo.get_user_by_id(order.user)
         cost = Decimal(order.volume) * order.sold_price.to_decimal() * (1 + user.commission.to_decimal())
         # 可用现金 = 原现金 + 预先冻结的现金 + 减实际花费的现金
-        cash = user.cash.to_decimal() + order.amount.to_decimal() - cost
+        cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - cost
         # 证券资产 = 原证券资产 + 证券资产的变化值
         securities = user.securities.to_decimal() + securities_diff
         # 总资产 = 原资产 - 现金花费 + 证券资产变化值
@@ -263,7 +284,7 @@ class UserEngine(BaseEngine):
             profit = (current_price.to_decimal() - position.cost.to_decimal()) * Decimal(position.volume) \
                 + position.profit.to_decimal()
             position_in_update.profit = PyDecimal(profit)
-            await self.position_repo.process_update_position_by_id(position_in_update)
+            await self.position_repo.process_update_position(position_in_update)
 
     async def liquidate_user_profit(self, user: UserInDB) -> UserInUpdate:
         """清算用户个人数据."""

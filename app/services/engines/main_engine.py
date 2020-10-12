@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app import settings
 from app.db.repositories.order import OrderRepository
 from app.models.base import PyObjectId, get_utc_now
-from app.models.enums import PriceTypeEnum, OrderStatusEnum
+from app.models.enums import PriceTypeEnum, OrderStatusEnum, OrderTypeEnum
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
 from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus
@@ -68,11 +68,15 @@ class MainEngine(BaseEngine):
 
     async def on_order_arrived(self, order: OrderInCreate, user: UserInDB) -> OrderInCreateViewResponse:
         """新订单到达."""
-        amount = await self.user_engine.pre_trade_validation(order, user)
+        frozen = await self.user_engine.pre_trade_validation(order, user)
         # 根据订单的股票价格确定价格类型
         order.price_type = PriceTypeEnum.MARKET if str(order.price) == "0" else PriceTypeEnum.LIMIT
         order_in_db = OrderInDB(**dict(order), user=user.id, order_date=get_utc_now(),
-                                entrust_id=PyObjectId(), amount=amount)
+                                entrust_id=PyObjectId())
+        if order.order_type == OrderTypeEnum.BUY:
+            order_in_db.frozen_amount = frozen
+        else:
+            order_in_db.frozen_stock_volume = frozen
         order_create_event = Event(ORDER_CREATE_EVENT, order_in_db)
         await self.event_engine.put(order_create_event)
         order_in_db.id = None

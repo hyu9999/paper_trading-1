@@ -18,3 +18,4 @@ USER_ASSETS_RECORD_CREATE_EVENT = "user_assets_record_create_event"  # 创建用
 USER_ASSETS_RECORD_UPDATE_EVENT = "user_assets_record_update_event"  # 更新用户资产记录
 
 MARKET_CLOSE_EVENT = "market_close_event"  # 股市收盘事件
+UNFREEZE_EVENT = "unfreeze_event"   # 解除预先冻结的现金或可用股票数量事件
