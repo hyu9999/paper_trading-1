@@ -136,7 +136,7 @@ class UserEngine(BaseEngine):
             payload = UserInUpdateCash(id=user.id, cash=frozen_cash)
             event = Event(USER_UPDATE_CASH_EVENT, payload)
             await self.event_engine.put(event)
-            return frozen_cash
+            return cash_needs
         else:
             raise InsufficientFunds
 
@@ -158,7 +158,7 @@ class UserEngine(BaseEngine):
                     )
                 )
                 await self.event_engine.put(event)
-                return frozen_stock_volume
+                return order.volume
             raise NotEnoughAvailablePositions
         else:
             raise NoPositionsAvailable
@@ -247,8 +247,11 @@ class UserEngine(BaseEngine):
         """订单成交后更新用户信息."""
         user = await self.user_repo.get_user_by_id(order.user)
         cost = Decimal(order.volume) * order.sold_price.to_decimal() * (1 + user.commission.to_decimal())
-        # 可用现金 = 原现金 + 预先冻结的现金 + 减实际花费的现金
-        cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - cost
+        if order.order_type == OrderTypeEnum.BUY:
+            # 可用现金 = 原现金 + 预先冻结的现金 + 减实际花费的现金
+            cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - cost
+        else:
+            cash = user.cash.to_decimal()
         # 证券资产 = 原证券资产 + 证券资产的变化值
         securities = user.securities.to_decimal() + securities_diff
         # 总资产 = 原资产 - 现金花费 + 证券资产变化值

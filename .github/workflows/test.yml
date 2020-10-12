@@ -21,6 +21,7 @@ jobs:
       DYNACONF_ENV_FOR_DYNACONF: production
       DYNACONF_DB_USER: mongo
       DYNACONF_DB_PASSWORD: mongo
+      DYNACONF_AUTH_MODE: JWT
     name: Test
     runs-on: ubuntu-latest
     services:

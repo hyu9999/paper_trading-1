@@ -49,7 +49,8 @@ async def order_create_with_sell():
 async def order_t0(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
     json = {
         **order_in_create_json,
-        **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "sold_price": "10"}
+        **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "sold_price": "10",
+           "frozen_amount": PyDecimal("10")}
     }
     return await OrderRepository(db).create_order(**json)
 
@@ -59,7 +60,7 @@ async def order_t1(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
     json = {
         **order_in_create_json,
         **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "trade_type": "T1",
-           "sold_price": "10"}
+           "sold_price": "10", "frozen_amount": PyDecimal("10")}
     }
     return await OrderRepository(db).create_order(**json)
 
@@ -69,7 +70,7 @@ async def order_sell_90(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase
     json = {
         **order_in_create_json,
         **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "volume": "90",
-           "amount": "900", "sold_price": "10"}
+           "amount": "900", "sold_price": "10", "frozen_stock_volume": 90}
     }
     return await OrderRepository(db).create_order(**json)
 
@@ -79,7 +80,7 @@ async def order_sell_100(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabas
     json = {
         **order_in_create_json,
         **{"user_id": test_user_scope_func.id, "price_type": "market", "order_type": "sell", "volume": "100",
-           "amount": "900", "sold_price": "10"}
+           "amount": "900", "sold_price": "10", "frozen_stock_volume": 100}
     }
     return await OrderRepository(db).create_order(**json)
 
@@ -148,9 +149,9 @@ async def test_can_frozen_user_cash(
         amount = Decimal(order_in_create.volume) * \
             order_in_create.price.to_decimal() * (1 + test_user_scope_func.commission.to_decimal())
         # 判断冻结金额是否正确
-        assert frozen_cash == PyDecimal(test_user_scope_func.cash.to_decimal() - amount)
+        assert frozen_cash == amount
         # 判断用户的现金是否被正确冻结
-        assert user_after_task.cash == frozen_cash
+        assert user_after_task.cash == PyDecimal(test_user_scope_func.cash.to_decimal() - amount)
     finally:
         assert is_caught == is_exception
 

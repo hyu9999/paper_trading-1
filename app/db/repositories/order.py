@@ -39,12 +39,14 @@ class OrderRepository(BaseRepository):
         amount: PyDecimal = Decimal128("0"),
         entrust_id: PyObjectId = None,
         status: OrderStatusEnum = OrderStatusEnum.SUBMITTING,
-        sold_price: PyDecimal = None
+        sold_price: PyDecimal = None,
+        frozen_stock_volume: int = None,
+        frozen_amount: PyDecimal = None,
     ) -> OrderInDB:
         order = OrderInDB(symbol=symbol, user=user_id, exchange=exchange, volume=volume, price=price,
                           order_type=order_type, price_type=price_type, trade_type=trade_type, amount=amount,
                           entrust_id=entrust_id or PyObjectId(), order_date=get_utc_now(), status=status,
-                          sold_price=sold_price)
+                          sold_price=sold_price, frozen_stock_volume=frozen_stock_volume, frozen_amount=frozen_amount)
         order_row = await self.collection.insert_one(order.dict(exclude={"id"}))
         order.id = order_row.inserted_id
         return order

@@ -1,5 +1,6 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 
+import pytz
 from bson import ObjectId
 from pydantic import BaseModel, Field
 
@@ -7,7 +8,7 @@ from app.models.types import PyObjectId
 
 
 def get_utc_now():
-    return datetime.now(timezone(timedelta(hours=8)))
+    return datetime.now(tz=pytz.utc).replace(tzinfo=)
 
 
 class DateTimeModelMixin(BaseModel):
