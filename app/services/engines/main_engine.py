@@ -21,6 +21,7 @@ from app.services.engines.event_constants import (
     ORDER_CREATE_EVENT,
     ORDER_UPDATE_EVENT,
     ORDER_UPDATE_STATUS_EVENT,
+    MARKET_CLOSE_EVENT,
 )
 
 
@@ -57,6 +58,7 @@ class MainEngine(BaseEngine):
         await self.event_engine.register(ORDER_CREATE_EVENT, self.process_order_create)
         await self.event_engine.register(ORDER_UPDATE_EVENT, self.process_order_update)
         await self.event_engine.register(ORDER_UPDATE_STATUS_EVENT, self.process_order_status_update)
+        await self.event_engine.register(MARKET_CLOSE_EVENT, self.process_refuse_entrust_orders)
 
     async def process_order_create(self, payload: OrderInDB) -> None:
         await self.order_repo.process_create_order(payload)
@@ -66,6 +68,22 @@ class MainEngine(BaseEngine):
 
     async def process_order_status_update(self, payload: OrderInUpdateStatus) -> None:
         await self.order_repo.process_update_order_status(payload)
+
+    async def process_refuse_entrust_orders(self, *args) -> None:
+        """将待处理订单列表中的订单状态设置为拒单."""
+        orders = await self.order_repo.get_orders(
+            status=[OrderStatusEnum.NOT_DONE],
+            start_date=get_utc_now().date(),
+            end_date=get_utc_now().date(),
+        )
+        for order in orders:
+            await self.refuse_order(order)
+
+    async def refuse_order(self, order: OrderInDB) -> None:
+        """设置订单状态为拒单."""
+        order.status = OrderStatusEnum.REJECTED
+        order_in_update_payload = OrderInUpdate(**dict(order))
+        await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
 
     async def on_order_arrived(self, order: OrderInCreate, user: UserInDB) -> OrderInCreateViewResponse:
         """新订单到达."""

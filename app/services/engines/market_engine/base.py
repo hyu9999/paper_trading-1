@@ -45,15 +45,8 @@ class BaseMarket(BaseEngine):
         self._should_exit.set()
         await self._entrust_orders.put(EXIT_ENGINE_EVENT)
 
-    async def refuse_entrust_orders(self, *args) -> None:
-        """将待处理订单列表中的订单状态设置为拒单."""
-        orders = self._entrust_orders.get_all()
-        for order in orders:
-            await self.refuse_order(order)
-            await self.event_engine.put(Event(UNFREEZE_EVENT, order))
-
     async def register_event(self) -> None:
-        await self.event_engine.register(MARKET_CLOSE_EVENT, self.refuse_entrust_orders)
+        pass
 
     async def put(self, order: OrderInDB) -> None:
         self.exchange_validation(order)
@@ -137,12 +130,6 @@ class BaseMarket(BaseEngine):
         order.status = OrderStatusEnum.ALL_FINISHED.value \
             if order.volume == order.traded_volume \
             else OrderStatusEnum.PART_FINISHED.value
-        order_in_update_payload = OrderInUpdate(**dict(order))
-        await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
-
-    async def refuse_order(self, order: OrderInDB) -> None:
-        """设置订单状态为拒单."""
-        order.status = OrderStatusEnum.REJECTED
         order_in_update_payload = OrderInUpdate(**dict(order))
         await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
 
