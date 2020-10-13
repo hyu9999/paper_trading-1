@@ -8,14 +8,14 @@ from app import settings
 
 async def connect_to_db(app: FastAPI) -> None:
     logger.info("连接数据库中...")
-    app.state.db = AsyncIOMotorClient(settings.db.url, maxPoolSize=settings.db.max_connections,
-                                      minPoolSize=settings.db.min_connections)
+    app.state.db_client = AsyncIOMotorClient(settings.db.url, maxPoolSize=settings.db.max_connections,
+                                             minPoolSize=settings.db.min_connections)
     logger.info("数据库已连接.")
 
 
 async def close_db_connection(app: FastAPI) -> None:
     logger.info("关闭数据库连接中...")
-    app.state.db.close()
+    app.state.db_client.close()
     logger.info("数据库连接已关闭.")
 
 

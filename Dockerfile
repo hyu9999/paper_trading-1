@@ -1,4 +1,4 @@
-FROM python:3.7-slim
+FROM python:3.7-buster
 
 WORKDIR /paper_trading
 
@@ -7,15 +7,13 @@ COPY ./tests tests
 COPY ./Makefile ./
 COPY ./pyproject.toml ./poetry.lock* ./
 
-RUN apt-get update && apt-get install -y libzmq3-dev python3-pip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install Poetry
-RUN python -m pip install poetry \
-    && poetry config virtualenvs.create false
+# Install Poetry and package
+RUN pip install poetry \
+    && poetry cache clear pypi --all \
+    && poetry update \
+    && poetry install --no-dev
 
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && echo "Asia/Shanghai" > /etc/timezone
 
-RUN poetry install
-CMD ["make", "server"]
+CMD ["poetry", "run", "uvicorn", "app.main:app"]

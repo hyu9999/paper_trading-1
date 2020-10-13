@@ -59,6 +59,8 @@ venv.bak/
 .DS_Store
 
 # Ignore env secret files
-.env
 .secrets.*
 
+# Ignore docs static files
+_build/
+/docs/source/

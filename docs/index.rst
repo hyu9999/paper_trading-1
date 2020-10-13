@@ -1,15 +1,8 @@
-==================================
-Paper Trading
-==================================
-*基于Python的证券市场模拟交易后台服务器*
+=============================
+欢迎来到 PaperTrading 的文档!
+=============================
 
-|Test Status| |Codecov Status| |License|
-
-.. |Test Status| image:: https://github.com/Chaoyingz/paper_trading/workflows/Test/badge.svg
-
-.. |Codecov Status| image:: https://codecov.io/gh/Chaoyingz/paper_trading/branch/paper_trading_v2/graph/badge.svg
-
-.. |License| image:: https://img.shields.io/github/license/Naereen/StrapDown.js.svg
+PaperTrading是基于Python的证券市场模拟交易后台服务器。
 
 
 Quickstart
@@ -62,6 +55,7 @@ Docker 部署
 
 然后应用会运行在本地运行。
 
+
 项目结构
 ========
 
@@ -89,3 +83,20 @@ Docker 部署
     │   ├── engines         - 引擎服务
     │   └── quotes          - 行情服务
     └── settings.toml       - 应用全局配置
+
+
+目录
+====
+
+.. toctree::
+   :name: mastertoc
+   :maxdepth: 2
+
+   api
+   contributing
+
+索引
+====
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

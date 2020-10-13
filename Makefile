@@ -1,6 +1,6 @@
 SRC = app scripts tests
 
-.PHONY: server debug test initdb flake8 mypy install
+.PHONY: server debug test initdb flake8 mypy
 
 default:
 	@echo "帮助:"
@@ -12,13 +12,13 @@ default:
 	@echo "\tmake mypy      启动mypy"
 
 server:
-	source .env && poetry run uvicorn app.main:app --host=$$DYNACONF_PT_HOST --port=$$DYNACONF_PT_PORT
+	. .env && poetry run uvicorn app.main:app --host=$$DYNACONF_PT_HOST --port=$$DYNACONF_PT_PORT
 
 debug:
-	source .env && poetry run uvicorn app.main:app --host=$$DYNACONF_PT_HOST --port=$$DYNACONF_PT_PORT --reload --debug
+	. .env && poetry run uvicorn app.main:app --host=$$DYNACONF_PT_HOST --port=$$DYNACONF_PT_PORT --reload --debug
 
 test:
-	source .env && poetry run pytest --cov=app --cov=tests --cov-report=term-missing --cov-report html
+	. .env && poetry run pytest --cov=app --cov=tests --cov-report=term-missing --cov-report html
 
 flake8:
 	poetry run flake8 $(SRC)
@@ -28,6 +28,3 @@ mypy:
 
 initdb:
 	poetry run sh -c "PYTHONPATH=. python ./scripts/db_tools.py initdb"
-
-install:
-    docker image build -t pt . && docker container run -p 8000:3000 -it pt /bin/bash

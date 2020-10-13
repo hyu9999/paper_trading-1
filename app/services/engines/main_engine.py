@@ -4,7 +4,8 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app import settings
 from app.db.repositories.order import OrderRepository
-from app.models.base import PyObjectId, get_utc_now
+from app.models.base import get_utc_now
+from app.models.types import PyObjectId, PyDecimal
 from app.models.enums import PriceTypeEnum, OrderStatusEnum, OrderTypeEnum
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
@@ -74,7 +75,7 @@ class MainEngine(BaseEngine):
         order_in_db = OrderInDB(**dict(order), user=user.id, order_date=get_utc_now(),
                                 entrust_id=PyObjectId())
         if order.order_type == OrderTypeEnum.BUY:
-            order_in_db.frozen_amount = frozen
+            order_in_db.frozen_amount = PyDecimal(frozen)
         else:
             order_in_db.frozen_stock_volume = frozen
         order_create_event = Event(ORDER_CREATE_EVENT, order_in_db)

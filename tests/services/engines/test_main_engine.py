@@ -1,4 +1,5 @@
 import asyncio
+from decimal import Decimal
 
 import pytest
 from pytest_mock import MockerFixture
@@ -89,7 +90,7 @@ async def mock_put_entrust_order(self, order: OrderInDB, *args, **kwargs):
 
 
 async def mock_pre_trade_validation(*args, **kwargs):
-    return 1000
+    return Decimal(1000)
 
 
 async def test_main_engine_can_load_entrust_orders(

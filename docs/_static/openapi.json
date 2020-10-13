@@ -1,0 +1,842 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Paper Trading",
+    "description": "基于Python的证券市场模拟交易后台服务器.",
+    "version": "2.0.1"
+  },
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["authentication"],
+        "summary": "Auth:Register",
+        "operationId": "auth_register_api_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserInCreate" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserInResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["authentication"],
+        "summary": "Auth:Login",
+        "operationId": "auth_login_api_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserInLogin" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserInResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}": {
+      "get": {
+        "tags": ["user"],
+        "summary": "Users:Get-User",
+        "operationId": "users_get_user_api_users__user_id__get",
+        "parameters": [
+          {
+            "description": "用户ID",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "pattern": "^[0-9a-fA-F]{24}$",
+              "description": "用户ID",
+              "type": "string"
+            },
+            "name": "user_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserInResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/": {
+      "get": {
+        "tags": ["user"],
+        "summary": "Users:List-Users",
+        "operationId": "users_list_users_api_users__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListOfUserInResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/": {
+      "get": {
+        "tags": ["order"],
+        "summary": "Orders:Get-Order-List",
+        "operationId": "orders_get_order_list_api_orders__get",
+        "parameters": [
+          {
+            "description": "订单状态",
+            "required": false,
+            "schema": {
+              "title": "Status",
+              "type": "array",
+              "items": { "$ref": "#/components/schemas/OrderStatusEnum" },
+              "description": "订单状态"
+            },
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "description": "开始时间",
+            "required": false,
+            "schema": {
+              "title": "Start Date",
+              "type": "string",
+              "description": "开始时间",
+              "format": "date"
+            },
+            "name": "start_date",
+            "in": "query"
+          },
+          {
+            "description": "结束时间",
+            "required": false,
+            "schema": {
+              "title": "End Date",
+              "type": "string",
+              "description": "结束时间",
+              "format": "date"
+            },
+            "name": "end_date",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Orders Get Order List Api Orders  Get",
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/OrderInResponse" }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "RWAPIKeyHeader": [] }]
+      },
+      "post": {
+        "tags": ["order"],
+        "summary": "Orders:Create-Order",
+        "operationId": "orders_create_order_api_orders__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderInCreate" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "RWAPIKeyHeader": [] }]
+      }
+    },
+    "/api/orders/{entrust_id}": {
+      "get": {
+        "tags": ["order"],
+        "summary": "Orders:Get-Order",
+        "operationId": "orders_get_order_api_orders__entrust_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": { "title": "Entrust Id", "pattern": "^[0-9a-fA-F]{24}$", "type": "string" },
+            "name": "entrust_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderInResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "RWAPIKeyHeader": [] }]
+      }
+    },
+    "/api/orders/entrust_orders/{entrust_id}": {
+      "delete": {
+        "tags": ["order"],
+        "summary": "Orders:Delete-Entrust-Order",
+        "operationId": "orders_delete_entrust_order_api_orders_entrust_orders__entrust_id__delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": { "title": "Entrust Id", "pattern": "^[0-9a-fA-F]{24}$", "type": "string" },
+            "name": "entrust_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HttpMessage" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "RWAPIKeyHeader": [] }]
+      }
+    },
+    "/api/position/": {
+      "get": {
+        "tags": ["position"],
+        "summary": "Position:Get-Position-List",
+        "operationId": "position_get_position_list_api_position__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Position Get Position List Api Position  Get",
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PositionInResponse" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "RWAPIKeyHeader": [] }]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ExchangeEnum": {
+        "title": "ExchangeEnum",
+        "enum": ["SH", "SZ"],
+        "type": "string",
+        "description": "股票市场."
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ValidationError" }
+          }
+        }
+      },
+      "HttpMessage": {
+        "title": "HttpMessage",
+        "required": ["text"],
+        "type": "object",
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string",
+            "description": "消息文本"
+          }
+        },
+        "description": "Schema模型基类."
+      },
+      "ListOfUserInResponse": {
+        "title": "ListOfUserInResponse",
+        "required": ["users", "count"],
+        "type": "object",
+        "properties": {
+          "users": {
+            "title": "Users",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/User" }
+          },
+          "count": { "title": "Count", "type": "integer" }
+        },
+        "description": "Schema模型基类."
+      },
+      "OrderInCreate": {
+        "title": "OrderInCreate",
+        "required": [
+          "symbol",
+          "exchange",
+          "volume",
+          "price",
+          "order_type",
+          "trade_type"
+        ],
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "title": "Symbol",
+            "type": "string",
+            "description": "股票代码"
+          },
+          "exchange": { "$ref": "#/components/schemas/ExchangeEnum" },
+          "volume": {
+            "title": "Volume",
+            "exclusiveMinimum": 0.0,
+            "type": "integer",
+            "description": "数量"
+          },
+          "price": {
+            "title": "Price",
+            "type": "number",
+            "description": "价格",
+            "format": "json-number"
+          },
+          "order_type": { "$ref": "#/components/schemas/OrderTypeEnum" },
+          "price_type": { "$ref": "#/components/schemas/PriceTypeEnum" },
+          "trade_type": { "$ref": "#/components/schemas/TradeTypeEnum" }
+        },
+        "description": "Schema模型基类."
+      },
+      "OrderInResponse": {
+        "title": "OrderInResponse",
+        "required": [
+          "symbol",
+          "exchange",
+          "volume",
+          "price",
+          "order_type",
+          "price_type",
+          "trade_type",
+          "entrust_id",
+          "user",
+          "order_date"
+        ],
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "title": "Symbol",
+            "type": "string",
+            "description": "股票代码"
+          },
+          "exchange": { "$ref": "#/components/schemas/ExchangeEnum" },
+          "volume": {
+            "title": "Volume",
+            "exclusiveMinimum": 0.0,
+            "type": "integer",
+            "description": "数量"
+          },
+          "price": {
+            "title": "Price",
+            "type": "number",
+            "description": "价格",
+            "format": "json-number"
+          },
+          "order_type": { "$ref": "#/components/schemas/OrderTypeEnum" },
+          "price_type": { "$ref": "#/components/schemas/PriceTypeEnum" },
+          "trade_type": { "$ref": "#/components/schemas/TradeTypeEnum" },
+          "created_at": {
+            "title": "Created At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "_id": { "title": " Id", "pattern": "^[0-9a-fA-F]{24}$" },
+          "entrust_id": {
+            "title": "Entrust Id",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "description": "委托订单ID"
+          },
+          "user": {
+            "title": "User",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "description": "账户"
+          },
+          "status": { "$ref": "#/components/schemas/OrderStatusEnum" },
+          "traded_volume": {
+            "title": "Traded Volume",
+            "type": "integer",
+            "description": "已成交数量",
+            "default": 0
+          },
+          "sold_price": {
+            "title": "Sold Price",
+            "type": "number",
+            "description": "成交价格",
+            "format": "json-number"
+          },
+          "order_date": {
+            "title": "Order Date",
+            "type": "string",
+            "description": "订单日期",
+            "format": "date-time"
+          },
+          "order_time": {
+            "title": "Order Time",
+            "type": "number",
+            "description": "订单时长",
+            "format": "time-delta"
+          },
+          "frozen_amount": {
+            "title": "Frozen Amount",
+            "type": "number",
+            "description": "冻结资金",
+            "format": "json-number"
+          },
+          "frozen_stock_volume": {
+            "title": "Frozen Stock Volume",
+            "type": "integer",
+            "description": "冻结持仓股票数量"
+          }
+        },
+        "description": "Schema模型基类."
+      },
+      "OrderStatusEnum": {
+        "title": "OrderStatusEnum",
+        "enum": [
+          "提交中",
+          "未成交",
+          "部分成交",
+          "全部成交",
+          "已取消",
+          "已拒单"
+        ],
+        "type": "string",
+        "description": "订单状态."
+      },
+      "OrderTypeEnum": {
+        "title": "OrderTypeEnum",
+        "enum": ["buy", "sell", "cancel", "liquidation"],
+        "type": "string",
+        "description": "订单类型."
+      },
+      "PositionInResponse": {
+        "title": "PositionInResponse",
+        "required": [
+          "symbol",
+          "exchange",
+          "volume",
+          "available_volume",
+          "cost",
+          "current_price",
+          "profit",
+          "user"
+        ],
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "title": "Symbol",
+            "type": "string",
+            "description": "股票代码"
+          },
+          "exchange": { "$ref": "#/components/schemas/ExchangeEnum" },
+          "volume": {
+            "title": "Volume",
+            "type": "integer",
+            "description": "持仓量"
+          },
+          "available_volume": {
+            "title": "Available Volume",
+            "type": "integer",
+            "description": "可用量"
+          },
+          "cost": {
+            "title": "Cost",
+            "type": "number",
+            "description": "持仓成本",
+            "format": "json-number"
+          },
+          "current_price": {
+            "title": "Current Price",
+            "type": "number",
+            "description": "当前价格",
+            "format": "json-number"
+          },
+          "profit": {
+            "title": "Profit",
+            "type": "number",
+            "description": "利润",
+            "format": "json-number"
+          },
+          "first_buy_date": {
+            "title": "First Buy Date",
+            "type": "string",
+            "description": "首次持有日期",
+            "format": "date-time"
+          },
+          "last_sell_date": {
+            "title": "Last Sell Date",
+            "type": "string",
+            "description": "最后卖出日期",
+            "format": "date-time"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "_id": { "title": " Id", "pattern": "^[0-9a-fA-F]{24}$" },
+          "user": {
+            "title": "User",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "description": "用户ID"
+          }
+        },
+        "description": "Schema模型基类."
+      },
+      "PriceTypeEnum": {
+        "title": "PriceTypeEnum",
+        "enum": ["limit", "market"],
+        "type": "string",
+        "description": "价格类型."
+      },
+      "TradeTypeEnum": {
+        "title": "TradeTypeEnum",
+        "enum": ["T0", "T1"],
+        "type": "string",
+        "description": "交易类型."
+      },
+      "User": {
+        "title": "User",
+        "required": ["capital"],
+        "type": "object",
+        "properties": {
+          "capital": {
+            "title": "Capital",
+            "type": "number",
+            "description": "初始资金",
+            "format": "json-number"
+          },
+          "assets": {
+            "title": "Assets",
+            "type": "number",
+            "description": "总资产",
+            "format": "json-number",
+            "default": "1000000"
+          },
+          "cash": {
+            "title": "Cash",
+            "type": "number",
+            "description": "现金",
+            "format": "json-number",
+            "default": "1000000"
+          },
+          "securities": {
+            "title": "Securities",
+            "type": "number",
+            "description": "证券资产",
+            "format": "json-number",
+            "default": "0.00"
+          },
+          "commission": {
+            "title": "Commission",
+            "type": "number",
+            "description": "佣金",
+            "format": "json-number",
+            "default": "0.0003"
+          },
+          "tax_rate": {
+            "title": "Tax Rate",
+            "type": "number",
+            "description": "税点",
+            "format": "json-number",
+            "default": "0.001"
+          },
+          "slippage": {
+            "title": "Slippage",
+            "type": "number",
+            "description": "滑点",
+            "format": "json-number",
+            "default": "0.01"
+          },
+          "desc": {
+            "title": "Desc",
+            "type": "string",
+            "description": "账户描述"
+          }
+        },
+        "description": "模型基类."
+      },
+      "UserInCreate": {
+        "title": "UserInCreate",
+        "required": ["capital"],
+        "type": "object",
+        "properties": {
+          "capital": {
+            "title": "Capital",
+            "type": "number",
+            "description": "初始资金",
+            "format": "json-number"
+          },
+          "assets": {
+            "title": "Assets",
+            "type": "number",
+            "description": "总资产",
+            "format": "json-number",
+            "default": "1000000"
+          },
+          "cash": {
+            "title": "Cash",
+            "type": "number",
+            "description": "现金",
+            "format": "json-number",
+            "default": "1000000"
+          },
+          "securities": {
+            "title": "Securities",
+            "type": "number",
+            "description": "证券资产",
+            "format": "json-number",
+            "default": "0.00"
+          },
+          "commission": {
+            "title": "Commission",
+            "type": "number",
+            "description": "佣金",
+            "format": "json-number",
+            "default": "0.0003"
+          },
+          "tax_rate": {
+            "title": "Tax Rate",
+            "type": "number",
+            "description": "税点",
+            "format": "json-number",
+            "default": "0.001"
+          },
+          "slippage": {
+            "title": "Slippage",
+            "type": "number",
+            "description": "滑点",
+            "format": "json-number",
+            "default": "0.01"
+          },
+          "desc": {
+            "title": "Desc",
+            "type": "string",
+            "description": "账户描述"
+          }
+        },
+        "description": "Schema模型基类."
+      },
+      "UserInLogin": {
+        "title": "UserInLogin",
+        "required": ["id"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "description": "用户ID"
+          }
+        },
+        "description": "Schema模型基类."
+      },
+      "UserInResponse": {
+        "title": "UserInResponse",
+        "required": [
+          "capital",
+          "securities",
+          "commission",
+          "tax_rate",
+          "slippage"
+        ],
+        "type": "object",
+        "properties": {
+          "capital": {
+            "title": "Capital",
+            "type": "number",
+            "description": "初始资金",
+            "format": "json-number"
+          },
+          "assets": {
+            "title": "Assets",
+            "type": "number",
+            "description": "总资产",
+            "format": "json-number",
+            "default": "1000000"
+          },
+          "cash": {
+            "title": "Cash",
+            "type": "number",
+            "description": "现金",
+            "format": "json-number",
+            "default": "1000000"
+          },
+          "securities": {
+            "title": "Securities",
+            "type": "number",
+            "description": "证券资产",
+            "format": "json-number"
+          },
+          "commission": {
+            "title": "Commission",
+            "type": "number",
+            "description": "佣金",
+            "format": "json-number"
+          },
+          "tax_rate": {
+            "title": "Tax Rate",
+            "type": "number",
+            "description": "税点",
+            "format": "json-number"
+          },
+          "slippage": {
+            "title": "Slippage",
+            "type": "number",
+            "description": "滑点",
+            "format": "json-number"
+          },
+          "desc": {
+            "title": "Desc",
+            "type": "string",
+            "description": "账户描述"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "_id": { "title": " Id", "pattern": "^[0-9a-fA-F]{24}$" },
+          "token": { "title": "Token", "type": "string" }
+        },
+        "description": "Schema模型基类."
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": ["loc", "msg", "type"],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "msg": { "title": "Message", "type": "string" },
+          "type": { "title": "Error Type", "type": "string" }
+        }
+      }
+    },
+    "securitySchemes": {
+      "RWAPIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization"
+      }
+    }
+  }
+}

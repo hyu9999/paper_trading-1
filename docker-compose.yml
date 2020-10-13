@@ -9,7 +9,11 @@ services:
       - .env
     depends_on:
       - db
+    command: ['make', "server"]
   db:
     image: mongo:4.4.0
     ports:
       - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DYNACONF_DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DYNACONF_DB_PASSWORD}
