@@ -10,11 +10,6 @@ version = "1.3.1"
 async-timeout = "*"
 hiredis = "*"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "A configurable sidebar-enabled Sphinx theme"
@@ -22,11 +17,6 @@ name = "alabaster"
 optional = false
 python-versions = "*"
 version = "0.7.12"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -39,11 +29,6 @@ version = "1.0.1"
 [package.dependencies]
 sniffio = "*"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "Timeout context manager for asyncio programs"
@@ -51,11 +36,6 @@ name = "async-timeout"
 optional = false
 python-versions = ">=3.5.3"
 version = "3.0.1"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -65,11 +45,6 @@ name = "atomicwrites"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "1.4.0"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -85,11 +60,6 @@ docs = ["sphinx", "sphinx-rtd-theme", "zope.interface"]
 tests = ["coverage (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface"]
 tests_no_zope = ["coverage (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Internationalization utilities"
@@ -101,11 +71,6 @@ version = "2.8.0"
 [package.dependencies]
 pytz = ">=2015.7"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -113,11 +78,6 @@ name = "certifi"
 optional = false
 python-versions = "*"
 version = "2020.6.20"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -130,11 +90,6 @@ version = "1.14.3"
 [package.dependencies]
 pycparser = "*"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Universal encoding detector for Python 2 and 3"
@@ -142,11 +97,6 @@ name = "chardet"
 optional = false
 python-versions = "*"
 version = "3.0.4"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -156,11 +106,6 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 version = "7.1.2"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "Cross-platform colored terminal text."
@@ -168,12 +113,7 @@ marker = "sys_platform == \"win32\""
 name = "colorama"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-version = "0.4.3"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+version = "0.4.4"
 
 [[package]]
 category = "dev"
@@ -185,11 +125,6 @@ version = "5.3"
 
 [package.extras]
 toml = ["toml"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -210,11 +145,6 @@ pep8test = ["black", "flake8", "flake8-import-order", "pep8-naming"]
 ssh = ["bcrypt (>=3.1.5)"]
 test = ["pytest (>=3.6.0,<3.9.0 || >3.9.0,<3.9.1 || >3.9.1,<3.9.2 || >3.9.2)", "pretend", "iso8601", "pytz", "hypothesis (>=1.11.4,<3.79.2 || >3.79.2)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Docutils -- Python Documentation Utilities"
@@ -222,11 +152,6 @@ name = "docutils"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 version = "0.16"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -244,11 +169,6 @@ redis = ["redis"]
 toml = ["toml"]
 vault = ["hvac"]
 yaml = ["ruamel.yaml"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -268,11 +188,6 @@ dev = ["python-jose (>=3.1.0,<4.0.0)", "passlib (>=1.7.2,<2.0.0)", "autoflake (>
 doc = ["mkdocs (>=1.1.2,<2.0.0)", "mkdocs-material (>=5.5.0,<6.0.0)", "markdown-include (>=0.5.1,<0.6.0)", "mkdocs-markdownextradata-plugin (>=0.1.7,<0.2.0)", "typer (>=0.3.0,<0.4.0)", "typer-cli (>=0.0.9,<0.0.10)", "pyyaml (>=5.3.1,<6.0.0)"]
 test = ["pytest (5.4.3)", "pytest-cov (2.10.0)", "pytest-asyncio (>=0.14.0,<0.15.0)", "mypy (0.782)", "flake8 (>=3.8.3,<4.0.0)", "black (19.10b0)", "isort (>=5.0.6,<6.0.0)", "requests (>=2.24.0,<3.0.0)", "httpx (>=0.14.0,<0.15.0)", "email_validator (>=1.1.1,<2.0.0)", "sqlalchemy (>=1.3.18,<2.0.0)", "peewee (>=3.13.3,<4.0.0)", "databases (>=0.3.2,<0.4.0)", "orjson (>=3.2.1,<4.0.0)", "async_exit_stack (>=1.0.1,<2.0.0)", "async_generator (>=1.10,<2.0.0)", "python-multipart (>=0.0.5,<0.0.6)", "aiofiles (>=0.5.0,<0.6.0)", "flask (>=1.1.2,<2.0.0)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "the modular source code checker: pep8 pyflakes and co"
@@ -290,11 +205,6 @@ pyflakes = ">=2.2.0,<2.3.0"
 python = "<3.8"
 version = "*"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -303,11 +213,6 @@ optional = false
 python-versions = "*"
 version = "0.9.0"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "Python wrapper for hiredis"
@@ -315,11 +220,6 @@ name = "hiredis"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "1.1.0"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -336,11 +236,6 @@ sniffio = ">=1.0.0,<2.0.0"
 [package.extras]
 http2 = ["h2 (>=3.0.0,<4.0.0)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "A collection of framework independent HTTP protocol utils."
@@ -352,11 +247,6 @@ version = "0.1.1"
 
 [package.extras]
 test = ["Cython (0.29.14)"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -380,11 +270,6 @@ version = ">=1.3,<2"
 brotli = ["brotlipy (>=0.7.0,<0.8.0)"]
 http2 = ["h2 (>=3.0.0,<4.0.0)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -393,11 +278,6 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "2.10"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Getting image size from png/jpeg/jpeg2000/gif file"
@@ -405,11 +285,6 @@ name = "imagesize"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "1.2.0"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -427,11 +302,6 @@ zipp = ">=0.5"
 docs = ["sphinx", "rst.linker"]
 testing = ["packaging", "pep517", "importlib-resources (>=1.3)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "A very fast and expressive template engine."
@@ -445,11 +315,6 @@ MarkupSafe = ">=0.23"
 
 [package.extras]
 i18n = ["Babel (>=0.8)"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -473,11 +338,6 @@ version = "*"
 format = ["idna", "jsonpointer (>1.13)", "rfc3987", "strict-rfc3339", "webcolors"]
 format_nongpl = ["idna", "jsonpointer (>1.13)", "webcolors", "rfc3986-validator (>0.1.0)", "rfc3339-validator"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "Python logging made (stupidly) simple"
@@ -493,11 +353,6 @@ win32-setctime = ">=1.0.0"
 [package.extras]
 dev = ["codecov (>=2.0.15)", "colorama (>=0.3.4)", "flake8 (>=3.7.7)", "tox (>=3.9.0)", "tox-travis (>=0.12)", "pytest (>=4.6.2)", "pytest-cov (>=2.7.1)", "Sphinx (>=2.2.1)", "sphinx-autobuild (>=0.7.1)", "sphinx-rtd-theme (>=0.4.3)", "black (>=19.10b0)", "isort (>=5.1.1)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Markdown and reStructuredText in a single file."
@@ -510,11 +365,6 @@ version = "0.2.1"
 docutils = "*"
 mistune = "*"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Safely add untrusted strings to HTML/XML markup."
@@ -522,11 +372,6 @@ name = "markupsafe"
 optional = false
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
 version = "1.1.1"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -536,11 +381,6 @@ optional = false
 python-versions = "*"
 version = "0.6.1"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "The fastest markdown parser in pure Python"
@@ -549,11 +389,6 @@ optional = false
 python-versions = "*"
 version = "0.8.4"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "More routines for operating on iterables, beyond itertools"
@@ -561,11 +396,6 @@ name = "more-itertools"
 optional = false
 python-versions = ">=3.5"
 version = "8.5.0"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -577,11 +407,6 @@ version = "2.3.0"
 
 [package.dependencies]
 pymongo = ">=3.11,<4"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -599,11 +424,6 @@ typing-extensions = ">=3.7.4"
 [package.extras]
 dmypy = ["psutil (>=4.0)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Experimental type system extensions for programs checked with the mypy typechecker."
@@ -612,11 +432,6 @@ optional = false
 python-versions = "*"
 version = "0.4.3"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "NumPy is the fundamental package for array computing with Python."
@@ -624,11 +439,6 @@ name = "numpy"
 optional = false
 python-versions = ">=3.6"
 version = "1.19.2"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -641,11 +451,6 @@ version = "20.4"
 [package.dependencies]
 pyparsing = ">=2.0.2"
 six = "*"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -663,11 +468,6 @@ pytz = ">=2017.2"
 [package.extras]
 test = ["pytest (>=4.0.2)", "pytest-xdist", "hypothesis (>=3.58)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "plugin and hook calling mechanisms for python"
@@ -684,11 +484,6 @@ version = ">=0.12"
 [package.extras]
 dev = ["pre-commit", "tox"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
@@ -696,11 +491,6 @@ name = "py"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "1.9.0"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -710,11 +500,6 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "2.6.0"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "C parser in Python"
@@ -722,11 +507,6 @@ name = "pycparser"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "2.20"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -741,11 +521,6 @@ dotenv = ["python-dotenv (>=0.10.4)"]
 email = ["email-validator (>=1.0.3)"]
 typing_extensions = ["typing-extensions (>=3.7.2)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "passive checker of Python programs"
@@ -754,11 +529,6 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "2.2.0"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Pygments is a syntax highlighting package written in Python."
@@ -766,11 +536,6 @@ name = "pygments"
 optional = false
 python-versions = ">=3.5"
 version = "2.7.1"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -785,11 +550,6 @@ crypto = ["cryptography (>=1.4)"]
 flake8 = ["flake8", "flake8-import-order", "pep8-naming"]
 test = ["pytest (>=4.0.1,<5.0.0)", "pytest-cov (>=2.6.0,<3.0.0)", "pytest-runner (>=4.2,<5.0.0)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "Python driver for MongoDB <http://www.mongodb.org>"
@@ -802,16 +562,11 @@ version = "3.11.0"
 aws = ["pymongo-auth-aws (<2.0.0)"]
 encryption = ["pymongocrypt (<2.0.0)"]
 gssapi = ["pykerberos"]
-ocsp = ["pyopenssl (>=17.2.0)", "requests (<3.0.0)", "service_identity (>=18.1.0)"]
+ocsp = ["pyopenssl (>=17.2.0)", "requests (<3.0.0)", "service-identity (>=18.1.0)"]
 snappy = ["python-snappy"]
 srv = ["dnspython (>=1.16.0,<1.17.0)"]
 tls = ["ipaddress"]
 zstd = ["zstandard"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -821,11 +576,6 @@ optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 version = "2.4.7"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Persistent/Functional/Immutable data structures"
@@ -833,11 +583,6 @@ name = "pyrsistent"
 optional = false
 python-versions = ">=3.5"
 version = "0.17.3"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -852,11 +597,6 @@ click = "*"
 cryptography = "*"
 pandas = "*"
 six = "*"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -884,11 +624,6 @@ version = ">=0.12"
 checkqa-mypy = ["mypy (v0.761)"]
 testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "requests", "xmlschema"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Pytest support for asyncio."
@@ -902,11 +637,6 @@ pytest = ">=5.4.0"
 
 [package.extras]
 testing = ["async-generator (>=1.3)", "coverage", "hypothesis (>=5.7.1)"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -923,11 +653,6 @@ pytest = ">=4.6"
 [package.extras]
 testing = ["fields", "hunter", "process-tests (2.0.2)", "six", "pytest-xdist", "virtualenv"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "It helps to use fixtures in pytest.mark.parametrize"
@@ -938,11 +663,6 @@ version = "0.6.3"
 
 [package.dependencies]
 pytest = ">=3.2.5"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -958,11 +678,6 @@ pytest = ">=5.0"
 [package.extras]
 dev = ["pre-commit", "tox", "pytest-asyncio"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "Extensions to the standard Python datetime module"
@@ -973,11 +688,6 @@ version = "2.8.1"
 
 [package.dependencies]
 six = ">=1.5"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -990,11 +700,6 @@ version = "0.14.0"
 [package.extras]
 cli = ["click (>=5.0)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "World timezone definitions, modern and historical"
@@ -1003,11 +708,6 @@ optional = false
 python-versions = "*"
 version = "2020.1"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "YAML parser and emitter for Python"
@@ -1015,11 +715,6 @@ name = "pyyaml"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 version = "5.3.1"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -1039,11 +734,6 @@ urllib3 = ">=1.21.1,<1.25.0 || >1.25.0,<1.25.1 || >1.25.1,<1.26"
 security = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)"]
 socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7)", "win-inet-pton"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Validating URI References per RFC 3986"
@@ -1060,11 +750,6 @@ version = "*"
 [package.extras]
 idna2008 = ["idna"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "Python 2 and 3 compatibility utilities"
@@ -1072,11 +757,6 @@ name = "six"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 version = "1.15.0"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -1086,11 +766,6 @@ optional = false
 python-versions = ">=3.5"
 version = "1.2.0"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "This package provides 26 stemmers for 25 languages generated from Snowball algorithms."
@@ -1098,11 +773,6 @@ name = "snowballstemmer"
 optional = false
 python-versions = "*"
 version = "2.0.0"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -1136,11 +806,6 @@ docs = ["sphinxcontrib-websupport"]
 lint = ["flake8 (>=3.5.0)", "flake8-import-order", "mypy (>=0.780)", "docutils-stubs"]
 test = ["pytest", "pytest-cov", "html5lib", "typed-ast", "cython"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "sphinxcontrib-applehelp is a sphinx extension which outputs Apple help books"
@@ -1152,11 +817,6 @@ version = "1.0.2"
 [package.extras]
 lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -1170,11 +830,6 @@ version = "1.0.2"
 lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "sphinxcontrib-htmlhelp is a sphinx extension which renders HTML help files"
@@ -1186,11 +841,6 @@ version = "1.0.3"
 [package.extras]
 lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest", "html5lib"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -1204,11 +854,6 @@ version = "1.7.0"
 Sphinx = ">=1.5"
 six = "*"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "A sphinx extension which renders display math in HTML via JavaScript"
@@ -1219,11 +864,6 @@ version = "1.0.1"
 
 [package.extras]
 test = ["pytest", "flake8", "mypy"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -1240,11 +880,6 @@ m2r = ">=0.2"
 sphinx = ">=2.0"
 sphinxcontrib-httpdomain = ">=1.5.0"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "sphinxcontrib-qthelp is a sphinx extension which outputs QtHelp document."
@@ -1256,11 +891,6 @@ version = "1.0.3"
 [package.extras]
 lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -1274,11 +904,6 @@ version = "1.1.4"
 lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "The little ASGI library that shines."
@@ -1290,11 +915,6 @@ version = "0.13.6"
 [package.extras]
 full = ["aiofiles", "graphene", "itsdangerous", "jinja2", "python-multipart", "pyyaml", "requests", "ujson"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "a fork of Python 2 and 3 ast modules with type comment support"
@@ -1302,11 +922,6 @@ name = "typed-ast"
 optional = false
 python-versions = "*"
 version = "1.4.1"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -1316,11 +931,6 @@ optional = false
 python-versions = "*"
 version = "3.7.4.3"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "Ultra fast JSON encoder and decoder for Python"
@@ -1328,11 +938,6 @@ name = "ujson"
 optional = false
 python-versions = ">=3.5"
 version = "3.2.0"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -1346,11 +951,6 @@ version = "1.25.10"
 brotli = ["brotlipy (>=0.6.0)"]
 secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "pyOpenSSL (>=0.14)", "ipaddress"]
 socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -1370,11 +970,6 @@ websockets = ">=8.0.0,<9.0.0"
 [package.extras]
 watchgodreload = ["watchgod (>=0.6,<0.7)"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "Fast implementation of asyncio event loop on top of libuv"
@@ -1384,11 +979,6 @@ optional = false
 python-versions = "*"
 version = "0.14.0"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "dev"
 description = "Measures the displayed width of unicode strings in a terminal"
@@ -1397,11 +987,6 @@ optional = false
 python-versions = "*"
 version = "0.2.5"
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [[package]]
 category = "main"
 description = "An implementation of the WebSocket Protocol (RFC 6455 & 7692)"
@@ -1409,11 +994,6 @@ name = "websockets"
 optional = false
 python-versions = ">=3.6.1"
 version = "8.1"
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "main"
@@ -1426,11 +1006,6 @@ version = "1.0.3"
 
 [package.extras]
 dev = ["pytest (>=4.6.2)", "black (>=19.3b0)"]
-
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 [[package]]
 category = "dev"
@@ -1445,13 +1020,8 @@ version = "3.3.0"
 docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=3.5,<3.7.3 || >3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pytest-cov", "jaraco.test (>=3.2.0)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
-[package.source]
-reference = "tsinghua"
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-
 [metadata]
-content-hash = "b9b059cc7bd756d08159b8e1a4d941f092c68c04fae07877284ae11e2390a458"
+content-hash = "bd96f6397166bc041674083b84cc9d07ff5e13e485efb46451824a031c6899d7"
 lock-version = "1.0"
 python-versions = "^3.7"
 
@@ -1535,8 +1105,7 @@ click = [
     {file = "click-7.1.2.tar.gz", hash = "sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a"},
 ]
 colorama = [
-    {file = "colorama-0.4.3-py2.py3-none-any.whl", hash = "sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff"},
-    {file = "colorama-0.4.3.tar.gz", hash = "sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1"},
+    {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
 ]
 coverage = [
     {file = "coverage-5.3-cp27-cp27m-macosx_10_13_intel.whl", hash = "sha256:bd3166bb3b111e76a4f8e2980fa1addf2920a4ca9b2b8ca36a3bc3dedc618270"},
@@ -1939,6 +1508,7 @@ pymongo = [
     {file = "pymongo-3.11.0-cp38-cp38-manylinux2014_x86_64.whl", hash = "sha256:475a34a0745c456ceffaec4ce86b7e0983478f1b6140890dff7b161e7bcd895b"},
     {file = "pymongo-3.11.0-cp38-cp38-win32.whl", hash = "sha256:40696a9a53faa7d85aaa6fd7bef1cae08f7882640bad08c350fb59dee7ad069b"},
     {file = "pymongo-3.11.0-cp38-cp38-win_amd64.whl", hash = "sha256:03dc64a9aa7a5d405aea5c56db95835f6a2fa31b3502c5af1760e0e99210be30"},
+    {file = "pymongo-3.11.0-py2.7-macosx-10.15-x86_64.egg", hash = "sha256:63a5387e496a98170ffe638b435c0832c0f2011a6f4ff7a2880f17669fff8c03"},
     {file = "pymongo-3.11.0.tar.gz", hash = "sha256:076a7f2f7c251635cf6116ac8e45eefac77758ee5a77ab7bd2f63999e957613b"},
 ]
 pyparsing = [
