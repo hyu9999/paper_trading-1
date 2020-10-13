@@ -53,7 +53,7 @@ class BaseMarket(BaseEngine):
         payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.NOT_DONE)
         event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
         await self.event_engine.put(event)
-        await self.write_log(f"收到新订单: [{order.entrust_id}].")
+        await self.write_log(f"收到新的委托订单: [{order.entrust_id}].")
         await self._entrust_orders.put(order)
 
     @staticmethod
@@ -113,6 +113,7 @@ class BaseMarket(BaseEngine):
                         order.traded_volume = order.volume
                         await self.save_order(order)
                         continue
+
                     # 限价成交
                     elif order.price_type == PriceTypeEnum.LIMIT:
                         if order.price.to_decimal() <= quotes.bid1_p.to_decimal():

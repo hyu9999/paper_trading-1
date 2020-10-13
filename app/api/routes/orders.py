@@ -91,8 +91,13 @@ async def delete_entrust_order(
     except EntityDoesNotExist:
         raise OrderNotFound(status_code=http_status.HTTP_404_NOT_FOUND)
     else:
-        order_cancel = OrderInCreate(**order.dict())
-        order_cancel.order_type = OrderTypeEnum.CANCEL
-        await order_repo.create_order(**order_cancel.dict(), **{"user_id": user.id})
-        await engine.market_engine.put(order)
+        if order.status == OrderStatusEnum.CANCELED:
+            return HttpMessage(text="该委托订单已取消，请勿重复提交取消委托单请求.")
+        order_in_create = OrderInCreate(**order.dict())
+        order_in_create.order_type = OrderTypeEnum.CANCEL
+        order_cancel = await order_repo.create_order(
+            **order_in_create.dict(),
+            **{"entrust_id": entrust_id, "user_id": user.id}
+        )
+        await engine.market_engine.put(order_cancel)
         return HttpMessage(text="成功提交取消委托订单请求.")

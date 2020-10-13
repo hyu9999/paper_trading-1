@@ -29,6 +29,12 @@ class OrderInUpdate(RWSchema):
     sold_price: Optional[PyDecimal] = Field(..., description="交易价格")
 
 
+class OrderInUpdateFrozen(RWSchema):
+    entrust_id: PyObjectId = Field(...)
+    frozen_amount: PyDecimal = Field(None, description="冻结资金")
+    frozen_stock_volume: int = Field(None, description="冻结持仓股票数量")
+
+
 class OrderInUpdateStatus(RWSchema):
     entrust_id: PyObjectId = Field(...)
     status: OrderStatusEnum = Field(..., description="订单状态")

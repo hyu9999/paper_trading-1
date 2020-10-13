@@ -9,7 +9,7 @@ from app.models.types import PyObjectId, PyDecimal
 from app.models.enums import PriceTypeEnum, OrderStatusEnum, OrderTypeEnum
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
-from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus
+from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus, OrderInUpdateFrozen
 from app.models.schemas.orders import OrderInCreate, OrderInCreateViewResponse
 from app.services.quotes.tdx import TDXQuotes
 from app.services.engines.base import BaseEngine
@@ -22,7 +22,7 @@ from app.services.engines.event_constants import (
     ORDER_UPDATE_EVENT,
     ORDER_UPDATE_STATUS_EVENT,
     MARKET_CLOSE_EVENT,
-)
+    ORDER_UPDATE_FROZEN_EVENT)
 
 
 class MainEngine(BaseEngine):
@@ -59,6 +59,7 @@ class MainEngine(BaseEngine):
         await self.event_engine.register(ORDER_UPDATE_EVENT, self.process_order_update)
         await self.event_engine.register(ORDER_UPDATE_STATUS_EVENT, self.process_order_status_update)
         await self.event_engine.register(MARKET_CLOSE_EVENT, self.process_refuse_entrust_orders)
+        await self.event_engine.register(ORDER_UPDATE_FROZEN_EVENT, self.process_order_frozen_update)
 
     async def process_order_create(self, payload: OrderInDB) -> None:
         await self.order_repo.process_create_order(payload)
@@ -68,6 +69,9 @@ class MainEngine(BaseEngine):
 
     async def process_order_status_update(self, payload: OrderInUpdateStatus) -> None:
         await self.order_repo.process_update_order_status(payload)
+
+    async def process_order_frozen_update(self, payload: OrderInUpdateFrozen) -> None:
+        await self.order_repo.process_update_order_frozen(payload)
 
     async def process_refuse_entrust_orders(self, *args) -> None:
         """将待处理订单列表中的订单状态设置为拒单."""

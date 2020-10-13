@@ -11,9 +11,9 @@ from app.models.base import get_utc_now
 from app.models.types import PyDecimal
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
-from app.models.schemas.orders import OrderInCreate
 from app.models.enums import OrderTypeEnum, TradeTypeEnum
 from app.models.schemas.users import UserInUpdateCash, UserInUpdate
+from app.models.schemas.orders import OrderInCreate, OrderInUpdateFrozen
 from app.models.schemas.user_assets_records import UserAssetsRecordInCreate, UserAssetsRecordInUpdate
 from app.models.schemas.position import PositionInCreate, PositionInUpdateAvailable, PositionInUpdate
 from app.services.quotes.base import BaseQuotes
@@ -29,6 +29,7 @@ from app.services.engines.event_constants import (
     USER_ASSETS_RECORD_UPDATE_EVENT,
     MARKET_CLOSE_EVENT,
     UNFREEZE_EVENT,
+    ORDER_UPDATE_FROZEN_EVENT,
 )
 
 
@@ -110,6 +111,8 @@ class UserEngine(BaseEngine):
             position_in_update = PositionInUpdate(**position.dict())
             position_in_update.available_volume += payload.frozen_stock_volume
             await self.position_repo.process_update_position(position_in_update)
+        order_in_update_frozen = OrderInUpdateFrozen(entrust_id=payload.entrust_id)
+        await self.event_engine.put(Event(ORDER_UPDATE_FROZEN_EVENT, order_in_update_frozen))
 
     async def pre_trade_validation(
         self,

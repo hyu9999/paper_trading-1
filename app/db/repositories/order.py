@@ -9,7 +9,7 @@ from app.exceptions.db import EntityDoesNotExist
 from app.models.base import get_utc_now
 from app.models.domain.orders import OrderInDB
 from app.models.types import PyDecimal, PyObjectId
-from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus
+from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus, OrderInUpdateFrozen
 from app.models.enums import ExchangeEnum, OrderTypeEnum, PriceTypeEnum, TradeTypeEnum, OrderStatusEnum
 
 
@@ -106,6 +106,12 @@ class OrderRepository(BaseRepository):
         await self.collection.insert_one(order.dict(exclude={"id"}))
 
     async def process_update_order(self, order: OrderInUpdate) -> None:
+        await self.collection.update_many(
+            {"entrust_id": order.entrust_id},
+            {"$set": order.dict(exclude={"entrust_id"})}
+        )
+
+    async def process_update_order_frozen(self, order: OrderInUpdateFrozen) -> None:
         await self.collection.update_many(
             {"entrust_id": order.entrust_id},
             {"$set": order.dict(exclude={"entrust_id"})}
