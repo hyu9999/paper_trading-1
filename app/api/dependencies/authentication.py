@@ -20,7 +20,7 @@ HEADER_KEY = "Authorization"
 
 
 class RWAPIKeyHeader(APIKeyHeader):
-    """获取请求头的鉴权字段"""
+    """获取请求头的鉴权字段."""
     async def __call__(
         self,
         request: requests.Request,
