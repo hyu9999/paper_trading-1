@@ -31,6 +31,8 @@ async def create_order(
     engine: MainEngine = Depends(get_engine),
     user: UserInDB = Depends(get_current_user_authorizer()),
 ):
+    if not engine.market_engine.is_trading_time():
+        return HttpMessage(text="非交易时段，无法交易.")
     try:
         return await engine.on_order_arrived(order, user)
     except InsufficientFunds:
@@ -86,6 +88,8 @@ async def delete_entrust_order(
     order_repo: OrderRepository = Depends(get_repository(OrderRepository)),
     user: UserInDB = Depends(get_current_user_authorizer()),
 ):
+    if not engine.market_engine.is_trading_time():
+        return HttpMessage(text="非交易时段，无法交易.")
     try:
         order = await order_repo.get_order_by_entrust_id(entrust_id)
     except EntityDoesNotExist:
