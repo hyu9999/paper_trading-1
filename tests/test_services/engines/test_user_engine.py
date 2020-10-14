@@ -8,16 +8,20 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.db.repositories.order import OrderRepository
 from app.db.repositories.position import PositionRepository
+from app.db.repositories.user_assets_record import UserAssetsRecordRepository
 from app.exceptions.service import InsufficientFunds, NoPositionsAvailable, NotEnoughAvailablePositions
-from app.models.base import get_utc_now
 from app.models.types import PyDecimal
+from app.models.base import get_utc_now
+from app.models.enums import OrderTypeEnum
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
 from app.models.schemas.orders import OrderInCreate
 from app.models.domain.position import PositionInDB
 from app.models.schemas.position import PositionInCreate
 from app.services.engines.user_engine import UserEngine
+from tests.json.quotes import quotes_json
 from tests.json.order import order_in_create_json
+from tests.json.position import position_in_create_json
 
 pytestmark = pytest.mark.asyncio
 
@@ -83,18 +87,6 @@ async def order_sell_100(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabas
            "amount": "900", "sold_price": "10", "frozen_stock_volume": 100}
     }
     return await OrderRepository(db).create_order(**json)
-
-
-position_in_create_json = {
-    "symbol": "601816",
-    "exchange": "SH",
-    "volume": 100,
-    "available_volume": 0,
-    "cost": "10",
-    "current_price": "10",
-    "profit": "0",
-    "first_buy_date": get_utc_now()
-}
 
 
 @pytest.fixture
@@ -291,8 +283,63 @@ async def test_can_update_user(
     user_engine: UserEngine,
     order: OrderInDB,
 ):
-    """测试更新用户数据"""
+    """测试更新用户数据."""
     await user_engine.update_user(order, Decimal(100))
     await asyncio.sleep(1)
     user_after_task = await user_engine.user_repo.get_user_by_id(order.user)
     assert user_after_task.securities == PyDecimal("100.00")
+
+
+@pytest.mark.parametrize(
+    "order, position",
+    [
+        (pytest.lazy_fixture("order_t0"), None),
+        (pytest.lazy_fixture("order_sell_90"), pytest.lazy_fixture("position_in_create_available_100")),
+    ]
+)
+async def test_can_unfreeze_user_assets(
+    user_engine: UserEngine,
+    order: OrderInDB,
+    position: PositionInDB,
+):
+    """测试解冻用户资产."""
+    user_before_task = await user_engine.user_repo.get_user_by_id(order.user)
+    await user_engine.process_unfreeze(order)
+    await asyncio.sleep(2)
+    if order.order_type == OrderTypeEnum.BUY:
+        user_after_task = await user_engine.user_repo.get_user_by_id(order.user)
+        assert user_after_task.cash.to_decimal() == \
+            user_before_task.cash.to_decimal() + order.frozen_amount.to_decimal()
+    else:
+        position_after_task = await user_engine.position_repo.get_position_by_id(position.id)
+        assert position_after_task.available_volume == \
+            position.available_volume + order.frozen_stock_volume
+
+
+async def test_can_update_user_assets_record(
+    user_engine: UserEngine,
+    test_user: UserInDB,
+    db: AsyncIOMotorDatabase,
+):
+    # 创建俩次用户资产时点数据，查看每日数据是否唯一
+    await user_engine.update_user_assets_record(test_user)
+    await asyncio.sleep(2)
+    await user_engine.update_user_assets_record(test_user)
+    await asyncio.sleep(2)
+    user_assets_records_after_task = \
+        await UserAssetsRecordRepository(db).get_user_assets_records(
+            user_id=test_user.id,
+            record_date=get_utc_now().date()
+        )
+    assert len(user_assets_records_after_task) == 1
+
+
+async def test_can_liquidate_user_position(
+    user_engine: UserEngine,
+    test_user_scope_func: UserInDB,
+    position_in_create_available_100: PositionInDB
+):
+    await user_engine.liquidate_user_position(test_user_scope_func)
+    await asyncio.sleep(1)
+    position_after_task = await user_engine.position_repo.get_position_by_id(position_in_create_available_100.id)
+    assert str(position_after_task.current_price) == str(quotes_json["ask1_p"])

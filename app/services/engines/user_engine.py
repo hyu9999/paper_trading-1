@@ -265,7 +265,7 @@ class UserEngine(BaseEngine):
 
     async def update_user_assets_record(self, user: UserInDB) -> None:
         """更新用户资产时点数据."""
-        record = await self.user_assets_record_repo.get_user_assets_record_today()
+        record = await self.user_assets_record_repo.get_user_assets_record_today(user_id=user.id)
         if record:
             record_in_update = UserAssetsRecordInUpdate(
                 id=record.id, assets=user.assets, cash=user.cash, securities=user.securities

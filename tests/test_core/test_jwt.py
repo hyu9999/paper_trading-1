@@ -5,7 +5,6 @@ from datetime import timedelta
 import jwt
 import pytest
 from dynaconf import Dynaconf
-from jwt.exceptions import DecodeError, ExpiredSignatureError
 
 from app.core.jwt import create_jwt_token, get_user_id_from_token
 
@@ -18,6 +17,11 @@ def token():
     return token
 
 
+@pytest.fixture
+def invalid_token(token: str):
+    return token[::-1]
+
+
 def test_create_jwt_token(settings: Dynaconf):
     token = create_jwt_token(jwt_content=jwt_content, expires_delta=timedelta(minutes=1))
     content = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
@@ -25,15 +29,20 @@ def test_create_jwt_token(settings: Dynaconf):
 
 
 @pytest.mark.parametrize(
-    "expect_exception",
-    [None, DecodeError, ExpiredSignatureError]
+    "expect_exception_message, time_sleep, jwt_token",
+    [
+        ("", 0, pytest.lazy_fixture("token")),
+        ("无法解码该JWT Token.", 0, pytest.lazy_fixture("invalid_token")),
+        ("该Token已过期.", 4, pytest.lazy_fixture("token"))
+    ]
 )
-def test_decode_jwt_token(token: str, expect_exception: Optional[Exception]):
-    if expect_exception == ExpiredSignatureError:
-        time.sleep(3)
+def test_decode_jwt_token(expect_exception_message: Optional[Exception], time_sleep: int, jwt_token: str):
+    time.sleep(time_sleep)
+    exp = ""
     try:
-        id_ = get_user_id_from_token(token)
+        id_ = get_user_id_from_token(jwt_token)
     except Exception as e:
-        assert e == expect_exception
+        exp = e
     else:
         assert id_ == jwt_content["id"]
+    assert str(exp) == expect_exception_message

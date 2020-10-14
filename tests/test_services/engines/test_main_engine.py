@@ -6,10 +6,10 @@ from pytest_mock import MockerFixture
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.db.repositories.order import OrderRepository
-from app.models.enums import PriceTypeEnum
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
 from app.models.schemas.orders import OrderInCreate
+from app.models.enums import PriceTypeEnum, OrderStatusEnum
 from app.services.engines.main_engine import MainEngine
 from tests.json.order import order_in_create_json
 
@@ -125,3 +125,14 @@ async def test_main_engine_on_order_arrived(
     order_after_create = await OrderRepository(db).get_order_by_entrust_id(order.entrust_id)
     assert order_after_create
     assert order_after_create.price_type == expect_price_type
+
+
+async def test_main_engine_can_refuse_order(
+    main_engine: MainEngine,
+    order_not_done_status: OrderInDB,
+    db: AsyncIOMotorDatabase,
+):
+    await main_engine.refuse_order(order_not_done_status)
+    await asyncio.sleep(1)
+    order_after_create = await OrderRepository(db).get_order_by_entrust_id(order_not_done_status.entrust_id)
+    assert order_after_create.status == OrderStatusEnum.REJECTED

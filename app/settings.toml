@@ -8,7 +8,7 @@ allowed_origins = ["*"]
 
     # 数据库相关配置
     [default.db]
-    host = "localhost"
+    host = "127.0.0.1"
     port = 27017
     url = "@format mongodb://{env[DYNACONF_DB_USER]}:{env[DYNACONF_DB_PASSWORD]}@{this.DB.HOST}:{this.DB.PORT}"
     name = "paper_trading"
