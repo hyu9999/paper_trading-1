@@ -53,7 +53,7 @@ Docker 部署
     $ docker-compose up -d db
     $ docker-compose up -d app
 
-然后应用会运行在本地运行。
+然后应用将在本地运行。
 
 
 项目结构
