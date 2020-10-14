@@ -64,3 +64,6 @@ venv.bak/
 # Ignore docs static files
 _build/
 /docs/source/
+
+# Ignore script log files
+insert_log*.txt

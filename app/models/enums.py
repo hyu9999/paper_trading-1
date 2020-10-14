@@ -20,7 +20,6 @@ class OrderTypeEnum(str, Enum):
     BUY = "buy"
     SELL = "sell"
     CANCEL = "cancel"
-    LIQUIDATION = "liquidation"
 
 
 @unique
