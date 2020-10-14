@@ -54,7 +54,7 @@ class OrderRepository(BaseRepository):
     async def get_order_by_entrust_id(self, entrust_id: PyObjectId) -> OrderInDB:
         order_row = await self.collection.find_one({
             "entrust_id": entrust_id,
-            "order_type": {"$nin": [OrderTypeEnum.CANCEL.value, OrderTypeEnum.LIQUIDATION.value]}
+            "order_type": {"$nin": [OrderTypeEnum.CANCEL.value]}
         })
         if order_row:
             return OrderInDB(**order_row)
