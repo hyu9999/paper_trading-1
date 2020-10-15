@@ -66,4 +66,5 @@ _build/
 /docs/source/
 
 # Ignore script log files
-insert_log*.txt
+insert_log*.json
+
