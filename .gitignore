@@ -67,4 +67,7 @@ _build/
 
 # Ignore script log files
 insert_log*.json
+user_mapping.json
+order_mapping.json
+
 

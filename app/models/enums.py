@@ -43,7 +43,7 @@ class OrderStatusEnum(str, Enum):
     NOT_DONE = "未成交"
     PART_FINISHED = "部分成交"
     ALL_FINISHED = "全部成交"
-    CANCELED = "已取消"
+    CANCELED = "已撤销"
     REJECTED = "已拒单"
 
 

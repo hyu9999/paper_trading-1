@@ -76,8 +76,23 @@ async def insert_v1_data():
     v1_database = client.get_database(v1_db_name)
     v1_collection_names = await v1_database.list_collection_names()
 
-    # 成功插入到V2数据库中的ID列表
+    # 写入文件的路径
+    user_mapping_file_path = "./user_mapping.json"
+    order_mapping_file_path = "./order_mapping.json"
+    log_file_path = f"insert_log_{db_tag}_{datetime.today()}.json"
+
+    # 数据
     insert_logs = []
+    order_mapping = []
+    if db_tag_num == 1:
+        user_mapping = {}
+    else:
+        try:
+            with open(user_mapping_file_path) as f:
+                user_mapping = json.load(f)
+        except FileNotFoundError:
+            raise ValueError("请先插入用户数据.")
+
     # 找到V1数据的数量
     find_count = 0
 
@@ -90,8 +105,8 @@ async def insert_v1_data():
         for v1_conn_name in v1_collection_names:
             v1_account_conn = v1_database[v1_conn_name]
             v1_user = await v1_account_conn.find_one()
-            insert_status = {
-                "_id": str(v1_user.get("_id"))
+            insert_info = {
+                "v1_row_id": str(v1_user.get("_id"))
             }
             try:
                 user = UserInDB(
@@ -104,52 +119,67 @@ async def insert_v1_data():
                     slippage=str(v1_user.get("slippoint")),
                     desc=v1_user.get("account_info")
                 )
-                user_dict = user.dict(exclude={"id"})
-                user_dict["_id"] = ObjectId(v1_user.get("account_id"))
-                row = await v2_account_db_conn.insert_one(user_dict)
+                row = await v2_account_db_conn.insert_one(user.dict(exclude={"id"}))
             except Exception as e:
-                insert_status["status"] = "Error"
-                insert_status["error_msg"] = str(e)
+                insert_info["status"] = "Error"
+                insert_info["error_msg"] = str(e)
             else:
-                insert_status["status"] = "Success"
-                insert_status["inserted_id"] = str(row.inserted_id)
+                insert_info["status"] = "Success"
+                insert_info["inserted_id"] = str(row.inserted_id)
+                user_mapping[v1_user["account_id"]] = {
+                    "v1_user_id": v1_user["account_id"],
+                    "v2_user_id": str(row.inserted_id),
+                }
             finally:
-                insert_logs.append(insert_status)
+                insert_logs.append(insert_info)
                 find_count += 1
 
     elif db_tag_num == 2:
-        # 用户持仓时点数据表
+        # 用户资产时点数据表
         v2_account_record_db_conn = v2_database[settings.db.collections.user_assets_record]
-        click.echo("插入用户持仓时点数据到V2数据库中...")
+        click.echo("插入用户资产时点数据到V2数据库中...")
         for v1_conn_name in v1_collection_names:
             v1_account_record_conn = v1_database[v1_conn_name]
-            v1_user_record = await v1_account_record_conn.find_one()
-            insert_status = {
-                "_id": str(v1_user_record.get("_id"))
-            }
-            try:
-                user_id = ObjectId(v1_user_record.get("account_id"))
-                user_v2 = await v2_account_db_conn.find_one({"_id": user_id})
-                assert user_v2
-                check_date = datetime.strptime(v1_user_record.get("check_date"), "%Y%m%d")
-                user_record = UserAssetsRecordInDB(
-                    user=user_id,
-                    assets=str(v1_user_record.get("assets", 0)),
-                    cash=str(v1_user_record.get("available", 0)),
-                    securities=str(v1_user_record.get("market_value", 0)),
-                    date=check_date,
-                    check_time=check_date
-                )
-                row = await v2_account_record_db_conn.insert_one(user_record)
-            except Exception as e:
-                insert_status["status"] = "Error"
-                insert_status["error_msg"] = str(e)
-            else:
-                insert_status["status"] = "Success"
-                insert_status["inserted_id"] = str(row.inserted_id)
-            finally:
-                insert_logs.append(insert_status)
-                find_count += 1
+            v1_user_records = v1_account_record_conn.find()
+            async for v1_user_record in v1_user_records:
+                insert_info = {
+                    "v1_row_id": str(v1_user_record.get("_id"))
+                }
+                mapping_dict = user_mapping.get(v1_conn_name)
+                if not mapping_dict:
+                    insert_info["status"] = "Error"
+                    insert_info["error_msg"] = "该用户未写入."
+                    insert_logs.append(insert_info)
+                    find_count += 1
+                    continue
+                v2_user_id = ObjectId(mapping_dict["v2_user_id"])
+                v2_user = await v2_account_db_conn.find_one({"_id": v2_user_id})
+                if not v2_user:
+                    insert_info["status"] = "Error"
+                    insert_info["error_msg"] = "未找到该用户."
+                    insert_logs.append(insert_info)
+                    find_count += 1
+                    continue
+                try:
+                    check_date = datetime.strptime(str(v1_user_record.get("check_date")), "%Y%m%d")
+                    user_record = UserAssetsRecordInDB(
+                        user=v2_user_id,
+                        assets=str(v1_user_record.get("assets", 0)),
+                        cash=str(v1_user_record.get("available", 0)),
+                        securities=str(v1_user_record.get("market_value", 0)),
+                        date=check_date,
+                        check_time=check_date
+                    )
+                    row = await v2_account_record_db_conn.insert_one(user_record.dict(exclude={"id"}))
+                except Exception as e:
+                    insert_info["status"] = "Error"
+                    insert_info["error_msg"] = str(e)
+                else:
+                    insert_info["status"] = "Success"
+                    insert_info["inserted_id"] = str(row.inserted_id)
+                finally:
+                    insert_logs.append(insert_info)
+                    find_count += 1
 
     elif db_tag_num == 3:
         # 持仓表
@@ -157,35 +187,54 @@ async def insert_v1_data():
         click.echo("插入用户持仓数据到V2数据库中...")
         for v1_conn_name in v1_collection_names:
             v1_position_conn = v1_database[v1_conn_name]
-            v1_position = await v1_position_conn.find_one()
-            insert_status = {
-                "_id": str(v1_position.get("_id"))
-            }
-            try:
-                user_id = ObjectId(v1_position.get("account_id"))
-                user_v2 = await v2_account_db_conn.find_one({"_id": user_id})
-                assert user_v2
-                first_buy_date = datetime.strptime(v1_position.get("buy_price"), "%Y%m%d")
-                position_in_db = PositionInDB(
-                    symbol=v1_position.get("code"),
-                    exchange=v1_position.get("exchange"),
-                    user=user_id,
-                    first_buy_date=first_buy_date,
-                    volume=str(v1_position.get("volume")),
-                    available_volume=str(v1_position.get("available")),
-                    current_price=str(v1_position.get("now_price")),
-                    profit=str(v1_position.get("profit")),
-                )
-                row = await v2_position_db_conn.insert_one(position_in_db)
-            except Exception as e:
-                insert_status["status"] = "Error"
-                insert_status["error_msg"] = str(e)
-            else:
-                insert_status["status"] = "Success"
-                insert_status["inserted_id"] = str(row.inserted_id)
-            finally:
-                insert_logs.append(insert_status)
-                find_count += 1
+            v1_position_list = v1_position_conn.find()
+            async for v1_position in v1_position_list:
+                insert_info = {
+                    "v1_row_id": str(v1_position.get("_id"))
+                }
+                mapping_dict = user_mapping.get(v1_conn_name)
+                if not mapping_dict:
+                    insert_info["status"] = "Error"
+                    insert_info["error_msg"] = "该用户未写入."
+                    insert_logs.append(insert_info)
+                    find_count += 1
+                    continue
+                v2_user_id = ObjectId(mapping_dict["v2_user_id"])
+                v2_user = await v2_account_db_conn.find_one({"_id": v2_user_id})
+                if not v2_user:
+                    insert_info["status"] = "Error"
+                    insert_info["error_msg"] = "未找到该用户."
+                    insert_logs.append(insert_info)
+                    find_count += 1
+                    continue
+                try:
+                    first_buy_date_str = v1_position.get("first_buy_date")
+                    first_buy_date = datetime.strptime(first_buy_date_str, "%Y%m%d") if first_buy_date_str else None
+                    last_sell_date_str = v1_position.get("last_sell_date")
+                    last_sell_date = datetime.strptime(last_sell_date_str, "%Y%m%d") if first_buy_date_str else None
+                    position_in_db = PositionInDB(
+                        symbol=v1_position.get("code"),
+                        exchange=v1_position.get("exchange"),
+                        user=v2_user_id,
+                        first_buy_date=first_buy_date,
+                        last_sell_date=last_sell_date,
+                        volume=v1_position.get("volume"),
+                        available_volume=v1_position.get("available"),
+                        cost=str(v1_position.get("buy_price")),
+                        current_price=str(v1_position.get("now_price")),
+                        profit=str(v1_position.get("profit")),
+                    )
+                    row = await v2_position_db_conn.insert_one(position_in_db.dict(exclude={"id"}))
+                except Exception as e:
+                    insert_info["conn_name"] = v1_conn_name
+                    insert_info["status"] = "Error"
+                    insert_info["error_msg"] = str(e)
+                else:
+                    insert_info["status"] = "Success"
+                    insert_info["inserted_id"] = str(row.inserted_id)
+                finally:
+                    insert_logs.append(insert_info)
+                    find_count += 1
 
     elif db_tag_num == 4:
         # 订单表
@@ -193,50 +242,96 @@ async def insert_v1_data():
         click.echo("插入订单数据到V2数据库中...")
         for v1_conn_name in v1_collection_names:
             v1_order_conn = v1_database[v1_conn_name]
-            v1_order = await v1_order_conn.find_one()
-            insert_status = {
-                "_id": str(v1_order.get("_id"))
-            }
-            try:
-                user_id = ObjectId(v1_order.get("account_id"))
-                user_v2 = await v2_account_db_conn.find_one({"_id": user_id})
-                assert user_v2
-                order_type = v1_order.get("order_type")
-                if order_type == "liquidation":
+            v1_orders = v1_order_conn.find()
+            async for v1_order in v1_orders:
+                insert_info = {
+                    "v1_row_id": str(v1_order.get("_id"))
+                }
+                mapping_dict = user_mapping.get(v1_conn_name)
+                if not mapping_dict:
+                    insert_info["status"] = "Error"
+                    insert_info["error_msg"] = "该用户未写入."
+                    insert_logs.append(insert_info)
+                    find_count += 1
                     continue
-                order_in_db = OrderInDB(
-                    symbol=v1_order.get("code"),
-                    exchange=v1_order.get("exchange"),
-                    user=user_id,
-                    entrust_id=v1_order.get("order_id"),
-                    order_type=order_type,
-                    price_type=v1_order.get("price_type"),
-                    trade_type=v1_order.get("trade_type").upper(),
-                    volume=str(v1_order.get("volume")),
-                    price=str(v1_order.get("price")),
-                    sold_price=str(v1_order.get("trade_price")),
-                    traded_volume=str(v1_order.get("traded")),
-                    status=str(v1_order.get("status")),
-                    order_date=datetime.strptime(v1_order.get("order_date"), "%Y%m%d")
-                )
-                row = await order_db_v2_conn.insert_one(order_in_db)
-            except Exception as e:
-                insert_status["status"] = "Error"
-                insert_status["error_msg"] = str(e)
-            else:
-                insert_status["status"] = "Success"
-                insert_status["inserted_id"] = str(row.inserted_id)
-            finally:
-                insert_logs.append(insert_status)
-                find_count += 1
+                v2_user_id = ObjectId(mapping_dict["v2_user_id"])
+                v2_user = await v2_account_db_conn.find_one({"_id": v2_user_id})
+                if not v2_user:
+                    insert_info["status"] = "Error"
+                    insert_info["error_msg"] = "未找到该用户."
+                    insert_logs.append(insert_info)
+                    find_count += 1
+                    continue
+                try:
+                    v1_user_id = v1_order.get("account_id")
+                    user_id = ObjectId(user_mapping[v1_user_id]["v2_user_id"])
+                    user_v2 = await v2_account_db_conn.find_one({"_id": user_id})
+                    assert user_v2
+                    order_type = v1_order.get("order_type")
+                    if order_type == "liquidation":
+                        continue
+                    price_type_mapping = {
+                        "限价": "limit",
+                        "市价": "market",
+                    }
+                    trade_type_str = v1_order.get("trade_type")
+                    trade_type = trade_type_str.upper() if trade_type_str else "T1"
+
+                    trade_price_str = v1_order.get("order_price")
+                    trade_price = str(trade_price_str) if trade_price_str else None
+
+                    trade_status_str = v1_order.get("status")
+                    trade_status = "已拒单" if trade_status_str == "拒单" else trade_status_str
+
+                    order_date_str = v1_order.get("order_date")
+                    if len(order_date_str) > 8:
+                        order_date = datetime.strptime(order_date_str, "%Y-%m-%d")
+                    else:
+                        order_date = datetime.strptime(order_date_str, "%Y%m%d")
+
+                    order_in_db = OrderInDB(
+                        symbol=v1_order.get("code"),
+                        exchange=v1_order.get("exchange"),
+                        user=user_id,
+                        entrust_id=ObjectId(),
+                        order_type=order_type,
+                        price_type=price_type_mapping[v1_order.get("price_type")],
+                        trade_type=trade_type,
+                        volume=v1_order.get("volume"),
+                        price=str(v1_order.get("order_price")),
+                        sold_price=trade_price,
+                        traded_volume=v1_order.get("traded", 0),
+                        status=trade_status,
+                        order_date=order_date
+                    )
+                    row = await order_db_v2_conn.insert_one(order_in_db.dict(exclude={"id"}))
+                except Exception as e:
+                    insert_info["conn_name"] = v1_conn_name
+                    insert_info["status"] = "Error"
+                    insert_info["error_msg"] = str(e)
+                else:
+                    insert_info["status"] = "Success"
+                    insert_info["inserted_id"] = str(row.inserted_id)
+                    order_mapping.append({
+                        "v1_order_id": v1_order.get("order_id"),
+                        "v2_order_id": str(order_in_db.entrust_id)
+                    })
+                finally:
+                    insert_logs.append(insert_info)
+                    find_count += 1
 
     client.close()
     success_count = len([insert_log for insert_log in insert_logs if insert_log.get("status") == "Success"])
     click.echo(f"共找到{find_count}条{db_tag}数据，成功插入{success_count}条.")
-    file_name = f"insert_log_{db_tag}_{datetime.today()}.json"
-    with open(file_name, "w", encoding="utf-8") as f:
+    with open(log_file_path, "w", encoding="utf-8") as f:
         json.dump(insert_logs, f, ensure_ascii=False, indent=4)
-    click.echo(f"插入结果已写入{file_name}中.")
+    if db_tag_num == 1:
+        with open(user_mapping_file_path, "w", encoding="utf-8") as f:
+            json.dump(user_mapping, f, ensure_ascii=False, indent=4)
+    if db_tag_num == 4:
+        with open(order_mapping_file_path, "w", encoding="utf-8") as f:
+            json.dump(order_mapping, f, ensure_ascii=False, indent=4)
+    click.echo(f"插入结果已写入`{log_file_path}`中.")
 
 if __name__ == "__main__":
     cli()

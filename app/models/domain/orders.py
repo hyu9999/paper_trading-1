@@ -26,6 +26,5 @@ class OrderInDB(DBModelMixin, Order):
     traded_volume: int = Field(0, description="已成交数量")
     sold_price: Optional[PyDecimal] = Field(None, description="成交价格")
     order_date: datetime = Field(..., description="订单日期")
-    order_time: timedelta = Field(None, description="订单时长")
     frozen_amount: PyDecimal = Field(None, description="冻结资金")
     frozen_stock_volume: int = Field(None, description="冻结持仓股票数量")

@@ -56,7 +56,7 @@ async def order_all_finished_status(test_user_scope_func: UserInDB, db: AsyncIOM
 async def order_cancel_status(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
     json = {
         **order_in_create_json,
-        **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "status": "已取消"}
+        **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "status": "已撤销"}
     }
     return await OrderRepository(db).create_order(**json)
 
