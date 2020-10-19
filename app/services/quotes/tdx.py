@@ -23,8 +23,7 @@ class TDXQuotes(BaseQuotes):
     def __init__(self) -> None:
         addr = self.get_available_addr()
         self.ip_pool = AvailableIPPool(TdxHq_API, addr[:5])
-        self.api = TdxHqPool_API(TdxHq_API, self.ip_pool)
-        self.api: TdxHqPool_API
+        self.api: TdxHqPool_API = TdxHqPool_API(TdxHq_API, self.ip_pool)
 
     async def connect_pool(self) -> None:
         """连接到通达信行情池."""
@@ -85,7 +84,7 @@ class TDXQuotes(BaseQuotes):
             open=api_quotes["open"],
             high=api_quotes["high"],
             low=api_quotes["low"],
-            time=datetime.strptime(api_quotes["servertime"], "%H:%M:%S.%f"),
+            # time=datetime.strptime(api_quotes["servertime"], "%H:%M:%S.%f"),
             bid1_p=api_quotes.get("bid1"),
             bid2_p=api_quotes.get("bid2"),
             bid3_p=api_quotes.get("bid3"),

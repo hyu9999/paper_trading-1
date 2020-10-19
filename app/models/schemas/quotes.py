@@ -12,7 +12,7 @@ class Quotes(RWSchema, Stock):
     open: PyDecimal = Field(..., description="开盘价")
     high: PyDecimal = Field(..., description="当日最高价")
     low: PyDecimal = Field(..., description="当日最低价")
-    time: datetime = Field(..., description="时间")
+    # time: datetime = Field(..., description="时间")
     bid1_p: PyDecimal = Field(..., description="买1价格")
     bid2_p: PyDecimal = Field(..., description="买2价格")
     bid3_p: PyDecimal = Field(..., description="买3价格")
