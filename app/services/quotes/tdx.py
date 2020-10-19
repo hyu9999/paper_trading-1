@@ -1,5 +1,4 @@
 import socket
-from datetime import datetime
 from time import perf_counter
 from typing import List, Tuple
 
