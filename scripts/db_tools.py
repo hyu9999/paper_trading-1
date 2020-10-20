@@ -302,7 +302,8 @@ async def insert_v1_data():
                         sold_price=trade_price,
                         traded_volume=v1_order.get("traded", 0),
                         status=trade_status,
-                        order_date=order_date
+                        order_date=order_date,
+                        position_change=str(v1_order.get("pos_change"))
                     )
                     row = await order_db_v2_conn.insert_one(order_in_db.dict(exclude={"id"}))
                 except Exception as e:

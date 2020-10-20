@@ -1,6 +1,7 @@
 import asyncio
 
 from app.exceptions.service import InvalidExchange
+from app.models.types import PyDecimal
 from app.models.domain.orders import OrderInDB
 from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus
 from app.models.enums import OrderTypeEnum, PriceTypeEnum, OrderStatusEnum
@@ -125,13 +126,17 @@ class BaseMarket(BaseEngine):
     async def save_order(self, order: OrderInDB) -> None:
         """撮合完成后保存订单信息."""
         if order.order_type == OrderTypeEnum.BUY.value:
-            await self.user_engine.create_position(order)
+            securities_diff = await self.user_engine.create_position(order)
         elif order.order_type == OrderTypeEnum.SELL.value:
-            await self.user_engine.reduce_position(order)
+            securities_diff = await self.user_engine.reduce_position(order)
+        else:
+            securities_diff = 0
         order.status = OrderStatusEnum.ALL_FINISHED.value \
             if order.volume == order.traded_volume \
             else OrderStatusEnum.PART_FINISHED.value
         order_in_update_payload = OrderInUpdate(**dict(order))
+        user = await self.user_engine.user_repo.get_user_by_id(order.user)
+        order_in_update_payload.position_change = PyDecimal(securities_diff / user.assets.to_decimal())
         await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
 
     def exchange_validation(self, order: OrderInDB) -> None:

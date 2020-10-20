@@ -166,7 +166,7 @@ class UserEngine(BaseEngine):
         else:
             raise NoPositionsAvailable
 
-    async def create_position(self, order: OrderInDB) -> None:
+    async def create_position(self, order: OrderInDB) -> Decimal:
         """新建持仓."""
         position = await self.position_repo.get_position(order.user, order.symbol, order.exchange)
         user = await self.user_repo.get_user_by_id(order.user)
@@ -174,8 +174,8 @@ class UserEngine(BaseEngine):
         order_available_volume = order.traded_volume if order.trade_type == TradeTypeEnum.T0 else 0
         # 交易费用
         fee = Decimal(order.volume) * order.price.to_decimal() * user.commission.to_decimal()
-        # 交易金额
-        securities_diff = Decimal(order.traded_volume) * order.sold_price.to_decimal()
+        # 订单证券市值
+        securities = Decimal(order.traded_volume) * order.sold_price.to_decimal()
         # 增持股票
         if position:
             volume = position.volume + order.traded_volume
@@ -197,8 +197,12 @@ class UserEngine(BaseEngine):
             )
             event = Event(POSITION_UPDATE_EVENT, position_in_update)
             await self.event_engine.put(event)
+            # 证券资产变化值 = 订单证券市值 - 原持仓市值
+            securities_diff = securities - Decimal(position.volume) * position.current_price.to_decimal()
         # 建仓
         else:
+            # 证券资产变化值 = 订单证券市值
+            securities_diff = securities
             # 可用股票数量
             position_in_create = PositionInCreate(
                 user=order.user,
@@ -212,7 +216,8 @@ class UserEngine(BaseEngine):
                 first_buy_date=get_utc_now()
             )
             await self.event_engine.put(Event(POSITION_CREATE_EVENT, position_in_create))
-            await self.update_user(order, securities_diff)
+        await self.update_user(order, securities_diff)
+        return securities_diff
 
     async def reduce_position(self, order: OrderInDB) -> None:
         """减仓."""
@@ -245,6 +250,10 @@ class UserEngine(BaseEngine):
             position_in_update.last_sell_date = get_utc_now()
         event = Event(POSITION_UPDATE_EVENT, position_in_update)
         await self.event_engine.put(event)
+        # 证券资产变化值 = 订单证券市值
+        securities_diff = Decimal(order.traded_volume) * order.sold_price.to_decimal()
+        await self.update_user(order, securities_diff)
+        return securities_diff
 
     async def update_user(self, order: OrderInDB, securities_diff: Decimal) -> None:
         """订单成交后更新用户信息."""

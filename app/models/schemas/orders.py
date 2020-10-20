@@ -27,6 +27,7 @@ class OrderInUpdate(RWSchema):
     status: OrderStatusEnum = Field(..., description="订单状态")
     traded_volume: int = Field(..., description="已成交数量")
     sold_price: Optional[PyDecimal] = Field(..., description="交易价格")
+    position_change: Optional[PyDecimal] = Field(description="持仓变化")
 
 
 class OrderInUpdateFrozen(RWSchema):
