@@ -15,4 +15,5 @@ async def register_exceptions(app: FastAPI):
     app.add_exception_handler(http.InsufficientAccountFunds, http.InsufficientAccountFunds.handler)
     app.add_exception_handler(http.InvalidOrderExchange, http.InvalidOrderExchange.handler)
     app.add_exception_handler(http.OrderNotFound, http.OrderNotFound.handler)
+    app.add_exception_handler(http.NotTradingTime, http.NotTradingTime.handler)
     logger.info("注册自定义HTTP异常类别完成.")

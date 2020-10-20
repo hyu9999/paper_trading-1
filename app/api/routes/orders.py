@@ -10,7 +10,7 @@ from app.api.dependencies.authentication import get_current_user_authorizer
 from app.db.repositories.order import OrderRepository
 from app.exceptions.db import EntityDoesNotExist
 from app.exceptions.service import InsufficientFunds, InvalidExchange
-from app.exceptions.http import InsufficientAccountFunds, InvalidOrderExchange, OrderNotFound
+from app.exceptions.http import InsufficientAccountFunds, InvalidOrderExchange, OrderNotFound, NotTradingTime
 from app.models.types import PyObjectId
 from app.models.domain.users import UserInDB
 from app.models.schemas.http import HttpMessage
@@ -32,7 +32,7 @@ async def create_order(
     user: UserInDB = Depends(get_current_user_authorizer()),
 ):
     if not engine.market_engine.is_trading_time():
-        return HttpMessage(text="非交易时段，无法交易.")
+        raise NotTradingTime
     try:
         return await engine.on_order_arrived(order, user)
     except InsufficientFunds:

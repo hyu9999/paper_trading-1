@@ -1,6 +1,5 @@
-from datetime import time
+from datetime import datetime, time
 
-from app.models.base import get_utc_now
 from app.services.quotes.base import BaseQuotes
 from app.services.engines.user_engine import UserEngine
 from app.services.engines.event_engine import EventEngine
@@ -16,7 +15,7 @@ class ChinaAMarket(BaseMarket):
 
     @staticmethod
     def is_trading_time() -> bool:
-        current_time = get_utc_now().time()
+        current_time = datetime.today().time()
         trading_period = [{"start": time(9, 20), "end": time(11, 30)}, {"start": time(13, 0), "end": time(15, 0)}]
         for period in trading_period:
             if not (period["start"] <= current_time <= period["end"]):

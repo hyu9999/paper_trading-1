@@ -61,3 +61,8 @@ class InvalidOrderExchange(_HTTPException):
 class OrderNotFound(_HTTPException):
     code = 10023
     detail = "未找到该订单"
+
+
+class NotTradingTime(_HTTPException):
+    code = 10024
+    detail = "非交易时段，无法进行交易"
