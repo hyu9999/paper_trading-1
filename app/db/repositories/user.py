@@ -22,6 +22,8 @@ class UserRepository(BaseRepository):
 
     async def create_user(self, user_in_create: UserInCreate) -> UserInDB:
         user = UserInDB(**user_in_create.dict())
+        user.assets = user.capital
+        user.cash = user.capital
         user_row = await self.collection.insert_one(user.dict(exclude={"id"}))
         user.id = user_row.inserted_id
         return user
