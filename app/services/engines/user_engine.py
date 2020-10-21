@@ -197,8 +197,9 @@ class UserEngine(BaseEngine):
             )
             event = Event(POSITION_UPDATE_EVENT, position_in_update)
             await self.event_engine.put(event)
-            # 证券资产变化值 = 订单证券市值 - 原持仓市值
-            securities_diff = securities - Decimal(position.volume) * position.current_price.to_decimal()
+            # 证券资产变化值 = 现持仓市值 - 原持仓市值
+            securities_diff = volume * current_price.to_decimal() - \
+                Decimal(position.volume) * position.current_price.to_decimal()
         # 建仓
         else:
             # 证券资产变化值 = 订单证券市值
