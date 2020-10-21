@@ -18,6 +18,6 @@ class ChinaAMarket(BaseMarket):
         current_time = datetime.today().time()
         trading_period = [{"start": time(9, 20), "end": time(11, 30)}, {"start": time(13, 0), "end": time(15, 0)}]
         for period in trading_period:
-            if not (period["start"] <= current_time <= period["end"]):
-                return False
-        return True
+            if period["start"] <= current_time <= period["end"]:
+                return True
+        return False
