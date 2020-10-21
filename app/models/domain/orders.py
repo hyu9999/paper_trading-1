@@ -29,3 +29,4 @@ class OrderInDB(DBModelMixin, Order):
     frozen_amount: PyDecimal = Field(None, description="冻结资金")
     frozen_stock_volume: int = Field(None, description="冻结持仓股票数量")
     position_change: Optional[PyDecimal] = Field(None, description="仓位变化")
+    deal_time: Optional[datetime] = Field(None, description="成交时间")

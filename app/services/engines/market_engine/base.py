@@ -2,6 +2,7 @@ import asyncio
 
 from app.exceptions.service import InvalidExchange
 from app.models.types import PyDecimal
+from app.models.base import get_utc_now
 from app.models.domain.orders import OrderInDB
 from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus
 from app.models.enums import OrderTypeEnum, PriceTypeEnum, OrderStatusEnum
@@ -125,6 +126,7 @@ class BaseMarket(BaseEngine):
 
     async def save_order(self, order: OrderInDB) -> None:
         """撮合完成后保存订单信息."""
+        order.deal_time = get_utc_now()
         if order.order_type == OrderTypeEnum.BUY.value:
             securities_diff = await self.user_engine.create_position(order)
         elif order.order_type == OrderTypeEnum.SELL.value:

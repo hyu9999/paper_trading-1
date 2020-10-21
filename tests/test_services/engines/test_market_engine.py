@@ -4,11 +4,13 @@ import pytest
 from pytest_mock import MockerFixture
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app import settings
 from app.db.repositories.order import OrderRepository
 from app.models.schemas.quotes import Quotes
 from app.models.domain.orders import OrderInDB
 from app.models.enums import OrderTypeEnum, OrderStatusEnum
 from app.services.engines.market_engine.base import BaseMarket
+from app.services.engines.market_engine.constant import MARKET_NAME_MAPPING
 from tests.json.quotes import quotes_json
 
 pytestmark = pytest.mark.asyncio
@@ -28,6 +30,12 @@ async def mock_reduce_position(*args, **kwargs):
     pass
 
 
+def is_skip(*args):
+    market_class = MARKET_NAME_MAPPING[settings.service.market]
+    return market_class.is_trading_time()
+
+
+@pytest.mark.skipif(is_skip, reason="非交易时间无法测试.")
 @pytest.mark.parametrize(
     "order_in_db",
     [

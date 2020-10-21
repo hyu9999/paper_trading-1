@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 
 from pydantic import Field
 
@@ -28,6 +29,7 @@ class OrderInUpdate(RWSchema):
     traded_volume: int = Field(..., description="已成交数量")
     sold_price: Optional[PyDecimal] = Field(..., description="交易价格")
     position_change: Optional[PyDecimal] = Field(description="持仓变化")
+    deal_time: Optional[datetime] = Field(description="成交时间")
 
 
 class OrderInUpdateFrozen(RWSchema):
