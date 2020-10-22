@@ -1,6 +1,9 @@
+import asyncio
+from typing import Any
 from datetime import datetime
 from contextlib import contextmanager
 
+from loguru import logger
 from jqdatasdk import auth, logout
 from jqdatasdk import get_ticks as jq_get_ticks
 
@@ -19,6 +22,11 @@ class JQQuotes(BaseQuotes):
         yield
         logout()
 
+    async def _run_func_set_timeout(self, func, **kwargs) -> Any:
+        """用于提供给接口timeout功能."""
+        with self.connect_api():
+            return func(**kwargs)
+
     async def get_ticks(self, code: str) -> Quotes:
         """获取股票Ticks数据.
 
@@ -28,9 +36,21 @@ class JQQuotes(BaseQuotes):
         """
         jq_code = self.format_stock_code(code)
         str_of_today = str(datetime.today().date())
-        with self.connect_api():
-            df_ticks = jq_get_ticks(security=jq_code, count=1, end_dt=str_of_today)
-        return self._format_quotes(df_ticks.to_dict("records")[0], code=code)
+        retry_count = 0
+        while retry_count < settings.quotes_max_retry:
+            try:
+                df_ticks = await asyncio.wait_for(
+                    self._run_func_set_timeout(jq_get_ticks, security=jq_code, count=1, end_dt=str_of_today),
+                    settings.quotes_api_timeout
+                )
+            except asyncio.futures.TimeoutError:
+                logger.info(f"获取股票[{code}]行情连接超时.")
+                retry_count += 1
+                logger.info(f"正在重新获取股票[{code}]行情[{retry_count}/{settings.quotes_max_retry}]...")
+            else:
+                return self._format_quotes(df_ticks.to_dict("records")[0], code=code)
+        logger.error(f"获取股票[{code}]失败, 连接超时.")
+        raise TimeoutError(f"获取股票[{code}]失败, 连接超时.")
 
     @classmethod
     def format_stock_code(cls, code: str) -> str:

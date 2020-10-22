@@ -5,6 +5,8 @@ version = "2.0.1"
 api_prefix = "/api"
 base_url = "@format http://{env[DYNACONF_PT_HOST]}:{env[DYNACONF_PT_PORT]}/"
 allowed_origins = ["*"]
+quotes_api_timeout = 2
+quotes_max_retry = 3
 
     # 数据库相关配置
     [default.db]
