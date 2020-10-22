@@ -1,3 +1,6 @@
+from typing import Optional
+from datetime import datetime
+
 from pydantic import Field
 
 from app.models.types import PyDecimal
@@ -6,11 +9,11 @@ from app.models.schemas.rwschema import RWSchema
 
 
 class Quotes(RWSchema, Stock):
-    last_close: PyDecimal = Field(..., description="上一交易日收盘价")
-    open: PyDecimal = Field(..., description="开盘价")
+    last_close: Optional[PyDecimal] = Field(None, description="上一交易日收盘价")
+    open: Optional[PyDecimal] = Field(None, description="开盘价")
     high: PyDecimal = Field(..., description="当日最高价")
     low: PyDecimal = Field(..., description="当日最低价")
-    # time: datetime = Field(..., description="时间")
+    time: Optional[datetime] = Field(None, description="时间")
     bid1_p: PyDecimal = Field(..., description="买1价格")
     bid2_p: PyDecimal = Field(..., description="买2价格")
     bid3_p: PyDecimal = Field(..., description="买3价格")

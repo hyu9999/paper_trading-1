@@ -26,7 +26,7 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.fixture(scope='session', autouse=True)
 def mock(session_mocker):
-    session_mocker.patch("app.services.engines.main_engine.TDXQuotes", side_effect=TDXQuotesMocker)
+    session_mocker.patch("app.services.quotes.constant.TDXQuotes", side_effect=TDXQuotesMocker)
     session_mocker.patch("app.services.engines.market_engine.china_a_market.ChinaAMarket.is_trading_time",
                          return_value=True)
 

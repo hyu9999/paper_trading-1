@@ -11,3 +11,6 @@ class BaseQuotes(ABC):
 
     async def connect_pool(self) -> None:
         pass
+
+    async def close(self) -> None:
+        pass

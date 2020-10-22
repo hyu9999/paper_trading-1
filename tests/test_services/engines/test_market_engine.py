@@ -50,7 +50,6 @@ async def test_market_engine_can_matchmaking(
     mocker: MockerFixture,
     db: AsyncIOMotorDatabase
 ):
-    mocker.patch("app.services.quotes.tdx.TDXQuotes.get_ticks", mock_get_ticks)
     mocker.patch("app.services.engines.user_engine.UserEngine.create_position", mock_create_position)
     mocker.patch("app.services.engines.user_engine.UserEngine.reduce_position", mock_reduce_position)
     await market_engine.put(order_in_db)

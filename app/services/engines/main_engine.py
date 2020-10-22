@@ -11,7 +11,7 @@ from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
 from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus, OrderInUpdateFrozen
 from app.models.schemas.orders import OrderInCreate, OrderInCreateViewResponse
-from app.services.quotes.tdx import TDXQuotes
+from app.services.quotes.constant import quotes_mapping
 from app.services.engines.base import BaseEngine
 from app.services.engines.log_engine import LogEngine
 from app.services.engines.event_engine import EventEngine
@@ -32,7 +32,7 @@ class MainEngine(BaseEngine):
         self.db = db
         self.log_engine = LogEngine(self.event_engine)
         self.order_repo = OrderRepository(db)
-        self.quotes_api = TDXQuotes()
+        self.quotes_api = quotes_mapping[settings.quotes_api]()
         self.user_engine = UserEngine(self.event_engine, self.db, self.quotes_api)
         self.market_engine = MARKET_NAME_MAPPING[settings.service.market](
             self.event_engine, self.user_engine, self.quotes_api

@@ -58,12 +58,12 @@ class TDXQuotes(BaseQuotes):
         ----------
         code : 600001.SH
         """
-        tdx_code = await self.format_stock_code(code)
+        tdx_code = self.format_stock_code(code)
         api_quotes = self.api.get_security_quotes(tdx_code)
         return await self._format_quotes(api_quotes[0])
 
     @classmethod
-    async def format_stock_code(cls, code: str) -> Tuple[int, str]:
+    def format_stock_code(cls, code: str) -> Tuple[int, str]:
         """转化股票代码为通达信格式.
 
         Parameters
@@ -83,7 +83,6 @@ class TDXQuotes(BaseQuotes):
             open=api_quotes["open"],
             high=api_quotes["high"],
             low=api_quotes["low"],
-            # time=datetime.strptime(api_quotes["servertime"], "%H:%M:%S.%f"),
             bid1_p=api_quotes.get("bid1"),
             bid2_p=api_quotes.get("bid2"),
             bid3_p=api_quotes.get("bid3"),
