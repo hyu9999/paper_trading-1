@@ -94,13 +94,14 @@ class BaseMarket(BaseEngine):
                         order.traded_volume = order.volume
                         await self.save_order(order)
                         continue
-
                     # 限价成交
-                    elif order.price_type == PriceTypeEnum.LIMIT:
+                    else:
                         if order.price.to_decimal() >= quotes.ask1_p.to_decimal():
                             order.sold_price = quotes.ask1_p
                             order.traded_volume = order.volume
                             await self.save_order(order)
+                        else:
+                            await self._entrust_orders.put(order)
                         continue
                 else:
                     # 跌停
@@ -115,13 +116,14 @@ class BaseMarket(BaseEngine):
                         order.traded_volume = order.volume
                         await self.save_order(order)
                         continue
-
                     # 限价成交
-                    elif order.price_type == PriceTypeEnum.LIMIT:
+                    else:
                         if order.price.to_decimal() <= quotes.bid1_p.to_decimal():
                             order.sold_price = quotes.bid1_p
                             order.traded_volume = order.volume
                             await self.save_order(order)
+                        else:
+                            await self._entrust_orders.put(order)
                         continue
 
     async def save_order(self, order: OrderInDB) -> None:
