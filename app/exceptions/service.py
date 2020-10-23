@@ -20,3 +20,7 @@ class NoPositionsAvailable(ServiceError):
 
 class NotEnoughAvailablePositions(ServiceError):
     """用户持仓股票可用数量不足时触发."""
+
+
+class GetQuotesFailed(ServiceError):
+    """获取行情失败时触发."""

@@ -59,6 +59,9 @@ class PositionRepository(BaseRepository):
         position_rows = self.collection.find({"user": user_id})
         return [PositionInResponse(**position) async for position in position_rows]
 
+    async def update_position(self, position: PositionInUpdate) -> None:
+        await self.collection.update_one({"_id": position.id}, {"$set": position.dict(exclude={"id"})})
+
     async def process_create_position(self, position: PositionInCreate) -> None:
         position_in_db = PositionInDB(**position.dict())
         await self.collection.insert_one(position_in_db.dict(exclude={"id"}))

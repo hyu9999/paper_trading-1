@@ -38,6 +38,9 @@ class UserRepository(BaseRepository):
         users_row = self.collection.find()
         return [UserInDB(**user) async for user in users_row]
 
+    async def update_user(self, user: UserInUpdate) -> None:
+        await self.collection.update_one({"_id": user.id}, {"$set": user.dict(exclude={"id"})})
+
     async def update_user_by_id(
         self,
         capital: float,

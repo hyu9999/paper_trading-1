@@ -10,6 +10,7 @@ from app import settings
 from app.core.logging import init_logger
 from app.db.events import connect_to_db, close_db_connection
 from app.exceptions.events import register_exceptions
+from app.schedulers import load_jobs_with_lock
 from app.services.events import start_engine, close_engine
 
 HANDLED_SIGNALS = (
@@ -38,6 +39,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         await register_exceptions(app)
         await start_engine(app)
         await install_signal_handlers(app)
+        await load_jobs_with_lock()
     return start_app
 
 
