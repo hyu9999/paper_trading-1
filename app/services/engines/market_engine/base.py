@@ -1,12 +1,13 @@
 import asyncio
 
+from hq2redis import HQ2Redis
+
 from app.exceptions.service import InvalidExchange
 from app.models.types import PyDecimal
 from app.models.base import get_utc_now
 from app.models.domain.orders import OrderInDB
 from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus
 from app.models.enums import OrderTypeEnum, PriceTypeEnum, OrderStatusEnum
-from app.services.quotes.base import BaseQuotes
 from app.services.engines.base import BaseEngine
 from app.services.engines.user_engine import UserEngine
 from app.services.engines.event_engine import Event, EventEngine
@@ -28,7 +29,7 @@ class BaseMarket(BaseEngine):
     InvalidExchange
         订单指定的交易所不在于市场引擎规定的交易所列表中时触发
     """
-    def __init__(self, event_engine: EventEngine, user_engine: UserEngine, quotes_api: BaseQuotes) -> None:
+    def __init__(self, event_engine: EventEngine, user_engine: UserEngine, quotes_api: HQ2Redis) -> None:
         super().__init__()
         self.event_engine = event_engine
         self.user_engine = user_engine
@@ -80,7 +81,7 @@ class BaseMarket(BaseEngine):
                 unfreeze_event = Event(UNFREEZE_EVENT, order)
                 await self.event_engine.put(unfreeze_event)
             else:
-                quotes = await self.quotes_api.get_ticks(order.stock_code)
+                quotes = await self.quotes_api.get_stock_ticks(order.stock_code)
                 if order.order_type == OrderTypeEnum.BUY:
                     # 涨停
                     if quotes.ask1_p == 0:
@@ -89,15 +90,15 @@ class BaseMarket(BaseEngine):
 
                     # 市价成交
                     if order.price_type == PriceTypeEnum.MARKET:
-                        order.price = quotes.ask1_p
+                        order.price = PyDecimal(quotes.ask1_p)
                         order.sold_price = quotes.ask1_p
                         order.traded_volume = order.volume
                         await self.save_order(order)
                         continue
                     # 限价成交
                     else:
-                        if order.price.to_decimal() >= quotes.ask1_p.to_decimal():
-                            order.sold_price = quotes.ask1_p
+                        if order.price.to_decimal() >= quotes.ask1_p:
+                            order.sold_price = PyDecimal(quotes.ask1_p)
                             order.traded_volume = order.volume
                             await self.save_order(order)
                         else:
@@ -112,14 +113,14 @@ class BaseMarket(BaseEngine):
                     # 市价成交
                     if order.price_type == PriceTypeEnum.MARKET:
                         order.price = quotes.ask1_p
-                        order.sold_price = quotes.ask1_p
+                        order.sold_price = PyDecimal(quotes.ask1_p)
                         order.traded_volume = order.volume
                         await self.save_order(order)
                         continue
                     # 限价成交
                     else:
-                        if order.price.to_decimal() <= quotes.bid1_p.to_decimal():
-                            order.sold_price = quotes.bid1_p
+                        if order.price.to_decimal() <= quotes.bid1_p:
+                            order.sold_price = PyDecimal(quotes.bid1_p)
                             order.traded_volume = order.volume
                             await self.save_order(order)
                         else:
@@ -128,6 +129,7 @@ class BaseMarket(BaseEngine):
 
     async def save_order(self, order: OrderInDB) -> None:
         """撮合完成后保存订单信息."""
+        await self.write_log(f"委托订单 `{order.entrust_id}` 已撮合成交.")
         order.deal_time = get_utc_now()
         if order.order_type == OrderTypeEnum.BUY.value:
             securities_diff = await self.user_engine.create_position(order)

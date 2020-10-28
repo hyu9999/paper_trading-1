@@ -1,9 +1,11 @@
+import types
 from pathlib import Path
+from contextvars import ContextVar
 
 from dynaconf import Dynaconf
 
-
 ROOT_PATH = Path.cwd()
+_app_state: ContextVar = ContextVar("_app_state", default=types.SimpleNamespace())
 
 # 应用设置
 settings = Dynaconf(
@@ -13,3 +15,5 @@ settings = Dynaconf(
     root_path=ROOT_PATH,
     dotenv_path=".env"
 )
+
+state = _app_state.get()

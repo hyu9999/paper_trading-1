@@ -1,5 +1,6 @@
 from typing import Type
 
+from hq2redis import HQ2Redis
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app import settings
@@ -11,7 +12,6 @@ from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
 from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus, OrderInUpdateFrozen
 from app.models.schemas.orders import OrderInCreate, OrderInCreateViewResponse
-from app.services.quotes.constant import quotes_mapping
 from app.services.engines.base import BaseEngine
 from app.services.engines.log_engine import LogEngine
 from app.services.engines.event_engine import EventEngine
@@ -26,30 +26,28 @@ from app.services.engines.event_constants import (
 
 
 class MainEngine(BaseEngine):
-    def __init__(self, db: AsyncIOMotorDatabase, event_engine: Type[EventEngine] = None) -> None:
+    def __init__(self, db: AsyncIOMotorDatabase, quotes_api: HQ2Redis, event_engine: Type[EventEngine] = None) -> None:
         super().__init__()
         self.event_engine = event_engine() if event_engine else EventEngine()
         self.db = db
         self.log_engine = LogEngine(self.event_engine)
         self.order_repo = OrderRepository(db)
-        self.quotes_api = quotes_mapping[settings.quotes_api]()
-        self.user_engine = UserEngine(self.event_engine, self.db, self.quotes_api)
+        self.quotes_api = quotes_api
+        self.user_engine = UserEngine(self.event_engine, self.db, quotes_api)
         self.market_engine = MARKET_NAME_MAPPING[settings.service.market](
-            self.event_engine, self.user_engine, self.quotes_api
+            self.event_engine, self.user_engine, quotes_api
         )
 
     async def startup(self) -> None:
         await self.event_engine.startup()
         await self.log_engine.startup()
         await self.user_engine.startup()
-        await self.quotes_api.connect_pool()
         await self.market_engine.startup()
         await self.register_event()
         await self.load_entrust_orders()
 
     async def shutdown(self) -> None:
         await self.market_engine.shutdown()
-        await self.quotes_api.close()
         await self.user_engine.shutdown()
         await self.log_engine.shutdown()
         await self.event_engine.shutdown()

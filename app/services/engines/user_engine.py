@@ -2,6 +2,7 @@ from typing import Union
 from decimal import Decimal
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from hq2redis import HQ2Redis
 
 from app.db.repositories.user import UserRepository
 from app.db.repositories.position import PositionRepository
@@ -16,7 +17,6 @@ from app.models.schemas.users import UserInUpdateCash, UserInUpdate
 from app.models.schemas.orders import OrderInCreate, OrderInUpdateFrozen
 from app.models.schemas.user_assets_records import UserAssetsRecordInCreate, UserAssetsRecordInUpdate
 from app.models.schemas.position import PositionInCreate, PositionInUpdateAvailable, PositionInUpdate
-from app.services.quotes.base import BaseQuotes
 from app.services.engines.base import BaseEngine
 from app.services.engines.event_engine import EventEngine, Event
 from app.services.engines.event_constants import (
@@ -45,7 +45,7 @@ class UserEngine(BaseEngine):
     NotEnoughAvailablePositions
         用户持仓股票可用数量不够买单指定的数量时触发
     """
-    def __init__(self, event_engine: EventEngine, db: AsyncIOMotorDatabase, quotes_api: BaseQuotes) -> None:
+    def __init__(self, event_engine: EventEngine, db: AsyncIOMotorDatabase, quotes_api: HQ2Redis) -> None:
         super().__init__()
         self.event_engine = event_engine
         self.quotes_api = quotes_api
@@ -293,11 +293,11 @@ class UserEngine(BaseEngine):
         """清算用户持仓数据."""
         user_position = await self.position_repo.get_positions_by_user_id(user_id=user.id)
         for position in user_position:
-            quotes = await self.quotes_api.get_ticks(position.stock_code)
+            quotes = await self.quotes_api.get_stock_ticks(position.stock_code)
             current_price = quotes.ask1_p
             position_in_update = PositionInUpdate(**position.dict())
-            position_in_update.current_price = current_price
-            profit = (current_price.to_decimal() - position.cost.to_decimal()) * Decimal(position.volume) \
+            position_in_update.current_price = PyDecimal(current_price)
+            profit = (current_price - position.cost.to_decimal()) * Decimal(position.volume) \
                 + position.profit.to_decimal()
             position_in_update.profit = PyDecimal(profit)
             await self.position_repo.process_update_position(position_in_update)

@@ -22,9 +22,7 @@ quotes_max_retry = 3
     host = "127.0.0.1"
     port = 6379
     encoding = "utf-8"
-    entrust_db = 1                  # 行情库
-    base_url = "@format redis://{this.REDIS.HOST}:{this.REDIS.PORT}"
-    entrust_url = "@format {this.REDIS.BASE_URL}/{this.REDIS.ENTRUST_DB}"
+    hq_db = 15                  # 行情库
 
     # 数据库表名
     [default.db.collections]
