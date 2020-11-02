@@ -4,6 +4,7 @@ import pytest
 from fastapi import FastAPI
 from dynaconf import Dynaconf
 from httpx import AsyncClient
+from hq2redis import HQ2Redis
 from asgi_lifespan import LifespanManager
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 
@@ -15,18 +16,17 @@ from app.models.domain.users import UserInDB
 from app.models.schemas.users import UserInCreate
 from app.services.engines.main_engine import MainEngine
 from app.services.engines.market_engine.base import BaseMarket
-from app.services.quotes.base import BaseQuotes
 from app.services.engines.user_engine import UserEngine
 from app.services.engines.event_engine import EventEngine
 from tests.json.order import order_in_create_json
-from tests.mock.tdx import TDXQuotesMocker
+from tests.mock.mock_quotes_api import QuotesAPIMocker
 
 pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture(scope='session', autouse=True)
 def mock(session_mocker):
-    session_mocker.patch("app.services.quotes.constant.TDXQuotes", side_effect=TDXQuotesMocker)
+    # session_mocker.patch("app.services.quotes.constant.TDXQuotes", side_effect=TDXQuotesMocker)
     session_mocker.patch("app.services.engines.market_engine.china_a_market.ChinaAMarket.is_trading_time",
                          return_value=True)
 
@@ -57,8 +57,11 @@ async def initialized_app(app: FastAPI) -> FastAPI:
 
 
 @pytest.fixture(scope="session")
-async def client(initialized_app: FastAPI, settings: Dynaconf,
-                 event_loop: asyncio.AbstractEventLoop) -> AsyncClient:
+async def client(
+    initialized_app: FastAPI,
+    settings: Dynaconf,
+    event_loop: asyncio.AbstractEventLoop
+) -> AsyncClient:
     async with AsyncClient(
         app=initialized_app,
         base_url=settings.base_url,
@@ -119,15 +122,13 @@ async def event_engine() -> EventEngine:
 
 
 @pytest.fixture
-async def quotes_api() -> BaseQuotes:
-    quotes_api = TDXQuotesMocker()
-    await quotes_api.connect_pool()
+async def quotes_api() -> HQ2Redis:
+    quotes_api = QuotesAPIMocker()
     yield quotes_api
-    await quotes_api.close()
 
 
 @pytest.fixture
-async def user_engine(event_engine: EventEngine, db: AsyncIOMotorDatabase, quotes_api: BaseQuotes) -> UserEngine:
+async def user_engine(event_engine: EventEngine, db: AsyncIOMotorDatabase, quotes_api: HQ2Redis) -> UserEngine:
     user_engine = UserEngine(event_engine, db, quotes_api)
     await user_engine.startup()
     yield user_engine
@@ -135,8 +136,8 @@ async def user_engine(event_engine: EventEngine, db: AsyncIOMotorDatabase, quote
 
 
 @pytest.fixture
-async def market_engine(db: AsyncIOMotorDatabase) -> BaseMarket:
-    main_engine = MainEngine(db)
+async def market_engine(db: AsyncIOMotorDatabase, quotes_api: HQ2Redis) -> BaseMarket:
+    main_engine = MainEngine(db, quotes_api)
     await main_engine.event_engine.startup()
     await main_engine.quotes_api.connect_pool()
     await main_engine.market_engine.startup()
@@ -148,8 +149,8 @@ async def market_engine(db: AsyncIOMotorDatabase) -> BaseMarket:
 
 
 @pytest.fixture(scope="session")
-async def main_engine(db: AsyncIOMotorDatabase):
-    main_engine = MainEngine(db)
+async def main_engine(db: AsyncIOMotorDatabase, quotes_api: HQ2Redis):
+    main_engine = MainEngine(db, quotes_api)
     await main_engine.startup()
     yield main_engine
     await main_engine.shutdown()
