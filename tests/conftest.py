@@ -19,6 +19,7 @@ from app.services.engines.market_engine.base import BaseMarket
 from app.services.engines.user_engine import UserEngine
 from app.services.engines.event_engine import EventEngine
 from tests.json.order import order_in_create_json
+from tests.mock.mock_event import mock_load_jobs_with_lock
 from tests.mock.mock_quotes_api import QuotesAPIMocker
 
 pytestmark = pytest.mark.asyncio
@@ -26,9 +27,9 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.fixture(scope='session', autouse=True)
 def mock(session_mocker):
-    # session_mocker.patch("app.services.quotes.constant.TDXQuotes", side_effect=TDXQuotesMocker)
     session_mocker.patch("app.services.engines.market_engine.china_a_market.ChinaAMarket.is_trading_time",
                          return_value=True)
+    session_mocker.patch("app.core.event.load_jobs_with_lock", mock_load_jobs_with_lock)
 
 
 @pytest.yield_fixture(scope='session')
@@ -121,7 +122,7 @@ async def event_engine() -> EventEngine:
     await event_engine.shutdown()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def quotes_api() -> HQ2Redis:
     quotes_api = QuotesAPIMocker()
     yield quotes_api
