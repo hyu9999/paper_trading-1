@@ -9,6 +9,9 @@ from app.services.engines.market_engine.base import BaseMarket
 
 class ChinaAMarket(BaseMarket):
     """A股市场."""
+    OPEN_MARKET_TIME = time(9, 30)   # 开市时间
+    CLOSE_MARKET_TIME = time(15, 0)  # 闭市时间
+
     def __init__(self, event_engine: EventEngine, user_engine: UserEngine, quotes_api: HQ2Redis) -> None:
         super().__init__(event_engine, user_engine, quotes_api)
         self.market_name = "中国A股"     # 交易市场名称

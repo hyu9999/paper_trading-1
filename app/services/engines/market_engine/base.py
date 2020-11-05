@@ -30,6 +30,10 @@ class BaseMarket(BaseEngine):
     InvalidExchange
         订单指定的交易所不在于市场引擎规定的交易所列表中时触发
     """
+
+    OPEN_MARKET_TIME = None   # 开市时间
+    CLOSE_MARKET_TIME = None  # 闭市时间
+
     def __init__(self, event_engine: EventEngine, user_engine: UserEngine, quotes_api: HQ2Redis) -> None:
         super().__init__()
         self.event_engine = event_engine
