@@ -1,6 +1,7 @@
 import asyncio
 
 from hq2redis import HQ2Redis
+from hq2redis.exceptions import EntityNotFound
 
 from app.exceptions.service import InvalidExchange
 from app.models.types import PyDecimal
@@ -81,7 +82,11 @@ class BaseMarket(BaseEngine):
                 unfreeze_event = Event(UNFREEZE_EVENT, order)
                 await self.event_engine.put(unfreeze_event)
             else:
-                quotes = await self.quotes_api.get_stock_ticks(order.stock_code)
+                try:
+                    quotes = await self.quotes_api.get_stock_ticks(order.stock_code)
+                except EntityNotFound:
+                    await self.write_log(f"未找到股票{order.stock_code}的行情信息.")
+                    continue
                 if order.order_type == OrderTypeEnum.BUY:
                     # 涨停
                     if quotes.ask1_p == 0:

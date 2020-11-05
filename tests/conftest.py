@@ -140,12 +140,12 @@ async def user_engine(event_engine: EventEngine, db: AsyncIOMotorDatabase, quote
 async def market_engine(db: AsyncIOMotorDatabase, quotes_api: HQ2Redis) -> BaseMarket:
     main_engine = MainEngine(db, quotes_api)
     await main_engine.event_engine.startup()
-    await main_engine.quotes_api.connect_pool()
+    await main_engine.quotes_api.startup()
     await main_engine.market_engine.startup()
     await main_engine.register_event()
     yield main_engine.market_engine
     await main_engine.market_engine.shutdown()
-    await main_engine.quotes_api.close()
+    await main_engine.quotes_api.shutdown()
     await main_engine.event_engine.shutdown()
 
 
