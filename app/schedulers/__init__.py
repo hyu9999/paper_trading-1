@@ -3,6 +3,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from loguru import logger
 
 from app.schedulers.user.jobs import UserJobs
+from app.schedulers.market.jobs import MarketJobs
 
 scheduler = AsyncIOScheduler()
 
@@ -13,6 +14,7 @@ async def load_jobs():
     scheduler.configure(**init_scheduler_options)
     logger.info("正在加载定时任务...")
     UserJobs.init(scheduler)
+    MarketJobs.init(scheduler)
     logger.info("加载定时任务完成.")
 
     logger.info("正在启动定时任务中...")

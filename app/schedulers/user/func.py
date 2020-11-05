@@ -9,7 +9,8 @@ from app.services.engines.market_engine.constant import MARKET_NAME_MAPPING
 market_class = MARKET_NAME_MAPPING[settings.service.market]
 
 
-async def sync_user_assets():
+async def sync_user_assets_task():
+    """同步用户资产相关数据."""
     db_database = state.db_client.get_database(settings.db.name, codec_options=codec_option)
     user_repo = UserRepository(db_database)
     users = await user_repo.get_users_list()

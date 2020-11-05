@@ -17,7 +17,6 @@ from app.services.engines.event_constants import (
     ORDER_UPDATE_EVENT,
     EXIT_ENGINE_EVENT,
     ORDER_UPDATE_STATUS_EVENT,
-    MARKET_CLOSE_EVENT,
     UNFREEZE_EVENT,
 )
 
@@ -33,6 +32,7 @@ class BaseMarket(BaseEngine):
 
     OPEN_MARKET_TIME = None   # 开市时间
     CLOSE_MARKET_TIME = None  # 闭市时间
+    TRADING_PERIOD = None
 
     def __init__(self, event_engine: EventEngine, user_engine: UserEngine, quotes_api: HQ2Redis) -> None:
         super().__init__()
@@ -46,12 +46,21 @@ class BaseMarket(BaseEngine):
 
     async def startup(self) -> None:
         await self.register_event()
-        asyncio.create_task(self.matchmaking())
-        await self.write_log(f"[{self.market_name}]交易市场已开启.")
+        if self.is_trading_time():
+            await self.start_matchmaking()
 
     async def shutdown(self) -> None:
         self._should_exit.set()
         await self._entrust_orders.put(EXIT_ENGINE_EVENT)
+
+    async def start_matchmaking(self) -> None:
+        asyncio.create_task(self.matchmaking())
+        await self.write_log(f"[{self.market_name}]交易市场已开启.")
+
+    async def stop_matchmaking(self) -> None:
+        self._should_exit.set()
+        await self._entrust_orders.put(EXIT_ENGINE_EVENT)
+        await self.write_log(f"[{self.market_name}]交易市场已收盘.")
 
     async def register_event(self) -> None:
         pass
@@ -70,11 +79,6 @@ class BaseMarket(BaseEngine):
 
     async def matchmaking(self) -> None:
         while not self._should_exit.is_set():
-            if not self.is_trading_time():
-                await self.shutdown()
-                market_close_event = Event(MARKET_CLOSE_EVENT)
-                await self.event_engine.put(market_close_event)
-                await self.write_log(f"[{self.market_name}]交易市场已收盘.")
             order = await self._entrust_orders.get()
             if order == EXIT_ENGINE_EVENT:
                 continue

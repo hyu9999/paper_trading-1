@@ -301,6 +301,7 @@ class UserEngine(BaseEngine):
                 continue
             current_price = quotes.ask1_p
             position_in_update = PositionInUpdate(**position.dict())
+            position_in_update.available_volume = position.volume
             position_in_update.current_price = PyDecimal(current_price)
             profit = (current_price - position.cost.to_decimal()) * Decimal(position.volume) \
                 + position.profit.to_decimal()
