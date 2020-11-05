@@ -73,7 +73,7 @@ class OrderRepository(BaseRepository):
         start_date: date = None,
         end_date: date = None,
     ) -> List[OrderInDB]:
-        query = {}
+        query = {"order_type": {"$nin": [OrderTypeEnum.CANCEL.value]}}
         if user_id:
             query["user"] = user_id
         if status:
