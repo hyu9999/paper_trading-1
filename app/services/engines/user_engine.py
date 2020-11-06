@@ -95,7 +95,7 @@ class UserEngine(BaseEngine):
     async def process_market_close(self, *args) -> None:
         users = await self.user_repo.get_users_list()
         for user in users:
-            await self.liquidate_user_position(user)
+            await self.liquidate_user_position(user, is_update_volume=True)
             await self.liquidate_user_profit(user)
             await self.update_user_assets_record(user)
 
@@ -290,7 +290,7 @@ class UserEngine(BaseEngine):
             event = Event(USER_ASSETS_RECORD_CREATE_EVENT, record_in_create)
             await self.event_engine.put(event)
 
-    async def liquidate_user_position(self, user: UserInDB) -> None:
+    async def liquidate_user_position(self, user: UserInDB, is_update_volume: int = False) -> None:
         """清算用户持仓数据."""
         user_position = await self.position_repo.get_positions_by_user_id(user_id=user.id)
         for position in user_position:
@@ -301,8 +301,9 @@ class UserEngine(BaseEngine):
                 continue
             current_price = quotes.ask1_p
             position_in_update = PositionInUpdate(**position.dict())
-            position_in_update.available_volume = position.volume
             position_in_update.current_price = PyDecimal(current_price)
+            if is_update_volume:
+                position_in_update.available_volume = position.volume
             profit = (current_price - position.cost.to_decimal()) * Decimal(position.volume) \
                 + position.profit.to_decimal()
             position_in_update.profit = PyDecimal(profit)
