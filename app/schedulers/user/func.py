@@ -18,7 +18,6 @@ async def sync_user_assets_task():
     end_time = datetime.combine(date.today(), market_class.CLOSE_MARKET_TIME)
     while start_time < datetime.now() < end_time:
         users = await user_repo.get_users_list()
-        for user in users:
-            await user_engine.liquidate_user_position(user)
-            await user_engine.liquidate_user_profit(user)
+        await asyncio.gather(*[user_engine.liquidate_user_position(user) for user in users])
+        await asyncio.gather(*[user_engine.liquidate_user_profit(user) for user in users])
         await asyncio.sleep(3)
