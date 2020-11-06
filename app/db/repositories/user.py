@@ -57,5 +57,8 @@ class UserRepository(BaseRepository):
     async def process_update_user_cash(self, user: UserInUpdateCash) -> None:
         await self.collection.update_one({"_id": user.id}, {"$set": {"cash": user.cash}})
 
-    async def process_update_user(self, user: UserInUpdate) -> None:
-        await self.collection.update_one({"_id": user.id}, {"$set": user.dict(exclude={"id"})})
+    async def process_update_user(self, user: UserInUpdate, exclude: list = None) -> None:
+        exclude_field = ["id"]
+        if exclude:
+            exclude_field.extend(exclude)
+        await self.collection.update_one({"_id": user.id}, {"$set": user.dict(exclude=set(exclude_field))})

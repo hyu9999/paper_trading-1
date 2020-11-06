@@ -319,5 +319,5 @@ class UserEngine(BaseEngine):
         if securities != Decimal(0):
             user_in_update.securities = PyDecimal(securities)
         user_in_update.assets = PyDecimal(assets)
-        await self.user_repo.process_update_user(user_in_update)
+        await self.user_repo.process_update_user(user_in_update, exclude=["cash"])
         return user_in_update
