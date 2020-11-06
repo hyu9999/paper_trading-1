@@ -346,7 +346,7 @@ async def sync_user_assets():
     database = client.get_database(settings.db.name)
     account_db_conn = database[settings.db.collections.user]
     position_db_conn = database[settings.db.collections.position]
-    users = account_db_conn.find()
+    # users = account_db_conn.find()
     quotes_api = HQ2Redis(
         redis_host=settings.redis.host,
         redis_port=settings.redis.port,
@@ -354,15 +354,20 @@ async def sync_user_assets():
         jq_data_password=settings.jqdata_password,
         jq_data_user=settings.jqdata_user,
     )
+    await quotes_api.startup()
     async_user_assets_log_file = "async_user_assets_log.json"
     update_logs = []
-    async for user in users:
-        position_rows = position_db_conn.collection.find({"user": user["_id"]})
+    users = await account_db_conn.find_one({"_id": ObjectId("5fa4ed7c8186614acaaaa423")})
+    for user in [users]:
+        position_rows = position_db_conn.find({"user": ObjectId(user["_id"])})
+        user_position = [position async for position in position_rows]
+        if not user_position:
+            continue
         market_value = 0
-        async for row in position_rows:
-            quotes = await quotes_api.get_stock_ticks(f"row['symbol'].row['exchange']")
+        for row in user_position:
+            quotes = await quotes_api.get_stock_ticks(f"{row['symbol']}.{row['exchange']}")
             market_value += quotes.current * Decimal(row["volume"])
-        assets = PyDecimal(market_value + user["cash"])
+        assets = PyDecimal(market_value + user["cash"].to_decimal())
         securities = PyDecimal(market_value)
         user_in_db = UserInUpdate(assets=assets, securities=securities, id=user["_id"], cash=user["cash"])
         await account_db_conn.update_one({"_id": user_in_db.id}, {"$set": user_in_db.dict(exclude={"id", "cash"})})
@@ -375,6 +380,7 @@ async def sync_user_assets():
         })
     with open(async_user_assets_log_file, "w", encoding="utf-8") as f:
         json.dump(update_logs, f, ensure_ascii=False, indent=4)
+    await quotes_api.shutdown()
 
 if __name__ == "__main__":
     cli()
