@@ -1,16 +1,20 @@
 import json
 import asyncio
+from decimal import Decimal
 from functools import wraps
 from datetime import datetime
 
 import click
 from bson import ObjectId
+from hq2redis import HQ2Redis
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import CollectionInvalid
 
 from app import settings
+from app.models.types import PyDecimal
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
+from app.models.schemas.users import UserInUpdate
 from app.models.domain.position import PositionInDB
 from app.models.domain.user_assets_records import UserAssetsRecordInDB
 
@@ -333,6 +337,44 @@ async def insert_v1_data():
         with open(order_mapping_file_path, "w", encoding="utf-8") as f:
             json.dump(order_mapping, f, ensure_ascii=False, indent=4)
     click.echo(f"插入结果已写入`{log_file_path}`中.")
+
+
+@cli.command(name="sync_user_assets")
+@coro
+async def sync_user_assets():
+    client = AsyncIOMotorClient(settings.db.url)
+    database = client.get_database(settings.db.name)
+    account_db_conn = database[settings.db.collections.user]
+    position_db_conn = database[settings.db.collections.position]
+    users = account_db_conn.find()
+    quotes_api = HQ2Redis(
+        redis_host=settings.redis.host,
+        redis_port=settings.redis.port,
+        redis_db=settings.redis.hq_db,
+        jq_data_password=settings.jqdata_password,
+        jq_data_user=settings.jqdata_user,
+    )
+    async_user_assets_log_file = "async_user_assets_log.json"
+    update_logs = []
+    async for user in users:
+        position_rows = position_db_conn.collection.find({"user": user["_id"]})
+        market_value = 0
+        async for row in position_rows:
+            quotes = await quotes_api.get_stock_ticks(f"row['symbol'].row['exchange']")
+            market_value += quotes.current * Decimal(row["volume"])
+        assets = PyDecimal(market_value + user["cash"])
+        securities = PyDecimal(market_value)
+        user_in_db = UserInUpdate(assets=assets, securities=securities, id=user["_id"], cash=user["cash"])
+        await account_db_conn.update_one({"_id": user_in_db.id}, {"$set": user_in_db.dict(exclude={"id", "cash"})})
+        update_logs.append({
+            "user_id": str(user["_id"]),
+            "raw_user_assets": str(user["assets"]),
+            "new_user_assets": str(assets),
+            "raw_user_securities": str(user["securities"]),
+            "new_user_securities": str(securities)
+        })
+    with open(async_user_assets_log_file, "w", encoding="utf-8") as f:
+        json.dump(update_logs, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     cli()
