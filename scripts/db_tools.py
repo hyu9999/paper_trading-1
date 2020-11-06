@@ -346,7 +346,7 @@ async def sync_user_assets():
     database = client.get_database(settings.db.name)
     account_db_conn = database[settings.db.collections.user]
     position_db_conn = database[settings.db.collections.position]
-    # users = account_db_conn.find()
+    users = account_db_conn.find()
     quotes_api = HQ2Redis(
         redis_host=settings.redis.host,
         redis_port=settings.redis.port,
@@ -355,10 +355,9 @@ async def sync_user_assets():
         jq_data_user=settings.jqdata_user,
     )
     await quotes_api.startup()
-    async_user_assets_log_file = "async_user_assets_log.json"
+    async_user_assets_log_file = "sync_user_assets_log.json"
     update_logs = []
-    users = await account_db_conn.find_one({"_id": ObjectId("5fa4ed7c8186614acaaaa423")})
-    for user in [users]:
+    async for user in users:
         position_rows = position_db_conn.find({"user": ObjectId(user["_id"])})
         user_position = [position async for position in position_rows]
         if not user_position:
