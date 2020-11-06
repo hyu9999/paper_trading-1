@@ -262,7 +262,7 @@ class UserEngine(BaseEngine):
         user = await self.user_repo.get_user_by_id(order.user)
         cost = Decimal(order.volume) * order.sold_price.to_decimal() * (1 + user.commission.to_decimal())
         if order.order_type == OrderTypeEnum.BUY:
-            # 可用现金 = 原现金 + 预先冻结的现金 + 减实际花费的现金
+            # 可用现金 = 原现金 + 预先冻结的现金 - 减实际花费的现金
             cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - cost
         else:
             cash = user.cash.to_decimal()

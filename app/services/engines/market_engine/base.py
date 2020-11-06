@@ -42,7 +42,7 @@ class BaseMarket(BaseEngine):
         self.exchange_symbols = None    # 交易市场标识
         self.quotes_api = quotes_api
         self._entrust_orders = EntrustOrders()
-        self._should_exit = asyncio.Event()
+        self._matchmaking_active = False
 
     async def startup(self) -> None:
         await self.register_event()
@@ -50,17 +50,19 @@ class BaseMarket(BaseEngine):
             await self.start_matchmaking()
 
     async def shutdown(self) -> None:
-        self._should_exit.set()
         await self._entrust_orders.put(EXIT_ENGINE_EVENT)
 
     async def start_matchmaking(self) -> None:
-        asyncio.create_task(self.matchmaking())
-        await self.write_log(f"[{self.market_name}]交易市场已开启.")
+        if not self._matchmaking_active:
+            self._matchmaking_active = True
+            asyncio.create_task(self.matchmaking())
+            await self.write_log(f"[{self.market_name}]交易市场已开启.")
 
     async def stop_matchmaking(self) -> None:
-        self._should_exit.set()
-        await self._entrust_orders.put(EXIT_ENGINE_EVENT)
-        await self.write_log(f"[{self.market_name}]交易市场已收盘.")
+        if self._matchmaking_active:
+            self._matchmaking_active = False
+            await self._entrust_orders.put(EXIT_ENGINE_EVENT)
+            await self.write_log(f"[{self.market_name}]交易市场已收盘.")
 
     async def register_event(self) -> None:
         pass
@@ -78,7 +80,7 @@ class BaseMarket(BaseEngine):
         pass
 
     async def matchmaking(self) -> None:
-        while not self._should_exit.is_set():
+        while self._matchmaking_active:
             order = await self._entrust_orders.get()
             if order == EXIT_ENGINE_EVENT:
                 continue

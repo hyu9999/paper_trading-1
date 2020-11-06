@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.combining import OrTrigger
 
 from app import settings
 from app.services.engines.market_engine.constant import MARKET_NAME_MAPPING
@@ -21,70 +22,18 @@ put_close_market_event_task_config = {
     },
 }
 
-trading_time = []
+trading_time_list = []
 for period in market_class.TRADING_PERIOD:
-    trading_time.append(period.get("start"))
-    trading_time.append(period.get("end"))
-trading_time_hours = [str(tt.hour) for tt in trading_time]
-trading_time_minutes = [str(tt.minute) for tt in trading_time]
-trading_time_seconds = [str(tt.second) for tt in trading_time]
+    trading_time_list.append(period.get("start"))
+    trading_time_list.append(period.get("end"))
 
-toggle_market_matchmaking_task_config_0 = {
+toggle_market_matchmaking_task_config = {
     "func": toggle_market_matchmaking_task,
-    "cron": {
-        "id": "切换市场引擎撮合交易开关",
-        "trigger": "cron",
-        "day_of_week": "0-4",
-        "hour": trading_time_hours[0],
-        "minute": trading_time_minutes[0],
-        "second": 1,
-        "timezone": "Asia/Shanghai",
-        "replace_existing": True,
-        "misfire_grace_time": 900,
-    },
-}
-
-toggle_market_matchmaking_task_config_1 = {
-    "func": toggle_market_matchmaking_task,
-    "cron": {
-        "id": "切换市场引擎撮合交易开关",
-        "trigger": "cron",
-        "day_of_week": "0-4",
-        "hour": trading_time_hours[1],
-        "minute": trading_time_minutes[1],
-        "second": 1,
-        "timezone": "Asia/Shanghai",
-        "replace_existing": True,
-        "misfire_grace_time": 900,
-    },
-}
-
-toggle_market_matchmaking_task_config_2 = {
-    "func": toggle_market_matchmaking_task,
-    "cron": {
-        "id": "切换市场引擎撮合交易开关",
-        "trigger": "cron",
-        "day_of_week": "0-4",
-        "hour": trading_time_hours[2],
-        "minute": trading_time_minutes[2],
-        "second": 1,
-        "timezone": "Asia/Shanghai",
-        "replace_existing": True,
-        "misfire_grace_time": 900,
-    },
-}
-
-toggle_market_matchmaking_task_config_3 = {
-    "func": toggle_market_matchmaking_task,
-    "cron": {
-        "id": "切换市场引擎撮合交易开关",
-        "trigger": "cron",
-        "day_of_week": "0-4",
-        "hour": trading_time_hours[3],
-        "minute": trading_time_minutes[3],
-        "second": 1,
-        "timezone": "Asia/Shanghai",
-        "replace_existing": True,
-        "misfire_grace_time": 900,
-    },
+    "cron": OrTrigger([CronTrigger(
+        day_of_week="0-4",
+        hour=trading_time.hour,
+        minute=trading_time.minute,
+        second=1,
+        timezone="Asia/Shanghai",
+    ) for trading_time in trading_time_list])
 }
