@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from datetime import date, datetime
 
 from bson import Decimal128
@@ -59,6 +59,15 @@ class OrderRepository(BaseRepository):
         if order_row:
             return OrderInDB(**order_row)
         raise EntityDoesNotExist(f"委托订单`{entrust_id}`不存在.")
+
+    async def get_cancel_order_by_entrust_id(self, entrust_id: PyObjectId) -> Optional[OrderInDB]:
+        order_row = await self.collection.find_one({
+            "entrust_id": entrust_id,
+            "order_type": {"$in": [OrderTypeEnum.CANCEL.value]}
+        })
+        if order_row:
+            return OrderInDB(**order_row)
+        return None
 
     async def get_order_by_id(self, order_id: PyObjectId) -> OrderInDB:
         order_row = await self.collection.find_one({"_id": order_id})

@@ -72,7 +72,7 @@ class BaseMarket(BaseEngine):
         payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.NOT_DONE)
         event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
         await self.event_engine.put(event)
-        await self.write_log(f"收到新的委托订单: [{order.entrust_id}].")
+        await self.write_log(f"收到新的委托订单[{order.order_type}]: `{order.entrust_id}`.")
         await self._entrust_orders.put(order)
 
     @staticmethod
@@ -86,16 +86,22 @@ class BaseMarket(BaseEngine):
                 continue
             # 取消委托订单
             if order.order_type == OrderTypeEnum.CANCEL:
+                try:
+                    del self._entrust_orders[str(order.entrust_id)]
+                except KeyError:
+                    await self.write_log(f"取消委托订单 `{order.entrust_id}` 失败, 该委托订单已处理.")
+                    continue
                 payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.CANCELED)
                 update_order_status_event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
                 await self.event_engine.put(update_order_status_event)
                 unfreeze_event = Event(UNFREEZE_EVENT, order)
                 await self.event_engine.put(unfreeze_event)
+                await self.write_log(f"取消委托订单 `{order.entrust_id}` 成功.")
             else:
                 try:
                     quotes = await self.quotes_api.get_stock_ticks(order.stock_code)
                 except EntityNotFound:
-                    await self.write_log(f"未找到股票{order.stock_code}的行情信息.")
+                    await self.write_log(f"未找到股票 `{order.stock_code}` 的行情信息.")
                     continue
                 if order.order_type == OrderTypeEnum.BUY:
                     # 涨停

@@ -2,6 +2,7 @@ import asyncio
 from typing import Union
 from collections import OrderedDict, deque
 
+from app.models.enums import OrderTypeEnum
 from app.models.domain.orders import OrderInDB
 from app.models.enums import EntrustOrdersMode
 from app.services.engines.event_engine import Event
@@ -37,7 +38,8 @@ class EntrustOrders(OrderedDict):
 
     async def put(self, item: Union[OrderInDB, Event]) -> None:
         if isinstance(item, OrderInDB):
-            self[str(item.entrust_id)] = item
+            key = f"{item.entrust_id}_cancel" if item.order_type == OrderTypeEnum.CANCEL else str(item.entrust_id)
+            self[key] = item
         else:
             self["event"] = item
         self._wakeup_next()

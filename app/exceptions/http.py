@@ -11,11 +11,13 @@ class _HTTPException(Exception):
 
     def __init__(self, *args, **kwargs):
         self.status_code = kwargs.get("status_code")
+        self.detail = kwargs.get("detail")
 
     @classmethod
     async def handler(cls, request: Request, exc: Exception) -> JSONResponse:
+        print(exc)
         return JSONResponse(status_code=exc.__dict__.get("status_code") or cls.status_code,
-                            content={"code": cls.code, "detail": cls.detail})
+                            content={"code": cls.code, "detail": exc.__dict__.get("detail") or cls.detail})
 
 
 class InvalidUserID(_HTTPException):
@@ -66,3 +68,8 @@ class OrderNotFound(_HTTPException):
 class NotTradingTime(_HTTPException):
     code = 10024
     detail = "非交易时段，无法进行交易"
+
+
+class CancelOrderFailed(_HTTPException):
+    code = 10024
+    detail = "提交撤单请求失败"

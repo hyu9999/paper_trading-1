@@ -10,7 +10,11 @@ from app.api.dependencies.authentication import get_current_user_authorizer
 from app.db.repositories.order import OrderRepository
 from app.exceptions.db import EntityDoesNotExist
 from app.exceptions.service import InsufficientFunds, InvalidExchange
-from app.exceptions.http import InsufficientAccountFunds, InvalidOrderExchange, OrderNotFound, NotTradingTime
+from app.exceptions.http import (
+    InsufficientAccountFunds,
+    OrderNotFound,
+    CancelOrderFailed,
+    InvalidOrderExchange)
 from app.models.types import PyObjectId
 from app.models.domain.users import UserInDB
 from app.models.schemas.http import HttpMessage
@@ -92,9 +96,11 @@ async def delete_entrust_order(
         raise OrderNotFound(status_code=http_status.HTTP_404_NOT_FOUND)
     else:
         if order.status == OrderStatusEnum.CANCELED:
-            return HttpMessage(text="该委托订单已撤销，请勿重复提交取消委托单请求.")
+            raise CancelOrderFailed(detail="该委托订单已撤销, 请勿重复提交撤单请求.")
         if order.status != OrderStatusEnum.NOT_DONE:
-            return HttpMessage(text="该委托订单已处理，无法提交取消委托单请求.")
+            raise CancelOrderFailed(detail="该委托订单已处理, 无法提交撤单请求.")
+        if await order_repo.get_cancel_order_by_entrust_id(entrust_id):
+            raise CancelOrderFailed(detail="请勿重复提交撤单请求.")
         order_in_create = OrderInCreate(**order.dict())
         order_in_create.order_type = OrderTypeEnum.CANCEL
         order_cancel = await order_repo.create_order(
