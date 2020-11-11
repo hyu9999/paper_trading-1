@@ -55,15 +55,15 @@ async def mock_put(*args, **kwargs):
 async def test_user_can_delete_entrust_order(
     app: FastAPI,
     authorized_client: AsyncClient,
-    order_buy_type: OrderInDB,
+    order_buy_type_status_not_done: OrderInDB,
     mocker: MockerFixture,
 ):
     mocker.patch("app.services.engines.market_engine.china_a_market.ChinaAMarket.put", mock_put)
     response_200 = await authorized_client.request(
-        "DELETE", app.url_path_for("orders:delete-entrust-order", entrust_id=str(order_buy_type.entrust_id))
+        "DELETE", app.url_path_for("orders:delete-entrust-order", entrust_id=str(order_buy_type_status_not_done.entrust_id))
     )
     assert response_200.status_code == status.HTTP_200_OK
-    entrust_id = str(order_buy_type.entrust_id)[::-1]
+    entrust_id = str(order_buy_type_status_not_done.entrust_id)[::-1]
     response_404 = await authorized_client.request(
         "DELETE", app.url_path_for("orders:delete-entrust-order", entrust_id=entrust_id)
     )

@@ -175,3 +175,12 @@ async def order_cancel_type(test_user_scope_func: UserInDB, db: AsyncIOMotorData
     json = {**order_in_create_json, **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000",
                                        "order_type": "cancel"}}
     return await OrderRepository(db).create_order(**json)
+
+
+@pytest.fixture
+async def order_buy_type_status_not_done(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
+    json = {
+        **order_in_create_json,
+        **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "status": "未成交"}
+    }
+    return await OrderRepository(db).create_order(**json)

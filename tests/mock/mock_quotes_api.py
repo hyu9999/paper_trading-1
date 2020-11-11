@@ -11,6 +11,7 @@ class QuotesAPIMocker:
         quotes_json.update({"exchange": exchange})
         quotes_json.update({"current": quotes_json["bid1_p"]})
         quotes_json.update({"timestamp": get_utc_now()})
+        quotes_json.update({"symbol_name": "symbol_name"})
         return StockTicks(**quotes_json)
 
     async def startup(self):
