@@ -30,6 +30,7 @@ quotes_max_retry = 3
     user_assets_record = "user_assets_records"
     order = "orders"
     position = "position"
+    statement = "statement"
 
     # 日志
     [default.log]

@@ -4,6 +4,8 @@ from hq2redis import HQ2Redis
 from hq2redis.exceptions import EntityNotFound
 
 from app.exceptions.service import InvalidExchange
+from app.models.domain.statement import StatementInDB
+from app.models.schemas.statement import StatementInCreateEvent
 from app.models.types import PyDecimal
 from app.models.base import get_utc_now
 from app.models.domain.orders import OrderInDB
@@ -18,6 +20,7 @@ from app.services.engines.event_constants import (
     EXIT_ENGINE_EVENT,
     ORDER_UPDATE_STATUS_EVENT,
     UNFREEZE_EVENT,
+    STATEMENT_CREATE_EVENT,
 )
 
 
@@ -153,18 +156,17 @@ class BaseMarket(BaseEngine):
         await self.write_log(f"委托订单 `{order.entrust_id}` 已撮合成交.")
         order.deal_time = get_utc_now()
         if order.order_type == OrderTypeEnum.BUY.value:
-            securities_diff = await self.user_engine.create_position(order)
-        elif order.order_type == OrderTypeEnum.SELL.value:
-            securities_diff = await self.user_engine.reduce_position(order)
+            securities_diff, costs = await self.user_engine.create_position(order)
         else:
-            securities_diff = 0
-        order.status = OrderStatusEnum.ALL_FINISHED.value \
-            if order.volume == order.traded_volume \
+            securities_diff, costs = await self.user_engine.reduce_position(order)
+        order.status = OrderStatusEnum.ALL_FINISHED.value if order.volume == order.traded_volume \
             else OrderStatusEnum.PART_FINISHED.value
         order_in_update_payload = OrderInUpdate(**dict(order))
         user = await self.user_engine.user_repo.get_user_by_id(order.user)
         order_in_update_payload.position_change = PyDecimal(securities_diff / user.assets.to_decimal())
         await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
+        statement_in_create = StatementInCreateEvent(costs=costs, order=order, securities_diff=securities_diff)
+        await self.event_engine.put(Event(STATEMENT_CREATE_EVENT,statement_in_create ))
 
     def exchange_validation(self, order: OrderInDB) -> None:
         """交易市场类别检查."""

@@ -16,10 +16,17 @@ class JWTSubjectEnum(str, Enum):
 
 @unique
 class OrderTypeEnum(str, Enum):
-    """订单类型."""
+    """委托订单类型."""
     BUY = "buy"
     SELL = "sell"
     CANCEL = "cancel"
+
+
+@unique
+class TradeCategoryEnum(str, Enum):
+    """交易类别."""
+    BUY = "buy"     # 证券买入
+    SELL = "sell"   # 证券卖出
 
 
 @unique

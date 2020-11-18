@@ -1,5 +1,5 @@
-from typing import Union
 from decimal import Decimal
+from typing import Union, Tuple
 
 from hq2redis.exceptions import EntityNotFound
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -12,6 +12,7 @@ from app.exceptions.service import InsufficientFunds, NoPositionsAvailable, NotE
 from app.models.base import get_utc_now
 from app.models.types import PyDecimal
 from app.models.domain.users import UserInDB
+from app.models.domain.statement import Costs
 from app.models.domain.orders import OrderInDB
 from app.models.enums import OrderTypeEnum, TradeTypeEnum
 from app.models.schemas.users import UserInUpdateCash, UserInUpdate
@@ -167,7 +168,7 @@ class UserEngine(BaseEngine):
         else:
             raise NoPositionsAvailable
 
-    async def create_position(self, order: OrderInDB) -> Decimal:
+    async def create_position(self, order: OrderInDB) -> Tuple[Decimal, Costs]:
         """新建持仓."""
         position = await self.position_repo.get_position(order.user, order.symbol, order.exchange)
         user = await self.user_repo.get_user_by_id(order.user)
@@ -219,9 +220,9 @@ class UserEngine(BaseEngine):
             )
             await self.event_engine.put(Event(POSITION_CREATE_EVENT, position_in_create))
         await self.update_user(order, securities_diff)
-        return securities_diff
+        return securities_diff, Costs(commission=fee, total=fee)
 
-    async def reduce_position(self, order: OrderInDB) -> None:
+    async def reduce_position(self, order: OrderInDB) -> Tuple[Decimal, Costs]:
         """减仓."""
         position = await self.position_repo.get_position(order.user, order.symbol, order.exchange)
         user = await self.user_repo.get_user_by_id(order.user)
@@ -229,7 +230,7 @@ class UserEngine(BaseEngine):
         volume = position.volume - order.traded_volume
         current_price = order.sold_price
         tax = Decimal(order.volume) * order.sold_price.to_decimal() * user.tax_rate.to_decimal()
-        # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持仓数量 + 原持仓利润 - 交易费用 - 印花税
+        # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持仓数量 + 原持仓利润 - 交易佣金 - 印花税
         profit = (order.sold_price.to_decimal() - position.current_price.to_decimal()
                   ) * Decimal(position.volume) + position.profit.to_decimal() - fee - tax
         # 可用持仓 = 原持仓数 + 冻结的股票数量 - 交易成功的股票数量
@@ -255,7 +256,7 @@ class UserEngine(BaseEngine):
         # 证券资产变化值 = 订单证券市值
         securities_diff = Decimal(order.traded_volume) * order.sold_price.to_decimal()
         await self.update_user(order, securities_diff)
-        return securities_diff
+        return securities_diff, Costs(commission=fee, tax=tax, total=fee+tax)
 
     async def update_user(self, order: OrderInDB, securities_diff: Decimal) -> None:
         """订单成交后更新用户信息."""
