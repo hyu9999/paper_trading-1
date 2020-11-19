@@ -1,0 +1,56 @@
+import json
+from decimal import Decimal
+
+import click
+from bson import ObjectId
+from hq2redis import HQ2Redis
+from motor.motor_asyncio import AsyncIOMotorClient
+
+from app import settings
+from app.models.types import PyDecimal
+from app.models.schemas.users import UserInUpdate
+from scripts.utils import coro
+
+
+@click.command("sync_user_assets")
+@coro
+async def sync_user_assets():
+    """根据持仓同步用户资产数据."""
+    client = AsyncIOMotorClient(settings.db.url)
+    database = client.get_database(settings.db.name)
+    account_db_conn = database[settings.db.collections.user]
+    position_db_conn = database[settings.db.collections.position]
+    users = account_db_conn.find()
+    quotes_api = HQ2Redis(
+        redis_host=settings.redis.host,
+        redis_port=settings.redis.port,
+        redis_db=settings.redis.hq_db,
+        jq_data_password=settings.jqdata_password,
+        jq_data_user=settings.jqdata_user,
+    )
+    await quotes_api.startup()
+    async_user_assets_log_file = "sync_user_assets_log.json"
+    update_logs = []
+    async for user in users:
+        position_rows = position_db_conn.find({"user": ObjectId(user["_id"])})
+        user_position = [position async for position in position_rows]
+        if not user_position:
+            continue
+        market_value = 0
+        for row in user_position:
+            quotes = await quotes_api.get_stock_ticks(f"{row['symbol']}.{row['exchange']}")
+            market_value += quotes.current * Decimal(row["volume"])
+        assets = PyDecimal(market_value + user["cash"].to_decimal())
+        securities = PyDecimal(market_value)
+        user_in_db = UserInUpdate(assets=assets, securities=securities, id=user["_id"], cash=user["cash"])
+        await account_db_conn.update_one({"_id": user_in_db.id}, {"$set": user_in_db.dict(exclude={"id", "cash"})})
+        update_logs.append({
+            "user_id": str(user["_id"]),
+            "raw_user_assets": str(user["assets"]),
+            "new_user_assets": str(assets),
+            "raw_user_securities": str(user["securities"]),
+            "new_user_securities": str(securities)
+        })
+    with open(async_user_assets_log_file, "w", encoding="utf-8") as f:
+        json.dump(update_logs, f, ensure_ascii=False, indent=4)
+    await quotes_api.shutdown()

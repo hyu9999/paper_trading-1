@@ -5,13 +5,16 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app import settings
 from app.db.repositories.order import OrderRepository
+from app.db.repositories.statement import StatementRepository
 from app.models.base import get_utc_now
-from app.models.types import PyObjectId, PyDecimal
-from app.models.enums import PriceTypeEnum, OrderStatusEnum, OrderTypeEnum
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
-from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus, OrderInUpdateFrozen
+from app.models.schemas.statement import StatementInCreateEvent
+from app.models.types import PyObjectId, PyDecimal
+from app.models.domain.statement import StatementInDB
+from app.models.enums import PriceTypeEnum, OrderStatusEnum, OrderTypeEnum
 from app.models.schemas.orders import OrderInCreate, OrderInCreateViewResponse
+from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus, OrderInUpdateFrozen
 from app.services.engines.base import BaseEngine
 from app.services.engines.log_engine import LogEngine
 from app.services.engines.event_engine import EventEngine
@@ -22,7 +25,9 @@ from app.services.engines.event_constants import (
     ORDER_UPDATE_EVENT,
     ORDER_UPDATE_STATUS_EVENT,
     MARKET_CLOSE_EVENT,
-    ORDER_UPDATE_FROZEN_EVENT)
+    ORDER_UPDATE_FROZEN_EVENT,
+    STATEMENT_CREATE_EVENT,
+)
 
 
 class MainEngine(BaseEngine):
@@ -32,6 +37,7 @@ class MainEngine(BaseEngine):
         self.db = db
         self.log_engine = LogEngine(self.event_engine)
         self.order_repo = OrderRepository(db)
+        self.statement_repo = StatementRepository(db)
         self.quotes_api = quotes_api
         self.user_engine = UserEngine(self.event_engine, self.db, quotes_api)
         self.market_engine = MARKET_NAME_MAPPING[settings.service.market](
@@ -58,6 +64,7 @@ class MainEngine(BaseEngine):
         await self.event_engine.register(ORDER_UPDATE_STATUS_EVENT, self.process_order_status_update)
         await self.event_engine.register(MARKET_CLOSE_EVENT, self.process_refuse_entrust_orders)
         await self.event_engine.register(ORDER_UPDATE_FROZEN_EVENT, self.process_order_frozen_update)
+        await self.event_engine.register(STATEMENT_CREATE_EVENT, self.process_statement_create)
 
     async def process_order_create(self, payload: OrderInDB) -> None:
         await self.order_repo.process_create_order(payload)
@@ -70,6 +77,20 @@ class MainEngine(BaseEngine):
 
     async def process_order_frozen_update(self, payload: OrderInUpdateFrozen) -> None:
         await self.order_repo.process_update_order_frozen(payload)
+
+    async def process_statement_create(self, payload: StatementInCreateEvent) -> None:
+        amount = payload.costs.total.to_decimal() + payload.securities_diff
+        statement_in_db = StatementInDB(
+            entrust_id=payload.order.entrust_id,
+            user=payload.order.user,
+            trade_category=payload.order.order_type.value,
+            volume=payload.order.traded_volume,
+            sold_price=payload.order.sold_price,
+            costs=payload.costs,
+            amount=amount if payload.order.order_type == OrderTypeEnum.BUY else -amount,
+            deal_time=payload.order.deal_time
+        )
+        await self.statement_repo.create_statement(statement_in_db)
 
     async def process_refuse_entrust_orders(self, *args) -> None:
         """将待处理订单列表中的订单状态设置为拒单."""

@@ -1,14 +1,13 @@
 SRC = app scripts tests
 
-.PHONY: server debug test initdb flake8 mypy insert_v1_data
+.PHONY: server debug test flake8 mypy script
 
 default:
 	@echo "帮助:"
 	@echo "\tmake server            启动服务器"
 	@echo "\tmake debug             启动调试服务器"
 	@echo "\tmake test              启动测试"
-	@echo "\tmake initdb            初始化数据库"
-	@echo "\tmake insert_v1_data    插入v1版本数据库数据"
+	@echo "\tmake script            执行脚本"
 	@echo "\tmake flake8            启动Flake8"
 	@echo "\tmake mypy              启动mypy"
 
@@ -27,8 +26,6 @@ flake8:
 mypy:
 	mypy app
 
-initdb:
-	poetry run sh -c "PYTHONPATH=. python ./scripts/db_tools.py initdb"
+script:
+	export PYTHONPATH=. & poetry run python ./scripts/cli.py $(filter-out $@,$(MAKECMDGOALS))
 
-insert_v1_data:
-	poetry run sh -c "PYTHONPATH=. python ./scripts/db_tools.py insert_v1_data"
