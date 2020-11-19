@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import authentication, users, orders, position
+from app.api.routes import authentication, users, orders, position, statement
 
 
 router = APIRouter()
@@ -8,3 +8,4 @@ router.include_router(authentication.router, tags=["authentication"], prefix="/a
 router.include_router(users.router, tags=["user"], prefix="/users")
 router.include_router(orders.router, tags=["order"], prefix="/orders")
 router.include_router(position.router, tags=["position"], prefix="/position")
+router.include_router(statement.router, tags=["statement"], prefix="/statement")

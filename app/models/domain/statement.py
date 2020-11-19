@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import Field, PositiveInt
+from pydantic import Field, PositiveInt, validator
 
 from bson import Decimal128
 
@@ -13,8 +13,14 @@ from app.models.types import PyDecimal, PyObjectId
 class Costs(RWModel):
     """费用."""
     total: PyDecimal = Field(..., description="费用合计")
-    commission: PyDecimal = Field(Decimal128("0"), description="佣金")
-    tax: PyDecimal = Field(Decimal128("0"), description="印花税")
+    commission: PyDecimal = Field(..., description="佣金")
+    tax: PyDecimal = Field(description="印花税")
+
+    @validator("tax", pre=True)
+    def set_tax_default(cls, v):
+        if not v:
+            return Decimal128("0")
+        return v
 
 
 class Statement(Stock):
