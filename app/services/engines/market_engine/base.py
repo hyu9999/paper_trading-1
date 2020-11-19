@@ -4,7 +4,6 @@ from hq2redis import HQ2Redis
 from hq2redis.exceptions import EntityNotFound
 
 from app.exceptions.service import InvalidExchange
-from app.models.domain.statement import StatementInDB
 from app.models.schemas.statement import StatementInCreateEvent
 from app.models.types import PyDecimal
 from app.models.base import get_utc_now
@@ -166,7 +165,7 @@ class BaseMarket(BaseEngine):
         order_in_update_payload.position_change = PyDecimal(securities_diff / user.assets.to_decimal())
         await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
         statement_in_create = StatementInCreateEvent(costs=costs, order=order, securities_diff=securities_diff)
-        await self.event_engine.put(Event(STATEMENT_CREATE_EVENT,statement_in_create ))
+        await self.event_engine.put(Event(STATEMENT_CREATE_EVENT, statement_in_create))
 
     def exchange_validation(self, order: OrderInDB) -> None:
         """交易市场类别检查."""

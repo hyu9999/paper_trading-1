@@ -1,68 +1,22 @@
 import json
-import asyncio
-from decimal import Decimal
-from functools import wraps
 from datetime import datetime
 
 import click
 from bson import ObjectId
-from hq2redis import HQ2Redis
 from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo.errors import CollectionInvalid
 
 from app import settings
-from app.models.types import PyDecimal
 from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
-from app.models.schemas.users import UserInUpdate
 from app.models.domain.position import PositionInDB
 from app.models.domain.user_assets_records import UserAssetsRecordInDB
+from scripts.utils import coro
 
 
-async def create_collection(db: AsyncIOMotorClient, collection_name: str):
-    """创建表"""
-    try:
-        await db[settings.db.name].create_collection(collection_name)
-    except CollectionInvalid as e:
-        click.echo(e)
-    else:
-        click.echo(f"创建{collection_name}成功\n")
-
-
-@click.group()
-def cli():
-    pass
-
-
-def coro(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        return asyncio.run(f(*args, **kwargs))
-    return wrapper
-
-
-@cli.command()
-@coro
-async def initdb():
-    """初始化数据库"""
-    if click.confirm("初始化数据库可能会导致原数据丢失，确认要继续吗？"):
-        client = AsyncIOMotorClient(settings.db.url)
-        await create_collection(client, settings.db.collections.user)
-        await create_collection(client, settings.db.collections.order)
-        await client[settings.db.name][settings.db.collections.order].create_index("entrust_id")
-        await create_collection(client, settings.db.collections.position)
-        await client[settings.db.name][settings.db.collections.position].create_index("user")
-        await client[settings.db.name][settings.db.collections.position].create_index("symbol")
-        await client[settings.db.name][settings.db.collections.position].create_index("exchange")
-        await create_collection(client, settings.db.collections.user_assets_record)
-        click.echo("初始化数据库完成.")
-    else:
-        click.echo("初始化数据库失败，用户操作中止.")
-
-
-@cli.command(name="insert_v1_data")
+@click.command("insert_v1_data")
 @coro
 async def insert_v1_data():
+    """插入V1版本的数据."""
     client = AsyncIOMotorClient(settings.db.url)
     v2_database = client.get_database(settings.db.name)
 
@@ -337,49 +291,3 @@ async def insert_v1_data():
         with open(order_mapping_file_path, "w", encoding="utf-8") as f:
             json.dump(order_mapping, f, ensure_ascii=False, indent=4)
     click.echo(f"插入结果已写入`{log_file_path}`中.")
-
-
-@cli.command(name="sync_user_assets")
-@coro
-async def sync_user_assets():
-    client = AsyncIOMotorClient(settings.db.url)
-    database = client.get_database(settings.db.name)
-    account_db_conn = database[settings.db.collections.user]
-    position_db_conn = database[settings.db.collections.position]
-    users = account_db_conn.find()
-    quotes_api = HQ2Redis(
-        redis_host=settings.redis.host,
-        redis_port=settings.redis.port,
-        redis_db=settings.redis.hq_db,
-        jq_data_password=settings.jqdata_password,
-        jq_data_user=settings.jqdata_user,
-    )
-    await quotes_api.startup()
-    async_user_assets_log_file = "sync_user_assets_log.json"
-    update_logs = []
-    async for user in users:
-        position_rows = position_db_conn.find({"user": ObjectId(user["_id"])})
-        user_position = [position async for position in position_rows]
-        if not user_position:
-            continue
-        market_value = 0
-        for row in user_position:
-            quotes = await quotes_api.get_stock_ticks(f"{row['symbol']}.{row['exchange']}")
-            market_value += quotes.current * Decimal(row["volume"])
-        assets = PyDecimal(market_value + user["cash"].to_decimal())
-        securities = PyDecimal(market_value)
-        user_in_db = UserInUpdate(assets=assets, securities=securities, id=user["_id"], cash=user["cash"])
-        await account_db_conn.update_one({"_id": user_in_db.id}, {"$set": user_in_db.dict(exclude={"id", "cash"})})
-        update_logs.append({
-            "user_id": str(user["_id"]),
-            "raw_user_assets": str(user["assets"]),
-            "new_user_assets": str(assets),
-            "raw_user_securities": str(user["securities"]),
-            "new_user_securities": str(securities)
-        })
-    with open(async_user_assets_log_file, "w", encoding="utf-8") as f:
-        json.dump(update_logs, f, ensure_ascii=False, indent=4)
-    await quotes_api.shutdown()
-
-if __name__ == "__main__":
-    cli()
