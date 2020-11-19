@@ -79,15 +79,17 @@ class MainEngine(BaseEngine):
         await self.order_repo.process_update_order_frozen(payload)
 
     async def process_statement_create(self, payload: StatementInCreateEvent) -> None:
-        amount = payload.costs.total.to_decimal() + payload.securities_diff
+        amount = payload.costs.total.to_decimal() + payload.securities_diff.to_decimal()
         statement_in_db = StatementInDB(
+            exchange=payload.order.exchange,
+            symbol=payload.order.symbol,
             entrust_id=payload.order.entrust_id,
             user=payload.order.user,
             trade_category=payload.order.order_type.value,
             volume=payload.order.traded_volume,
             sold_price=payload.order.sold_price,
             costs=payload.costs,
-            amount=amount if payload.order.order_type == OrderTypeEnum.BUY else -amount,
+            amount=-amount if payload.order.order_type == OrderTypeEnum.BUY else amount,
             deal_time=payload.order.deal_time
         )
         await self.statement_repo.create_statement(statement_in_db)

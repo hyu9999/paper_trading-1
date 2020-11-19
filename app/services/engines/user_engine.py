@@ -174,10 +174,10 @@ class UserEngine(BaseEngine):
         user = await self.user_repo.get_user_by_id(order.user)
         # 根据交易类别判断持仓股票可用数量
         order_available_volume = order.traded_volume if order.trade_type == TradeTypeEnum.T0 else 0
-        # 交易费用
-        fee = Decimal(order.volume) * order.price.to_decimal() * user.commission.to_decimal()
         # 订单证券市值
         securities = Decimal(order.traded_volume) * order.sold_price.to_decimal()
+        # 交易佣金
+        commission = securities * user.commission.to_decimal()
         # 增持股票
         if position:
             volume = position.volume + order.traded_volume
@@ -188,7 +188,7 @@ class UserEngine(BaseEngine):
             available_volume = position.available_volume + order_available_volume
             # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持有数量 + 原利润 - 交易费用
             profit = (order.sold_price.to_decimal() - position.current_price.to_decimal()
-                      ) * Decimal(position.volume) + position.profit.to_decimal() - fee
+                      ) * Decimal(position.volume) + position.profit.to_decimal() - commission
             position_in_update = PositionInUpdate(
                 id=position.id,
                 volume=volume,
@@ -215,24 +215,24 @@ class UserEngine(BaseEngine):
                 available_volume=order_available_volume,
                 cost=order.sold_price,
                 current_price=order.sold_price,
-                profit=-fee,
+                profit=-commission,
                 first_buy_date=get_utc_now()
             )
             await self.event_engine.put(Event(POSITION_CREATE_EVENT, position_in_create))
         await self.update_user(order, securities_diff)
-        return securities_diff, Costs(commission=fee, total=fee)
+        return securities_diff, Costs(commission=commission, total=commission)
 
     async def reduce_position(self, order: OrderInDB) -> Tuple[Decimal, Costs]:
         """减仓."""
         position = await self.position_repo.get_position(order.user, order.symbol, order.exchange)
         user = await self.user_repo.get_user_by_id(order.user)
-        fee = Decimal(order.volume) * order.price.to_decimal() * user.commission.to_decimal()
+        commission = Decimal(order.volume) * order.price.to_decimal() * user.commission.to_decimal()
         volume = position.volume - order.traded_volume
         current_price = order.sold_price
-        tax = Decimal(order.volume) * order.sold_price.to_decimal() * user.tax_rate.to_decimal()
+        tax = Decimal(order.traded_volume) * order.sold_price.to_decimal() * user.tax_rate.to_decimal()
         # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持仓数量 + 原持仓利润 - 交易佣金 - 印花税
         profit = (order.sold_price.to_decimal() - position.current_price.to_decimal()
-                  ) * Decimal(position.volume) + position.profit.to_decimal() - fee - tax
+                  ) * Decimal(position.volume) + position.profit.to_decimal() - commission - tax
         # 可用持仓 = 原持仓数 + 冻结的股票数量 - 交易成功的股票数量
         available_volume = position.available_volume + order.frozen_stock_volume - order.traded_volume
         # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
@@ -256,7 +256,7 @@ class UserEngine(BaseEngine):
         # 证券资产变化值 = 订单证券市值
         securities_diff = Decimal(order.traded_volume) * order.sold_price.to_decimal()
         await self.update_user(order, securities_diff)
-        return securities_diff, Costs(commission=fee, tax=tax, total=fee+tax)
+        return securities_diff, Costs(commission=commission, tax=tax, total=commission+tax)
 
     async def update_user(self, order: OrderInDB, securities_diff: Decimal) -> None:
         """订单成交后更新用户信息."""

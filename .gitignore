@@ -67,9 +67,10 @@ _build/
 
 # Ignore script log files
 insert_log*.json
+sync_*_log.json
 user_mapping.json
 order_mapping.json
 
 # lock file
 scheduler.lock
-poetry.lock
+

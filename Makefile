@@ -1,6 +1,8 @@
 SRC = app scripts tests
+PYTHONPATH := .
+export PYTHONPATH
 
-.PHONY: server debug test flake8 mypy script
+.PHONY: server debug test flake8 mypy script initdb insert_v1_data sync_statement sync_user_assets
 
 default:
 	@echo "帮助:"
@@ -27,5 +29,4 @@ mypy:
 	mypy app
 
 script:
-	export PYTHONPATH=. & poetry run python ./scripts/cli.py $(filter-out $@,$(MAKECMDGOALS))
-
+	poetry run python ./scripts/cli.py $(filter-out $@,$(MAKECMDGOALS))

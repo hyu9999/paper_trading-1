@@ -8,7 +8,10 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from app import settings
 from app.models.types import PyDecimal
+from app.models.domain.statement import Costs
 from app.models.schemas.users import UserInUpdate
+from app.models.domain.statement import StatementInDB
+from app.models.enums import OrderStatusEnum, OrderTypeEnum
 from scripts.utils import coro
 
 
@@ -54,3 +57,56 @@ async def sync_user_assets():
     with open(async_user_assets_log_file, "w", encoding="utf-8") as f:
         json.dump(update_logs, f, ensure_ascii=False, indent=4)
     await quotes_api.shutdown()
+
+
+@click.command("sync_statement")
+@coro
+async def sync_statement():
+    """根据委托单同步交割单."""
+    client = AsyncIOMotorClient(settings.db.url)
+    database = client.get_database(settings.db.name)
+    order_db_conn = database[settings.db.collections.order]
+    statement_db_conn = database[settings.db.collections.statement]
+    user_db_conn = database[settings.db.collections.user]
+    orders = order_db_conn.find({
+        "status": OrderStatusEnum.ALL_FINISHED,
+        "order_type": {"$nin": [OrderTypeEnum.CANCEL.value]}
+    })
+    print(f"开始同步交割单...")
+    sync_statement_log_file = "sync_statement_log.json"
+    update_logs = []
+    async for order in orders:
+        statement_exists = await statement_db_conn.find_one({"entrust_id": order["entrust_id"]})
+        if not statement_exists:
+            traded_volume = order["traded_volume"]
+            sold_price = order["sold_price"]
+            securities = Decimal(traded_volume) * sold_price.to_decimal()
+            user = await user_db_conn.find_one({"_id": order["user"]})
+            commission = securities * user["commission"].to_decimal()
+            if order["order_type"] == "buy":
+                costs = Costs(commission=commission, total=commission)
+                amount = -(costs.total.to_decimal() + securities)
+            else:
+                tax = securities * user["tax_rate"].to_decimal()
+                costs = Costs(commission=commission, tax=tax, total=commission + tax)
+                amount = costs.total.to_decimal() + securities
+            statement = StatementInDB(
+                symbol=order["symbol"],
+                exchange=order["exchange"],
+                entrust_id=order["entrust_id"],
+                user=order["user"],
+                trade_category=order["order_type"],
+                volume=traded_volume,
+                sold_price=sold_price,
+                costs=costs,
+                amount=amount,
+                deal_time=order.get("deal_time") or order.get("order_date")
+            )
+            row = await statement_db_conn.insert_one(statement.dict(exclude={"id"}))
+            update_logs.append({
+                "entrust_id": str(statement.entrust_id),
+                "inserted_id": str(row.inserted_id),
+            })
+    with open(sync_statement_log_file, "w", encoding="utf-8") as f:
+        json.dump(update_logs, f, ensure_ascii=False, indent=4)
+    print(f"同步交割单完成, 共同步{len(update_logs)}条交割单, 同步结果已写入{sync_statement_log_file}.")
