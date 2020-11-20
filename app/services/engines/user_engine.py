@@ -220,7 +220,7 @@ class UserEngine(BaseEngine):
             )
             await self.event_engine.put(Event(POSITION_CREATE_EVENT, position_in_create))
         await self.update_user(order, securities_diff)
-        return securities_diff, Costs(commission=commission, total=commission)
+        return securities_diff, Costs(commission=commission, total=commission, tax="0")
 
     async def reduce_position(self, order: OrderInDB) -> Tuple[Decimal, Costs]:
         """减仓."""

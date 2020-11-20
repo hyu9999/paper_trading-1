@@ -84,7 +84,7 @@ async def sync_statement():
             user = await user_db_conn.find_one({"_id": order["user"]})
             commission = securities * user["commission"].to_decimal()
             if order["order_type"] == "buy":
-                costs = Costs(commission=commission, total=commission)
+                costs = Costs(commission=commission, total=commission, tax="0")
                 amount = -(costs.total.to_decimal() + securities)
             else:
                 tax = securities * user["tax_rate"].to_decimal()
