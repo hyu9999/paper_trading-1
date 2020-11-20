@@ -5,6 +5,7 @@ from hq2redis.exceptions import EntityNotFound
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from hq2redis import HQ2Redis
 
+from app.db.repositories.statement import StatementRepository
 from app.db.repositories.user import UserRepository
 from app.db.repositories.position import PositionRepository
 from app.db.repositories.user_assets_record import UserAssetsRecordRepository
@@ -54,6 +55,7 @@ class UserEngine(BaseEngine):
         self.user_repo = UserRepository(db)
         self.position_repo = PositionRepository(db)
         self.user_assets_record_repo = UserAssetsRecordRepository(db)
+        self.statement_repo = StatementRepository(db)
 
     async def startup(self) -> None:
         await self.register_event()
@@ -305,8 +307,9 @@ class UserEngine(BaseEngine):
             position_in_update.current_price = PyDecimal(current_price)
             if is_update_volume:
                 position_in_update.available_volume = position.volume
+            statement_list = await self.statement_repo.get_statement_list_by_symbol(user.id, position.symbol)
             profit = (current_price - position.cost.to_decimal()) * Decimal(position.volume) \
-                + position.profit.to_decimal()
+                + sum(statement.costs.total.to_decimal() for statement in statement_list)
             position_in_update.profit = PyDecimal(profit)
             await self.position_repo.process_update_position(position_in_update)
 

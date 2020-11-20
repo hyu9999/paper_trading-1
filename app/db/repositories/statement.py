@@ -25,6 +25,14 @@ class StatementRepository(BaseRepository):
         statement.id = statement_row.inserted_id
         return statement
 
+    async def get_statement_list_by_symbol(
+        self,
+        user_id: PyObjectId,
+        symbol: str,
+    ) -> List[StatementInDB]:
+        statement_rows = self.collection.find({"user": user_id, "symbol": symbol})
+        return [StatementInDB(**statement) async for statement in statement_rows]
+
     async def get_statement_list(
         self,
         user_id: PyObjectId = None,
