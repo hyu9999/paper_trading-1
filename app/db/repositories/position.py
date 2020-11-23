@@ -56,7 +56,7 @@ class PositionRepository(BaseRepository):
         return PositionInDB(**position_row) if position_row else None
 
     async def get_positions_by_user_id(self, user_id: PyObjectId) -> List[PositionInResponse]:
-        position_rows = self.collection.find({"user": user_id})
+        position_rows = self.collection.find({"user": user_id, "volume": {"$ne": 0}})
         return [PositionInResponse(**position) async for position in position_rows]
 
     async def update_position(self, position: PositionInUpdate) -> None:
