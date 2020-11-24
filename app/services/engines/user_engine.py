@@ -221,8 +221,9 @@ class UserEngine(BaseEngine):
                 first_buy_date=get_utc_now()
             )
             await self.event_engine.put(Event(POSITION_CREATE_EVENT, position_in_create))
-        await self.update_user(order, securities_diff)
-        return securities_diff, Costs(commission=commission, total=commission, tax="0")
+        costs = Costs(commission=commission, total=commission, tax="0")
+        await self.update_user(order, securities_diff, costs)
+        return securities_diff, costs
 
     async def reduce_position(self, order: OrderInDB) -> Tuple[Decimal, Costs]:
         """减仓."""
@@ -255,24 +256,27 @@ class UserEngine(BaseEngine):
             position_in_update.last_sell_date = get_utc_now()
         event = Event(POSITION_UPDATE_EVENT, position_in_update)
         await self.event_engine.put(event)
+        costs = Costs(commission=commission, tax=tax, total=commission+tax)
         # 证券资产变化值 = 订单证券市值
         securities_diff = Decimal(order.traded_volume) * order.sold_price.to_decimal()
-        await self.update_user(order, securities_diff)
-        return securities_diff, Costs(commission=commission, tax=tax, total=commission+tax)
+        await self.update_user(order, securities_diff, costs)
+        return securities_diff, costs
 
-    async def update_user(self, order: OrderInDB, securities_diff: Decimal) -> None:
+    async def update_user(self, order: OrderInDB, securities_diff: Decimal, costs: Costs) -> None:
         """订单成交后更新用户信息."""
         user = await self.user_repo.get_user_by_id(order.user)
-        cost = Decimal(order.volume) * order.sold_price.to_decimal() * (1 + user.commission.to_decimal())
         if order.order_type == OrderTypeEnum.BUY:
             # 可用现金 = 原现金 + 预先冻结的现金 - 减实际花费的现金
-            cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - cost
+            cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - costs.total
+            # 证券资产 = 原证券资产 + 证券资产的变化值
+            securities = user.securities.to_decimal() + securities_diff
         else:
-            cash = user.cash.to_decimal()
-        # 证券资产 = 原证券资产 + 证券资产的变化值
-        securities = user.securities.to_decimal() + securities_diff
-        # 总资产 = 原资产 - 现金花费 + 证券资产变化值
-        assets = user.assets.to_decimal() - cost + securities_diff
+            # 可用现金 = 原现金 + 证券资产变化值 - 手续费
+            cash = user.cash.to_decimal() + securities_diff - costs.total
+            # 证券资产 = 原证券资产 + 证券资产的变化值
+            securities = user.securities.to_decimal() - securities_diff
+        # 总资产 = 现金 + 证券资产
+        assets = cash + securities
         user_in_update = UserInUpdate(id=user.id, cash=PyDecimal(cash), securities=PyDecimal(securities),
                                       assets=PyDecimal(assets))
         await self.event_engine.put(Event(USER_UPDATE_EVENT, user_in_update))
