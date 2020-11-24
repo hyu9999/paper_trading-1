@@ -229,7 +229,7 @@ class UserEngine(BaseEngine):
         """减仓."""
         position = await self.position_repo.get_position(order.user, order.symbol, order.exchange)
         user = await self.user_repo.get_user_by_id(order.user)
-        commission = Decimal(order.volume) * order.price.to_decimal() * user.commission.to_decimal()
+        commission = Decimal(order.volume) * order.sold_price.to_decimal() * user.commission.to_decimal()
         volume = position.volume - order.traded_volume
         current_price = order.sold_price
         tax = Decimal(order.traded_volume) * order.sold_price.to_decimal() * user.tax_rate.to_decimal()
@@ -268,21 +268,19 @@ class UserEngine(BaseEngine):
         if order.order_type == OrderTypeEnum.BUY:
             # 可用现金 = 原现金 + 预先冻结的现金 - 证券市值 - 减实际花费的现金
             cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - securities_diff - \
-                   costs.total.to_decimal()
+                costs.total.to_decimal()
             # 证券资产 = 原证券资产 + 证券资产的变化值
             securities = user.securities.to_decimal() + securities_diff
         else:
             # 可用现金 = 原现金 + 证券资产变化值 - 手续费
             cash = user.cash.to_decimal() + securities_diff - costs.total.to_decimal()
             # 证券资产 = 原证券资产 - 证券资产的变化值
-            # 若证券资产的变化值, 则代表账户证券资产未及时更新 先按0处理 同步资产任务会矫正
-            if user.securities.to_decimal() > securities_diff:
-                securities = user.securities.to_decimal() - securities_diff
-            else:
-                securities = Decimal("0")
+            user_position = await self.position_repo.get_positions_by_user_id(user_id=user.id)
+            securities = sum([position.current_price.to_decimal() * Decimal(position.volume)
+                              for position in user_position])
         # 总资产 = 现金 + 证券资产
         assets = cash + securities
-        user_in_update = UserInUpdate(id=user.id, cash=PyDecimal(cash), securities=PyDecimal(securities),
+        user_in_update = UserInUpdate(id=user.id, cash=PyDecimal(cash), securities=PyDecimal(str(securities)),
                                       assets=PyDecimal(assets))
         await self.event_engine.put(Event(USER_UPDATE_EVENT, user_in_update))
 

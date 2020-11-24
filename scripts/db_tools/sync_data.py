@@ -72,7 +72,7 @@ async def sync_statement():
         "status": OrderStatusEnum.ALL_FINISHED,
         "order_type": {"$nin": [OrderTypeEnum.CANCEL.value]}
     })
-    print(f"开始同步交割单...")
+    print("开始同步交割单...")
     sync_statement_log_file = "sync_statement_log.json"
     update_logs = []
     async for order in orders:

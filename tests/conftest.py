@@ -20,7 +20,6 @@ from app.services.engines.market_engine.base import BaseMarket
 from app.services.engines.user_engine import UserEngine
 from app.services.engines.event_engine import EventEngine
 from tests.json.order import order_in_create_json
-from tests.mock.mock_load_entrust_orders import mock_load_entrust_orders
 from tests.mock.mock_event import mock_load_jobs_with_lock
 from tests.mock.mock_quotes_api import QuotesAPIMocker
 
