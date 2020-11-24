@@ -11,7 +11,6 @@ from app.db.repositories.order import OrderRepository
 from app.db.repositories.position import PositionRepository
 from app.db.repositories.statement import StatementRepository
 from app.db.repositories.user import UserRepository
-from app.exceptions.service import NoPositionsAvailable
 from app.models.domain.users import UserInDB
 from app.models.enums import OrderStatusEnum
 from app.models.schemas.orders import OrderInCreate
@@ -119,4 +118,3 @@ async def test_user_sell(
     # 持仓
     position_after_update = await PositionRepository(db).get_positions_by_user_id(test_user_scope_func.id)
     assert not position_after_update
-
