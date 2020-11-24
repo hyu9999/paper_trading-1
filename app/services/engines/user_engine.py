@@ -266,15 +266,19 @@ class UserEngine(BaseEngine):
         """订单成交后更新用户信息."""
         user = await self.user_repo.get_user_by_id(order.user)
         if order.order_type == OrderTypeEnum.BUY:
-            # 可用现金 = 原现金 + 预先冻结的现金 - 减实际花费的现金
-            cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - costs.total
+            # 可用现金 = 原现金 + 预先冻结的现金 - 证券市值 - 减实际花费的现金
+            cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - securities_diff - costs.total
             # 证券资产 = 原证券资产 + 证券资产的变化值
             securities = user.securities.to_decimal() + securities_diff
         else:
             # 可用现金 = 原现金 + 证券资产变化值 - 手续费
             cash = user.cash.to_decimal() + securities_diff - costs.total
-            # 证券资产 = 原证券资产 + 证券资产的变化值
-            securities = user.securities.to_decimal() - securities_diff
+            # 证券资产 = 原证券资产 - 证券资产的变化值
+            # 若证券资产的变化值, 则代表账户证券资产未及时更新 先按0处理 同步资产任务会矫正
+            if user.securities.to_decimal() > securities_diff:
+                securities = user.securities.to_decimal() - securities_diff
+            else:
+                securities = Decimal("0")
         # 总资产 = 现金 + 证券资产
         assets = cash + securities
         user_in_update = UserInUpdate(id=user.id, cash=PyDecimal(cash), securities=PyDecimal(securities),
@@ -309,11 +313,13 @@ class UserEngine(BaseEngine):
             current_price = quotes.ask1_p
             position_in_update = PositionInUpdate(**position.dict())
             position_in_update.current_price = PyDecimal(current_price)
+            # 更新可用股票数量
             if is_update_volume:
                 position_in_update.available_volume = position.volume
             statement_list = await self.statement_repo.get_statement_list_by_symbol(user.id, position.symbol)
-            profit = (current_price - position.cost.to_decimal()) * Decimal(position.volume) \
-                + sum(statement.costs.total.to_decimal() for statement in statement_list)
+            # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
+            profit = current_price * Decimal(position.volume) \
+                - sum(statement.costs.total.to_decimal() for statement in statement_list)
             position_in_update.profit = PyDecimal(profit)
             await self.position_repo.process_update_position(position_in_update)
 
