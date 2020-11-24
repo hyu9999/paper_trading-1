@@ -3,6 +3,7 @@ from typing import Optional
 from decimal import Decimal
 
 import pytest
+from bson import Decimal128
 from pytest_mock import MockerFixture
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -10,6 +11,7 @@ from app.db.repositories.order import OrderRepository
 from app.db.repositories.position import PositionRepository
 from app.db.repositories.user_assets_record import UserAssetsRecordRepository
 from app.exceptions.service import InsufficientFunds, NoPositionsAvailable, NotEnoughAvailablePositions
+from app.models.domain.statement import Costs
 from app.models.types import PyDecimal
 from app.models.base import get_utc_now
 from app.models.enums import OrderTypeEnum
@@ -107,6 +109,12 @@ async def position_in_create_available_100(db: AsyncIOMotorDatabase, test_user_s
     return await PositionRepository(db).create_position(**PositionInCreate(**json).dict())
 
 
+@pytest.fixture
+async def position_in_create_available_10000(db: AsyncIOMotorDatabase, test_user_scope_func: UserInDB):
+    json = {**position_in_create_json, **{"user": test_user_scope_func.id, "available_volume": 10000}}
+    return await PositionRepository(db).create_position(**PositionInCreate(**json).dict())
+
+
 async def mock_update_user(*args, **kwargs):
     pass
 
@@ -149,7 +157,7 @@ async def test_can_frozen_user_cash(
 
 
 @pytest.mark.parametrize(
-    "order_in_create, expected_exception, position_in_create",
+    "order_in_create, expected_exception, position",
     [
         (
             pytest.lazy_fixture("order_create_with_sell"),
@@ -164,7 +172,7 @@ async def test_can_frozen_user_cash(
         (
             pytest.lazy_fixture("order_create_with_sell"),
             None,
-            pytest.lazy_fixture("position_in_create_available_100")
+            pytest.lazy_fixture("position_in_create_available_10000")
         ),
     ],
 )
@@ -172,13 +180,13 @@ async def test_can_frozen_user_position(
     user_engine: UserEngine,
     order_in_create: OrderInCreate,
     expected_exception: Optional[Exception],
-    position_in_create: PositionInDB
+    position: PositionInDB
 ):
     """测试提交卖单时是否能正确冻结账户可用仓位.
 
     测试对象为: UserEngine.__position_validation.
     """
-    user = await user_engine.user_repo.get_user_by_id(position_in_create.user)
+    user = await user_engine.user_repo.get_user_by_id(position.user)
     exception = None
     try:
         await user_engine.pre_trade_validation(order_in_create, user)
@@ -188,8 +196,8 @@ async def test_can_frozen_user_position(
     except NotEnoughAvailablePositions:
         exception = NotEnoughAvailablePositions
     else:
-        position = await user_engine.position_repo.get_position_by_id(position_in_create.id)
-        assert position.available_volume == position_in_create.available_volume - order_in_create.volume
+        position_after_update = await user_engine.position_repo.get_position_by_id(position.id)
+        assert position_after_update.available_volume == position.available_volume - order_in_create.volume
     finally:
         assert exception == expected_exception
 
@@ -273,21 +281,22 @@ async def test_can_reduce_position(
 
 
 @pytest.mark.parametrize(
-    "order",
+    "order, securities",
     [
-        pytest.lazy_fixture("order_t0"),
-        pytest.lazy_fixture("order_sell_90"),
+        (pytest.lazy_fixture("order_t0"), PyDecimal("100.00")),
+        (pytest.lazy_fixture("order_sell_90"), PyDecimal("0")),
     ]
 )
 async def test_can_update_user(
     user_engine: UserEngine,
     order: OrderInDB,
+    securities: Decimal128
 ):
     """测试更新用户数据."""
-    await user_engine.update_user(order, Decimal(100))
+    await user_engine.update_user(order, Decimal(100), Costs(commission="5", total="5", tax="0"))
     await asyncio.sleep(1)
     user_after_task = await user_engine.user_repo.get_user_by_id(order.user)
-    assert user_after_task.securities == PyDecimal("100.00")
+    assert user_after_task.securities == securities
 
 
 @pytest.mark.parametrize(

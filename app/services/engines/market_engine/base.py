@@ -52,6 +52,7 @@ class BaseMarket(BaseEngine):
             await self.start_matchmaking()
 
     async def shutdown(self) -> None:
+        self._matchmaking_active = False
         await self._entrust_orders.put(EXIT_ENGINE_EVENT)
 
     async def start_matchmaking(self) -> None:
@@ -114,7 +115,7 @@ class BaseMarket(BaseEngine):
                     # 市价成交
                     if order.price_type == PriceTypeEnum.MARKET:
                         order.price = PyDecimal(quotes.ask1_p)
-                        order.sold_price = quotes.ask1_p
+                        order.sold_price = PyDecimal(quotes.ask1_p)
                         order.traded_volume = order.volume
                         await self.save_order(order)
                         continue

@@ -267,12 +267,13 @@ class UserEngine(BaseEngine):
         user = await self.user_repo.get_user_by_id(order.user)
         if order.order_type == OrderTypeEnum.BUY:
             # 可用现金 = 原现金 + 预先冻结的现金 - 证券市值 - 减实际花费的现金
-            cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - securities_diff - costs.total
+            cash = user.cash.to_decimal() + order.frozen_amount.to_decimal() - securities_diff - \
+                   costs.total.to_decimal()
             # 证券资产 = 原证券资产 + 证券资产的变化值
             securities = user.securities.to_decimal() + securities_diff
         else:
             # 可用现金 = 原现金 + 证券资产变化值 - 手续费
-            cash = user.cash.to_decimal() + securities_diff - costs.total
+            cash = user.cash.to_decimal() + securities_diff - costs.total.to_decimal()
             # 证券资产 = 原证券资产 - 证券资产的变化值
             # 若证券资产的变化值, 则代表账户证券资产未及时更新 先按0处理 同步资产任务会矫正
             if user.securities.to_decimal() > securities_diff:

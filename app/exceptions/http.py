@@ -15,7 +15,6 @@ class _HTTPException(Exception):
 
     @classmethod
     async def handler(cls, request: Request, exc: Exception) -> JSONResponse:
-        print(exc)
         return JSONResponse(status_code=exc.__dict__.get("status_code") or cls.status_code,
                             content={"code": cls.code, "detail": exc.__dict__.get("detail") or cls.detail})
 

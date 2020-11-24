@@ -12,6 +12,7 @@ from app import settings as base_settings
 from app.core import jwt
 from app.db.repositories.user import UserRepository
 from app.db.repositories.order import OrderRepository
+from app.models.domain.orders import OrderInDB
 from app.models.domain.users import UserInDB
 from app.models.schemas.users import UserInCreate
 from app.services.engines.main_engine import MainEngine
@@ -19,6 +20,7 @@ from app.services.engines.market_engine.base import BaseMarket
 from app.services.engines.user_engine import UserEngine
 from app.services.engines.event_engine import EventEngine
 from tests.json.order import order_in_create_json
+from tests.mock.mock_load_entrust_orders import mock_load_entrust_orders
 from tests.mock.mock_event import mock_load_jobs_with_lock
 from tests.mock.mock_quotes_api import QuotesAPIMocker
 
@@ -150,7 +152,7 @@ async def market_engine(db: AsyncIOMotorDatabase, quotes_api: HQ2Redis) -> BaseM
 
 
 @pytest.fixture(scope="session")
-async def main_engine(db: AsyncIOMotorDatabase, quotes_api: HQ2Redis):
+async def main_engine(db: AsyncIOMotorDatabase, quotes_api: HQ2Redis, session_mocker):
     main_engine = MainEngine(db, quotes_api)
     await main_engine.startup()
     yield main_engine
@@ -171,9 +173,9 @@ async def order_sell_type(test_user_scope_func: UserInDB, db: AsyncIOMotorDataba
 
 
 @pytest.fixture
-async def order_cancel_type(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
-    json = {**order_in_create_json, **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000",
-                                       "order_type": "cancel"}}
+async def order_cancel_type(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase, order_sell_type: OrderInDB):
+    json = {**order_in_create_json, **{"user_id": test_user_scope_func.id, "price_type": "market", "amount":
+            "1000", "order_type": "cancel", "entrust_id": order_sell_type.entrust_id}}
     return await OrderRepository(db).create_order(**json)
 
 
