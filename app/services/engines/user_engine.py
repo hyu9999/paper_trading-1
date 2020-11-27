@@ -229,33 +229,34 @@ class UserEngine(BaseEngine):
         """减仓."""
         position = await self.position_repo.get_position(order.user, order.symbol, order.exchange)
         user = await self.user_repo.get_user_by_id(order.user)
-        commission = Decimal(order.volume) * order.sold_price.to_decimal() * user.commission.to_decimal()
-        volume = position.volume - order.traded_volume
-        current_price = order.sold_price
+        commission = Decimal(order.traded_volume) * order.sold_price.to_decimal() * user.commission.to_decimal()
         tax = Decimal(order.traded_volume) * order.sold_price.to_decimal() * user.tax_rate.to_decimal()
-        # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持仓数量 + 原持仓利润 - 交易佣金 - 印花税
-        profit = (order.sold_price.to_decimal() - position.current_price.to_decimal()
-                  ) * Decimal(position.volume) + position.profit.to_decimal() - commission - tax
-        # 可用持仓 = 原持仓数 + 冻结的股票数量 - 交易成功的股票数量
-        available_volume = position.available_volume + order.frozen_stock_volume - order.traded_volume
-        # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
-        old_spent = Decimal(position.volume) * position.cost.to_decimal()
-        new_spent = Decimal(order.traded_volume) * order.sold_price.to_decimal() * \
-            (Decimal(1) - user.commission.to_decimal() - user.tax_rate.to_decimal())
-        cost = (old_spent - new_spent) / volume if volume else "0"
-        position_in_update = PositionInUpdate(
-            id=position.id,
-            volume=volume,
-            current_price=current_price,
-            cost=PyDecimal(cost),
-            available_volume=available_volume,
-            profit=PyDecimal(profit)
-        )
+        volume = position.volume - order.traded_volume
         # 清仓
         if volume == 0:
-            position_in_update.last_sell_date = get_utc_now()
-        event = Event(POSITION_UPDATE_EVENT, position_in_update)
-        await self.event_engine.put(event)
+            await self.position_repo.delete_position_by_id(position.id)
+        else:
+            current_price = order.sold_price
+            # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持仓数量 + 原持仓利润 - 交易佣金 - 印花税
+            profit = (order.sold_price.to_decimal() - position.current_price.to_decimal()
+                      ) * Decimal(position.volume) + position.profit.to_decimal() - commission - tax
+            # 可用持仓 = 原持仓数 + 冻结的股票数量 - 交易成功的股票数量
+            available_volume = position.available_volume + order.frozen_stock_volume - order.traded_volume
+            # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
+            old_spent = Decimal(position.volume) * position.cost.to_decimal()
+            new_spent = Decimal(order.traded_volume) * order.sold_price.to_decimal() * \
+                (Decimal(1) - user.commission.to_decimal() - user.tax_rate.to_decimal())
+            cost = (old_spent - new_spent) / volume if volume else "0"
+            position_in_update = PositionInUpdate(
+                id=position.id,
+                volume=volume,
+                current_price=current_price,
+                cost=PyDecimal(cost),
+                available_volume=available_volume,
+                profit=PyDecimal(profit)
+            )
+            event = Event(POSITION_UPDATE_EVENT, position_in_update)
+            await self.event_engine.put(event)
         costs = Costs(commission=commission, tax=tax, total=commission+tax)
         # 证券资产变化值 = 订单证券市值
         securities_diff = Decimal(order.traded_volume) * order.sold_price.to_decimal()

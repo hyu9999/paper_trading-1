@@ -62,6 +62,9 @@ class PositionRepository(BaseRepository):
     async def update_position(self, position: PositionInUpdate) -> None:
         await self.collection.update_one({"_id": position.id}, {"$set": position.dict(exclude={"id"})})
 
+    async def delete_position_by_id(self, position_id: PyObjectId) -> None:
+        await self.collection.delete_one({"_id": position_id})
+
     async def process_create_position(self, position: PositionInCreate) -> None:
         position_in_db = PositionInDB(**position.dict())
         await self.collection.insert_one(position_in_db.dict(exclude={"id"}))
