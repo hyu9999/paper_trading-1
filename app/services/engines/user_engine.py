@@ -318,7 +318,7 @@ class UserEngine(BaseEngine):
                 position_in_update.available_volume = position.volume
             statement_list = await self.statement_repo.get_statement_list_by_symbol(user.id, position.symbol)
             # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
-            profit = current_price * Decimal(position.volume) \
+            profit = (current_price - position.cost.to_decimal()) * Decimal(position.volume) \
                 - sum(statement.costs.total.to_decimal() for statement in statement_list)
             position_in_update.profit = PyDecimal(profit)
             await self.position_repo.process_update_position(position_in_update)
