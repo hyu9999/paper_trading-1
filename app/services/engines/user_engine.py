@@ -1,10 +1,12 @@
 from decimal import Decimal
 from typing import Union, Tuple
 
+from hq2redis import HQ2Redis
 from hq2redis.exceptions import EntityNotFound
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from hq2redis import HQ2Redis
 
+from app import state
+from app.db.cache.user import UserCache
 from app.db.repositories.statement import StatementRepository
 from app.db.repositories.user import UserRepository
 from app.db.repositories.position import PositionRepository
@@ -48,20 +50,30 @@ class UserEngine(BaseEngine):
     NotEnoughAvailablePositions
         用户持仓股票可用数量不够买单指定的数量时触发
     """
-    def __init__(self, event_engine: EventEngine, db: AsyncIOMotorDatabase, quotes_api: HQ2Redis) -> None:
+    def __init__(
+        self,
+        event_engine: EventEngine,
+        db: AsyncIOMotorDatabase,
+        quotes_api: HQ2Redis,
+    ) -> None:
         super().__init__()
         self.event_engine = event_engine
         self.quotes_api = quotes_api
         self.user_repo = UserRepository(db)
         self.position_repo = PositionRepository(db)
         self.user_assets_record_repo = UserAssetsRecordRepository(db)
+        self.user_cache = UserCache(state.user_redis_pool)
         self.statement_repo = StatementRepository(db)
 
     async def startup(self) -> None:
+        await self.load_user_to_redis()
         await self.register_event()
 
     async def shutdown(self) -> None:
         pass
+
+    async def load_user_to_redis(self) -> None:
+        await self.user_cache.set_user_many(await self.user_repo.get_user_list_to_cache())
 
     async def register_event(self) -> None:
         await self.event_engine.register(USER_UPDATE_CASH_EVENT, self.process_user_update_cash_event)
@@ -96,7 +108,7 @@ class UserEngine(BaseEngine):
         await self.user_assets_record_repo.process_update_user_assets_record(payload)
 
     async def process_market_close(self, *args) -> None:
-        users = await self.user_repo.get_users_list()
+        users = await self.user_repo.get_user_list()
         for user in users:
             await self.liquidate_user_position(user, is_update_volume=True)
             await self.liquidate_user_profit(user)

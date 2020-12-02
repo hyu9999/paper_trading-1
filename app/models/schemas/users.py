@@ -46,3 +46,11 @@ class UserInUpdate(RWSchema):
     assets: PyDecimal = Field(..., description="总资产")
     cash: PyDecimal = Field(..., description="现金")
     securities: PyDecimal = Field(0.00, description="证券资产")
+
+
+class UserInCache(RWSchema):
+    id: PyObjectId = Field(..., alias="_id")
+    capital: PyDecimal = Field(..., description="初始资产")
+    assets: PyDecimal = Field(..., description="总资产")
+    cash: PyDecimal = Field(..., description="现金")
+    securities: PyDecimal = Field(0.00, description="证券资产")

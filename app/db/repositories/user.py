@@ -5,7 +5,7 @@ from app.db.repositories.base import BaseRepository
 from app.exceptions.db import EntityDoesNotExist
 from app.models.types import PyObjectId
 from app.models.domain.users import UserInDB
-from app.models.schemas.users import UserInUpdateCash, UserInUpdate, UserInCreate
+from app.models.schemas.users import UserInUpdateCash, UserInUpdate, UserInCreate, UserInCache
 
 
 class UserRepository(BaseRepository):
@@ -34,9 +34,11 @@ class UserRepository(BaseRepository):
             return UserInDB(**user_row)
         raise EntityDoesNotExist(f"用户`{str(user_id)}`不存在.")
 
-    async def get_users_list(self) -> List[UserInDB]:
-        users_row = self.collection.find()
-        return [UserInDB(**user) async for user in users_row]
+    async def get_user_list(self) -> List[UserInDB]:
+        return [UserInDB(**user) async for user in self.collection.find({})]
+
+    async def get_user_list_to_cache(self) -> List[UserInCache]:
+        return [UserInCache(**user) async for user in self.collection.find({})]
 
     async def update_user(self, user: UserInUpdate) -> None:
         await self.collection.update_one({"_id": user.id}, {"$set": user.dict(exclude={"id"})})

@@ -22,7 +22,8 @@ quotes_max_retry = 3
     host = "127.0.0.1"
     port = 6379
     encoding = "utf-8"
-    hq_db = 15                  # 行情库
+    hq_db = 15                      # 行情
+    user_db = 9                     # 用户
 
     # 数据库表名
     [default.db.collections]

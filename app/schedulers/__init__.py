@@ -37,3 +37,7 @@ async def load_jobs_with_lock():
             fcntl.flock(f, fcntl.LOCK_UN)
             f.close()
         atexit.register(unlock)
+
+
+async def stop_jobs():
+    scheduler.remove_all_jobs()

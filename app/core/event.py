@@ -6,9 +6,9 @@ from hq2redis import HQ2Redis
 
 from app import settings, state
 from app.core.logging import init_logger
-from app.db.events import connect_to_db, close_db_connection
+from app.db.events import connect_to_db, close_db_connection, connect_to_redis, close_redis_connection
 from app.exceptions.events import register_exceptions
-from app.schedulers import load_jobs_with_lock
+from app.schedulers import load_jobs_with_lock, stop_jobs
 from app.services.events import start_engine, close_engine
 
 
@@ -32,6 +32,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
     async def start_app() -> None:
         await init_logger()
         await connect_to_db()
+        await connect_to_redis()
         await register_exceptions(app)
         await connect_to_quotes_api()
         await start_engine()
@@ -42,7 +43,9 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 def create_stop_app_handler(app: FastAPI) -> Callable:
     @logger.catch
     async def stop_app() -> None:
-        await close_db_connection()
+        await stop_jobs()
         await close_engine()
+        await close_redis_connection()
+        await close_db_connection()
         await close_quotes_api_conn()
     return stop_app
