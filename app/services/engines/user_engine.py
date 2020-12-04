@@ -25,14 +25,13 @@ from app.models.base import get_utc_now
 from app.models.domain.orders import OrderInDB
 from app.models.domain.statement import Costs
 from app.models.enums import OrderTypeEnum, TradeTypeEnum
-from app.models.schemas.orders import OrderInCreate, OrderInUpdateFrozen
+from app.models.schemas.orders import OrderInCreate
 from app.models.schemas.position import PositionInCache
 from app.models.schemas.users import UserInCache
 from app.models.types import PyDecimal
 from app.services.engines.base import BaseEngine
 from app.services.engines.event_constants import (
     MARKET_CLOSE_EVENT,
-    ORDER_UPDATE_FROZEN_EVENT,
     POSITION_CREATE_EVENT,
     POSITION_UPDATE_EVENT,
     UNFREEZE_EVENT,
@@ -164,17 +163,13 @@ class UserEngine(BaseEngine):
             user.frozen_amount = PyDecimal(
                 user.frozen_amount.to_decimal() - payload.frozen_amount.to_decimal()
             )
-            await self.user_cache.set_user(user)
+            await self.user_cache.set_user(user, include={"cash", "frozen_amount"})
         if payload.frozen_stock_volume:
             position = await self.position_cache.get_position(
                 user_id=payload.user, symbol=payload.symbol, exchange=payload.exchange
             )
             position.available_volume += payload.frozen_stock_volume
             await self.position_cache.set_position(position)
-        order_in_update_frozen = OrderInUpdateFrozen(entrust_id=payload.entrust_id)
-        await self.event_engine.put(
-            Event(ORDER_UPDATE_FROZEN_EVENT, order_in_update_frozen)
-        )
 
     async def pre_trade_validation(
         self,
@@ -216,24 +211,22 @@ class UserEngine(BaseEngine):
         user: UserInCache,
     ) -> int:
         """用户持仓检查."""
-        position = await self.position_cache.get_position(
-            user.id, order.symbol, order.exchange
-        )
-        if position:
+        try:
+            position = await self.position_cache.get_position(
+                user.id, order.symbol, order.exchange
+            )
+        except EntityDoesNotExist:
+            raise NoPositionsAvailable
+        else:
             if position.available_volume >= order.volume:
                 position.available_volume -= order.volume
                 event = Event(POSITION_UPDATE_EVENT, position)
                 await self.event_engine.put(event)
                 return order.volume
             raise NotEnoughAvailablePositions
-        else:
-            raise NoPositionsAvailable
 
     async def create_position(self, order: OrderInDB) -> Tuple[Decimal, Costs]:
         """新建持仓."""
-        position = await self.position_cache.get_position(
-            order.user, order.symbol, order.exchange
-        )
         user = await self.user_cache.get_user_by_id(order.user)
         # 根据交易类别判断持仓股票可用数量
         order_available_volume = (
@@ -243,8 +236,28 @@ class UserEngine(BaseEngine):
         securities = Decimal(order.traded_volume) * order.sold_price.to_decimal()
         # 交易佣金
         commission = securities * user.commission.to_decimal()
-        # 增持股票
-        if position:
+        try:
+            position = await self.position_cache.get_position(
+                order.user, order.symbol, order.exchange
+            )
+        except EntityDoesNotExist:
+            # 建仓
+            # 证券资产变化值 = 订单证券市值
+            securities_diff = securities
+            # 可用股票数量
+            new_position = PositionInCache(
+                user=order.user,
+                symbol=order.symbol,
+                exchange=order.exchange,
+                volume=order.traded_volume,
+                available_volume=order_available_volume,
+                cost=order.sold_price,
+                current_price=order.sold_price,
+                profit=-commission,
+                first_buy_date=get_utc_now(),
+            )
+            await self.event_engine.put(Event(POSITION_CREATE_EVENT, new_position))
+        else:
             volume = position.volume + order.traded_volume
             current_price = order.sold_price
             # 持仓成本 = ((原持仓数 * 原持仓成本) + (订单交易数 * 订单交易价格)) / 持仓总量
@@ -272,23 +285,6 @@ class UserEngine(BaseEngine):
                 volume * current_price.to_decimal()
                 - Decimal(position.volume) * position.current_price.to_decimal()
             )
-        # 建仓
-        else:
-            # 证券资产变化值 = 订单证券市值
-            securities_diff = securities
-            # 可用股票数量
-            new_position = PositionInCache(
-                user=order.user,
-                symbol=order.symbol,
-                exchange=order.exchange,
-                volume=order.traded_volume,
-                available_volume=order_available_volume,
-                cost=order.sold_price,
-                current_price=order.sold_price,
-                profit=-commission,
-                first_buy_date=get_utc_now(),
-            )
-            await self.event_engine.put(Event(POSITION_CREATE_EVENT, new_position))
         costs = Costs(commission=commission, total=commission, tax="0")
         await self.update_user(order, securities_diff, costs)
         return securities_diff, costs
@@ -369,6 +365,9 @@ class UserEngine(BaseEngine):
             )
             # 证券资产 = 原证券资产 + 证券资产的变化值
             securities = user.securities.to_decimal() + securities_diff
+            user.frozen_amount = PyDecimal(
+                user.frozen_amount.to_decimal() - order.frozen_amount.to_decimal()
+            )
         else:
             # 可用现金 = 原现金 + 证券资产变化值 - 手续费
             cash = user.cash.to_decimal() + securities_diff - costs.total.to_decimal()
@@ -385,11 +384,8 @@ class UserEngine(BaseEngine):
         # 总资产 = 现金 + 证券资产
         assets = cash + securities
         user.cash = PyDecimal(cash)
-        user.securities = PyDecimal(securities)
+        user.securities = PyDecimal(securities or "0")
         user.assets = PyDecimal(assets)
-        user.frozen_amount = PyDecimal(
-            user.frozen_amount.to_decimal() - order.frozen_amount.to_decimal()
-        )
         await self.event_engine.put(Event(USER_UPDATE_EVENT, user))
 
     async def liquidate_user_position(
@@ -442,4 +438,4 @@ class UserEngine(BaseEngine):
             new_user.securities = PyDecimal(securities)
         if is_refresh_frozen_amount:
             new_user.frozen_amount = PyDecimal("0")
-        await self.user_cache.set_user(new_user)
+        await self.user_cache.set_user(new_user, exclude={"cash", "frozen_amount"})

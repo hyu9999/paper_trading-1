@@ -103,6 +103,8 @@ async def delete_entrust_order(
     except EntityDoesNotExist:
         raise OrderNotFound(status_code=http_status.HTTP_404_NOT_FOUND)
     else:
+        if order.user != user.id:
+            raise CancelOrderFailed(detail="无法撤销他人的委托订单.")
         if order.status == OrderStatusEnum.CANCELED:
             raise CancelOrderFailed(detail="该委托订单已撤销, 请勿重复提交撤单请求.")
         if order.status != OrderStatusEnum.NOT_DONE:
@@ -115,7 +117,7 @@ async def delete_entrust_order(
             **order_in_create.dict(),
             **{
                 "entrust_id": entrust_id,
-                "user_id": user.id,
+                "user_id": order.user,
                 "frozen_amount": order.frozen_amount,
                 "frozen_stock_volume": order.frozen_stock_volume,
             }

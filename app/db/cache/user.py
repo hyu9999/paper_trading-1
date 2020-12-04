@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi.encoders import jsonable_encoder
 
@@ -22,10 +22,19 @@ class UserCache(BaseCache):
             await self._cache.set(self.IS_RELOAD_KEY, "0")
         return is_reload
 
-    async def set_user(self, user: UserInCache) -> None:
-        await self._cache.hmset_dict(
-            self.USER_KEY.format(user_id=user.id), jsonable_encoder(user)
-        )
+    async def set_user(
+        self,
+        user: UserInCache,
+        include: Optional[set] = None,
+        exclude: Optional[set] = None,
+    ) -> None:
+        if include:
+            json = jsonable_encoder(user, include=include)
+        elif exclude:
+            json = jsonable_encoder(user, exclude=exclude)
+        else:
+            json = jsonable_encoder(user)
+        await self._cache.hmset_dict(self.USER_KEY.format(user_id=user.id), json)
 
     async def set_user_many(self, user_list: List[UserInCache]) -> None:
         pipeline = self._cache.pipeline()

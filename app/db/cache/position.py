@@ -16,7 +16,14 @@ class PositionCache(BaseCache):
     POSITION_KEY_PREFIX = "position_"
 
     async def set_position(self, position: PositionInCache) -> None:
-        await self._cache.hmset_dict(str(position.user), jsonable_encoder(position))
+        await self._cache.hmset_dict(
+            self.POSITION_KEY.format(
+                user=position.user,
+                symbol=position.symbol,
+                exchange=position.exchange,
+            ),
+            jsonable_encoder(position),
+        )
 
     async def set_position_many(self, position_list: List[PositionInCache]) -> None:
         pipeline = self._cache.pipeline()
