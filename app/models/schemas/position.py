@@ -1,7 +1,9 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import Field
 
+from app.models.base import get_utc_now
 from app.models.domain.position import Position, PositionInDB
 from app.models.domain.stocks import Stock
 from app.models.schemas.rwschema import RWSchema
@@ -42,4 +44,6 @@ class PositionInCache(RWSchema, Stock):
     cost: PyDecimal = Field(..., description="持仓成本")
     current_price: PyDecimal = Field(..., description="当前价格")
     profit: PyDecimal = Field(..., description="利润")
-    first_buy_date: datetime = Field(..., description="首次持有日期")
+    first_buy_date: Optional[datetime] = Field(
+        default=get_utc_now(), description="首次持有日期"
+    )

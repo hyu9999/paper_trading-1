@@ -23,7 +23,9 @@ class UserCache(BaseCache):
         return is_reload
 
     async def set_user(self, user: UserInCache) -> None:
-        await self._cache.hmset_dict(str(user.id), jsonable_encoder(user))
+        await self._cache.hmset_dict(
+            self.USER_KEY.format(user_id=user.id), jsonable_encoder(user)
+        )
 
     async def set_user_many(self, user_list: List[UserInCache]) -> None:
         pipeline = self._cache.pipeline()
