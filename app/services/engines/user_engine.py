@@ -87,10 +87,9 @@ class UserEngine(BaseEngine):
                     for user in user_list
                 )
             )
-            if position_list:
-                await self.position_cache.set_position_many(
-                    list(itertools.chain.from_iterable(position_list))
-                )
+            position_in_cache_list = list(itertools.chain.from_iterable(position_list))
+            if position_in_cache_list:
+                await self.position_cache.set_position_many(position_in_cache_list)
 
     async def load_redis_data_to_db(self) -> None:
         """加载Redis的数据到MongoDB."""
