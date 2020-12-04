@@ -3,8 +3,8 @@ from typing import List
 
 from app import settings
 from app.db.repositories.base import BaseRepository
-from app.models.types import PyObjectId
 from app.models.domain.statement import StatementInDB
+from app.models.types import PyObjectId
 
 
 class StatementRepository(BaseRepository):
@@ -15,12 +15,10 @@ class StatementRepository(BaseRepository):
     EntityDoesNotExist
         交割单不存在时触发
     """
+
     COLLECTION_NAME = settings.db.collections.statement
 
-    async def create_statement(
-        self,
-        statement: StatementInDB
-    ) -> StatementInDB:
+    async def create_statement(self, statement: StatementInDB) -> StatementInDB:
         statement_row = await self.collection.insert_one(statement.dict(exclude={"id"}))
         statement.id = statement_row.inserted_id
         return statement
@@ -49,18 +47,11 @@ class StatementRepository(BaseRepository):
         if not (start_date or end_date):
             date_query = None
         elif start_date and end_date:
-            date_query = {
-                "$gte": start_date,
-                "$lt": end_date
-            }
+            date_query = {"$gte": start_date, "$lt": end_date}
         elif start_date and not end_date:
-            date_query = {
-                "$gte": start_date
-            }
+            date_query = {"$gte": start_date}
         else:
-            date_query = {
-                "$lte": end_date
-            }
+            date_query = {"$lte": end_date}
         if date_query:
             query.update({"deal_time": date_query})
         statement_rows = self.collection.find(query).sort("deal_time")

@@ -1,8 +1,8 @@
-import sys
 import logging
+import sys
 from pprint import pformat
-from typing import cast
 from types import FrameType
+from typing import cast
 
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
@@ -50,7 +50,9 @@ def format_record(record: dict) -> str:
 async def init_logger() -> None:
     """初始化logger"""
     logger.configure(
-        handlers=[{"sink": sys.stdout, "level": settings.log.level, "format": format_record}]
+        handlers=[
+            {"sink": sys.stdout, "level": settings.log.level, "format": format_record}
+        ]
     )
     # 统一设置uvicorn的处理器为loguru
     logging.getLogger("uvicorn").handlers = [InterceptHandler()]

@@ -1,6 +1,5 @@
-from typing import Callable, Coroutine, List
-
 import asyncio
+from typing import Callable, Coroutine, List
 
 import pytest
 from pydantic import BaseModel
@@ -47,10 +46,18 @@ async def process_4(payload: Payload) -> None:
 
 @pytest.mark.parametrize(
     "event_type, event_payload_msg, event_process, content",
-    [("foo_event", "foo", process_1, content_1), ("bar_event", "bar", process_2, content_2)],
+    [
+        ("foo_event", "foo", process_1, content_1),
+        ("bar_event", "bar", process_2, content_2),
+    ],
 )
-async def test_event_engine_can_run(event_engine: EventEngine, event_type: str, event_payload_msg: str,
-                                    event_process: Callable[[Payload], Coroutine], content: Content):
+async def test_event_engine_can_run(
+    event_engine: EventEngine,
+    event_type: str,
+    event_payload_msg: str,
+    event_process: Callable[[Payload], Coroutine],
+    content: Content,
+):
     """测试event engine是否能正确执行任务.
 
     任务内容为改变content实例的text值.
@@ -73,7 +80,7 @@ async def test_event_engine_can_handle_many_process_with_one_event(
     event_type: List[str],
     event_payload_msg: str,
     event_process: List[Callable[[Payload], Coroutine]],
-    content: Content
+    content: Content,
 ):
     """测试事件引擎能否正确处理一个事件的多个流程."""
     for process in event_process:
@@ -95,7 +102,7 @@ async def test_event_engine_can_handle_one_process_with_many_event(
     event_type: List[str],
     event_payload_msg: str,
     event_process: List[Callable[[Payload], Coroutine]],
-    content: Content
+    content: Content,
 ):
     """测试事件引擎能否正确同时处理多个事件的一个流程."""
     for i, j in zip(event_type, event_process):

@@ -1,19 +1,20 @@
 FROM python:3.7-buster
 
-WORKDIR /paper_trading
+EXPOSE 5000
+WORKDIR /app
 
-COPY ./app app
-COPY ./tests tests
-COPY ./Makefile ./
-COPY ./pyproject.toml ./poetry.lock* ./
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends netcat vim && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install Poetry and package
-RUN pip install poetry \
-    && poetry cache clear pypi --all \
-    && poetry update \
-    && poetry install --no-dev
+COPY poetry.lock pyproject.toml ./
+RUN pip install poetry==1.1 && \
+    poetry config virtualenvs.in-project true && \
+    poetry install --no-dev
+
+COPY . ./
 
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && echo "Asia/Shanghai" > /etc/timezone
 
-CMD ["poetry", "run", "uvicorn", "app.main:app"]
+CMD poetry run uvicorn --host=0.0.0.0 app.main:app

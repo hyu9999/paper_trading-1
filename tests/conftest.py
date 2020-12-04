@@ -1,24 +1,24 @@
 import asyncio
 
 import pytest
-from fastapi import FastAPI
-from dynaconf import Dynaconf
-from httpx import AsyncClient
-from hq2redis import HQ2Redis
 from asgi_lifespan import LifespanManager
-from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
+from dynaconf import Dynaconf
+from fastapi import FastAPI
+from hq2redis import HQ2Redis
+from httpx import AsyncClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from app import settings as base_settings
 from app.core import jwt
-from app.db.repositories.user import UserRepository
 from app.db.repositories.order import OrderRepository
+from app.db.repositories.user import UserRepository
 from app.models.domain.orders import OrderInDB
 from app.models.domain.users import UserInDB
 from app.models.schemas.users import UserInCreate
+from app.services.engines.event_engine import EventEngine
 from app.services.engines.main_engine import MainEngine
 from app.services.engines.market_engine.base import BaseMarket
 from app.services.engines.user_engine import UserEngine
-from app.services.engines.event_engine import EventEngine
 from tests.json.order import order_in_create_json
 from tests.mock.mock_event import mock_load_jobs_with_lock
 from tests.mock.mock_quotes_api import QuotesAPIMocker
@@ -26,14 +26,16 @@ from tests.mock.mock_quotes_api import QuotesAPIMocker
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def mock(session_mocker):
-    session_mocker.patch("app.services.engines.market_engine.china_a_market.ChinaAMarket.is_trading_time",
-                         return_value=True)
+    session_mocker.patch(
+        "app.services.engines.market_engine.china_a_market.ChinaAMarket.is_trading_time",
+        return_value=True,
+    )
     session_mocker.patch("app.core.event.load_jobs_with_lock", mock_load_jobs_with_lock)
 
 
-@pytest.yield_fixture(scope='session')
+@pytest.yield_fixture(scope="session")
 def event_loop():
     loop = asyncio.get_event_loop()
     yield loop
@@ -49,6 +51,7 @@ def settings() -> Dynaconf:
 @pytest.fixture(scope="session")
 def app() -> FastAPI:
     from app.main import app
+
     return app
 
 
@@ -60,9 +63,7 @@ async def initialized_app(app: FastAPI) -> FastAPI:
 
 @pytest.fixture(scope="session")
 async def client(
-    initialized_app: FastAPI,
-    settings: Dynaconf,
-    event_loop: asyncio.AbstractEventLoop
+    initialized_app: FastAPI, settings: Dynaconf, event_loop: asyncio.AbstractEventLoop
 ) -> AsyncClient:
     async with AsyncClient(
         app=initialized_app,
@@ -75,7 +76,9 @@ async def client(
 @pytest.fixture(scope="session")
 async def db(settings: Dynaconf) -> AsyncIOMotorDatabase:
     client = AsyncIOMotorClient(
-        settings.db.url, maxPoolSize=settings.db.max_connections, minPoolSize=settings.db.min_connections
+        settings.db.url,
+        maxPoolSize=settings.db.max_connections,
+        minPoolSize=settings.db.min_connections,
     )
     yield client[settings.db.name]
     client.close()
@@ -130,7 +133,9 @@ async def quotes_api() -> HQ2Redis:
 
 
 @pytest.fixture
-async def user_engine(event_engine: EventEngine, db: AsyncIOMotorDatabase, quotes_api: HQ2Redis) -> UserEngine:
+async def user_engine(
+    event_engine: EventEngine, db: AsyncIOMotorDatabase, quotes_api: HQ2Redis
+) -> UserEngine:
     user_engine = UserEngine(event_engine, db, quotes_api)
     await user_engine.startup()
     yield user_engine
@@ -160,28 +165,59 @@ async def main_engine(db: AsyncIOMotorDatabase, quotes_api: HQ2Redis, session_mo
 
 @pytest.fixture
 async def order_buy_type(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
-    json = {**order_in_create_json, **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000"}}
+    json = {
+        **order_in_create_json,
+        **{
+            "user_id": test_user_scope_func.id,
+            "price_type": "market",
+            "amount": "1000",
+        },
+    }
     return await OrderRepository(db).create_order(**json)
 
 
 @pytest.fixture
 async def order_sell_type(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
-    json = {**order_in_create_json, **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000",
-                                       "order_type": "sell"}}
-    return await OrderRepository(db).create_order(**json)
-
-
-@pytest.fixture
-async def order_cancel_type(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase, order_sell_type: OrderInDB):
-    json = {**order_in_create_json, **{"user_id": test_user_scope_func.id, "price_type": "market", "amount":
-            "1000", "order_type": "cancel", "entrust_id": order_sell_type.entrust_id}}
-    return await OrderRepository(db).create_order(**json)
-
-
-@pytest.fixture
-async def order_buy_type_status_not_done(test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase):
     json = {
         **order_in_create_json,
-        **{"user_id": test_user_scope_func.id, "price_type": "market", "amount": "1000", "status": "未成交"}
+        **{
+            "user_id": test_user_scope_func.id,
+            "price_type": "market",
+            "amount": "1000",
+            "order_type": "sell",
+        },
+    }
+    return await OrderRepository(db).create_order(**json)
+
+
+@pytest.fixture
+async def order_cancel_type(
+    test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase, order_sell_type: OrderInDB
+):
+    json = {
+        **order_in_create_json,
+        **{
+            "user_id": test_user_scope_func.id,
+            "price_type": "market",
+            "amount": "1000",
+            "order_type": "cancel",
+            "entrust_id": order_sell_type.entrust_id,
+        },
+    }
+    return await OrderRepository(db).create_order(**json)
+
+
+@pytest.fixture
+async def order_buy_type_status_not_done(
+    test_user_scope_func: UserInDB, db: AsyncIOMotorDatabase
+):
+    json = {
+        **order_in_create_json,
+        **{
+            "user_id": test_user_scope_func.id,
+            "price_type": "market",
+            "amount": "1000",
+            "status": "未成交",
+        },
     }
     return await OrderRepository(db).create_order(**json)

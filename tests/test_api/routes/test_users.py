@@ -1,17 +1,20 @@
 import pytest
 from fastapi import FastAPI
-from starlette import status
 from httpx import AsyncClient
+from starlette import status
 
 from app.models.domain.users import UserInDB
 from app.models.schemas.users import ListOfUserInResponse, UserInResponse
 
-
 pytestmark = pytest.mark.asyncio
 
 
-async def test_user_get_account_by_id(app: FastAPI, client: AsyncClient, test_user_scope_func: UserInDB) -> None:
-    response = await client.request("GET", app.url_path_for("users:get-user", user_id=str(test_user_scope_func.id)))
+async def test_user_get_account_by_id(
+    app: FastAPI, client: AsyncClient, test_user_scope_func: UserInDB
+) -> None:
+    response = await client.request(
+        "GET", app.url_path_for("users:get-user", user_id=str(test_user_scope_func.id))
+    )
     assert response.status_code == status.HTTP_200_OK
     user = UserInResponse(**response.json())
     assert user

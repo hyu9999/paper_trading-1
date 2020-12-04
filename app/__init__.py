@@ -1,6 +1,6 @@
 import types
-from pathlib import Path
 from contextvars import ContextVar
+from pathlib import Path
 
 from dynaconf import Dynaconf
 
@@ -13,7 +13,7 @@ settings = Dynaconf(
     environments=True,
     load_dotenv=True,
     root_path=ROOT_PATH,
-    dotenv_path=".env"
+    dotenv_path=".env",
 )
 
 state = _app_state.get()

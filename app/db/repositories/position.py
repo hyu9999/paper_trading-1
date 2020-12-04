@@ -1,17 +1,20 @@
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
+
+from pymongo import DeleteOne, UpdateOne
 
 from app import settings
 from app.db.repositories.base import BaseRepository
-from app.models.types import PyObjectId, PyDecimal
-from app.models.enums import ExchangeEnum
 from app.models.domain.position import PositionInDB
-from app.models.schemas.position import PositionInCreate
+from app.models.enums import ExchangeEnum
 from app.models.schemas.position import (
+    PositionInCache,
+    PositionInCreate,
     PositionInResponse,
-    PositionInUpdateAvailable,
     PositionInUpdate,
+    PositionInUpdateAvailable,
 )
+from app.models.types import PyDecimal, PyObjectId
 
 
 class PositionRepository(BaseRepository):
@@ -24,6 +27,7 @@ class PositionRepository(BaseRepository):
     EntityDoesNotExist
         用户无持仓记录时触发
     """
+
     COLLECTION_NAME = settings.db.collections.position
 
     async def create_position(
@@ -40,9 +44,18 @@ class PositionRepository(BaseRepository):
         first_buy_date: datetime,
         last_sell_date: Optional[datetime]
     ) -> PositionInDB:
-        position = PositionInDB(user=user, symbol=symbol, exchange=exchange, volume=volume,
-                                available_volume=available_volume, cost=cost, current_price=current_price,
-                                profit=profit, first_buy_date=first_buy_date, last_sell_date=last_sell_date)
+        position = PositionInDB(
+            user=user,
+            symbol=symbol,
+            exchange=exchange,
+            volume=volume,
+            available_volume=available_volume,
+            cost=cost,
+            current_price=current_price,
+            profit=profit,
+            first_buy_date=first_buy_date,
+            last_sell_date=last_sell_date,
+        )
         position_row = await self.collection.insert_one(position.dict(exclude={"id"}))
         position.id = position_row.inserted_id
         return position
@@ -51,29 +64,53 @@ class PositionRepository(BaseRepository):
         position_row = await self.collection.find_one({"_id": position_id})
         return PositionInDB(**position_row)
 
-    async def get_position(self, user_id: PyObjectId, symbol: str, exchange: ExchangeEnum) -> PositionInDB:
-        position_row = await self.collection.find_one({"user": user_id, "symbol": symbol, "exchange": exchange.value})
+    async def get_position(
+        self, user_id: PyObjectId, symbol: str, exchange: ExchangeEnum
+    ) -> PositionInDB:
+        position_row = await self.collection.find_one(
+            {"user": user_id, "symbol": symbol, "exchange": exchange.value}
+        )
         return PositionInDB(**position_row) if position_row else None
 
-    async def get_positions_by_user_id(self, user_id: PyObjectId) -> List[PositionInResponse]:
+    async def get_positions_by_user_id(
+        self, user_id: PyObjectId
+    ) -> List[PositionInResponse]:
         position_rows = self.collection.find({"user": user_id, "volume": {"$ne": 0}})
         return [PositionInResponse(**position) async for position in position_rows]
 
+    async def get_positions_by_user_id_to_cache(
+        self, user_id: PyObjectId
+    ) -> List[PositionInCache]:
+        position_rows = self.collection.find({"user": user_id})
+        return [PositionInCache(**position) async for position in position_rows]
+
     async def update_position(self, position: PositionInUpdate) -> None:
-        await self.collection.update_one({"_id": position.id}, {"$set": position.dict(exclude={"id"})})
+        await self.collection.update_one(
+            {"_id": position.id}, {"$set": position.dict(exclude={"id"})}
+        )
 
     async def delete_position_by_id(self, position_id: PyObjectId) -> None:
         await self.collection.delete_one({"_id": position_id})
+
+    async def bulk_update(self, options: List[UpdateOne]) -> None:
+        await self.collection.bulk_write(options)
+
+    async def bulk_delete(self, options: List[DeleteOne]) -> None:
+        await self.collection.bulk_write(options)
 
     async def process_create_position(self, position: PositionInCreate) -> None:
         position_in_db = PositionInDB(**position.dict())
         await self.collection.insert_one(position_in_db.dict(exclude={"id"}))
 
-    async def process_update_position_available_by_id(self, position: PositionInUpdateAvailable) -> None:
+    async def process_update_position_available_by_id(
+        self, position: PositionInUpdateAvailable
+    ) -> None:
         await self.collection.update_one(
             {"_id": position.id},
-            {"$set": {"available_volume": position.available_volume}}
+            {"$set": {"available_volume": position.available_volume}},
         )
 
     async def process_update_position(self, position: PositionInUpdate) -> None:
-        await self.collection.update_one({"_id": position.id}, {"$set": position.dict(exclude={"id"})})
+        await self.collection.update_one(
+            {"_id": position.id}, {"$set": position.dict(exclude={"id"})}
+        )

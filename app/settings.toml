@@ -21,9 +21,9 @@ quotes_max_retry = 3
     [default.redis]
     host = "127.0.0.1"
     port = 6379
-    encoding = "utf-8"
     hq_db = 15                      # 行情
     user_db = 9                     # 用户
+    position_db = 8                 # 持仓
 
     # 数据库表名
     [default.db.collections]
@@ -63,3 +63,11 @@ dynaconf_merge = true
     # 数据库相关配置
     [testing.db]
     name = "test_paper_trading"
+
+    # Redis
+    [testing.redis]
+    host = "127.0.0.1"
+    port = 6379
+    hq_db = 15                      # 行情
+    user_db = 7                     # 用户
+    position_db = 7                 # 持仓

@@ -7,31 +7,41 @@ from app import settings
 from app.db.repositories.order import OrderRepository
 from app.db.repositories.statement import StatementRepository
 from app.models.base import get_utc_now
-from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
-from app.models.schemas.statement import StatementInCreateEvent
-from app.models.types import PyObjectId, PyDecimal
 from app.models.domain.statement import StatementInDB
-from app.models.enums import PriceTypeEnum, OrderStatusEnum, OrderTypeEnum
-from app.models.schemas.orders import OrderInCreate, OrderInCreateViewResponse
-from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus, OrderInUpdateFrozen
+from app.models.enums import OrderStatusEnum, OrderTypeEnum, PriceTypeEnum
+from app.models.schemas.orders import (
+    OrderInCreate,
+    OrderInCreateViewResponse,
+    OrderInUpdate,
+    OrderInUpdateFrozen,
+    OrderInUpdateStatus,
+)
+from app.models.schemas.statement import StatementInCreateEvent
+from app.models.schemas.users import UserInCache
+from app.models.types import PyDecimal, PyObjectId
 from app.services.engines.base import BaseEngine
-from app.services.engines.log_engine import LogEngine
-from app.services.engines.event_engine import EventEngine
-from app.services.engines.user_engine import UserEngine, Event
-from app.services.engines.market_engine.constant import MARKET_NAME_MAPPING
 from app.services.engines.event_constants import (
+    MARKET_CLOSE_EVENT,
     ORDER_CREATE_EVENT,
     ORDER_UPDATE_EVENT,
-    ORDER_UPDATE_STATUS_EVENT,
-    MARKET_CLOSE_EVENT,
     ORDER_UPDATE_FROZEN_EVENT,
+    ORDER_UPDATE_STATUS_EVENT,
     STATEMENT_CREATE_EVENT,
 )
+from app.services.engines.event_engine import EventEngine
+from app.services.engines.log_engine import LogEngine
+from app.services.engines.market_engine.constant import MARKET_NAME_MAPPING
+from app.services.engines.user_engine import Event, UserEngine
 
 
 class MainEngine(BaseEngine):
-    def __init__(self, db: AsyncIOMotorDatabase, quotes_api: HQ2Redis, event_engine: Type[EventEngine] = None) -> None:
+    def __init__(
+        self,
+        db: AsyncIOMotorDatabase,
+        quotes_api: HQ2Redis,
+        event_engine: Type[EventEngine] = None,
+    ) -> None:
         super().__init__()
         self.event_engine = event_engine() if event_engine else EventEngine()
         self.db = db
@@ -61,10 +71,18 @@ class MainEngine(BaseEngine):
     async def register_event(self) -> None:
         await self.event_engine.register(ORDER_CREATE_EVENT, self.process_order_create)
         await self.event_engine.register(ORDER_UPDATE_EVENT, self.process_order_update)
-        await self.event_engine.register(ORDER_UPDATE_STATUS_EVENT, self.process_order_status_update)
-        await self.event_engine.register(MARKET_CLOSE_EVENT, self.process_refuse_entrust_orders)
-        await self.event_engine.register(ORDER_UPDATE_FROZEN_EVENT, self.process_order_frozen_update)
-        await self.event_engine.register(STATEMENT_CREATE_EVENT, self.process_statement_create)
+        await self.event_engine.register(
+            ORDER_UPDATE_STATUS_EVENT, self.process_order_status_update
+        )
+        await self.event_engine.register(
+            MARKET_CLOSE_EVENT, self.process_refuse_entrust_orders
+        )
+        await self.event_engine.register(
+            ORDER_UPDATE_FROZEN_EVENT, self.process_order_frozen_update
+        )
+        await self.event_engine.register(
+            STATEMENT_CREATE_EVENT, self.process_statement_create
+        )
 
     async def process_order_create(self, payload: OrderInDB) -> None:
         await self.order_repo.process_create_order(payload)
@@ -90,7 +108,7 @@ class MainEngine(BaseEngine):
             sold_price=payload.order.sold_price,
             costs=payload.costs,
             amount=-amount if payload.order.order_type == OrderTypeEnum.BUY else amount,
-            deal_time=payload.order.deal_time
+            deal_time=payload.order.deal_time,
         )
         await self.statement_repo.create_statement(statement_in_db)
 
@@ -110,13 +128,21 @@ class MainEngine(BaseEngine):
         order_in_update_payload = OrderInUpdate(**dict(order))
         await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
 
-    async def on_order_arrived(self, order: OrderInCreate, user: UserInDB) -> OrderInCreateViewResponse:
+    async def on_order_arrived(
+        self, order: OrderInCreate, user: UserInCache
+    ) -> OrderInCreateViewResponse:
         """新订单到达."""
         frozen = await self.user_engine.pre_trade_validation(order, user)
         # 根据订单的股票价格确定价格类型
-        order.price_type = PriceTypeEnum.MARKET if str(order.price) == "0" else PriceTypeEnum.LIMIT
-        order_in_db = OrderInDB(**dict(order), user=user.id, order_date=get_utc_now(),
-                                entrust_id=PyObjectId())
+        order.price_type = (
+            PriceTypeEnum.MARKET if str(order.price) == "0" else PriceTypeEnum.LIMIT
+        )
+        order_in_db = OrderInDB(
+            **dict(order),
+            user=user.id,
+            order_date=get_utc_now(),
+            entrust_id=PyObjectId()
+        )
         if order.order_type == OrderTypeEnum.BUY:
             order_in_db.frozen_amount = PyDecimal(frozen)
         else:

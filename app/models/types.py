@@ -1,20 +1,22 @@
 from decimal import Decimal
 from typing import Any, Dict, Union
 
-from bson import ObjectId, Decimal128
+from bson import Decimal128, ObjectId
 
 from app.models.typing import CallableGenerator
 
 
 class PyObjectId(ObjectId):
     @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
+    def __get_validators__(cls) -> "CallableGenerator":
         yield cls.validate
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        field_schema.update(pattern="^[0-9a-fA-F]{24}$", examples=["5f365bedcf31136279a97d19",
-                                                                   "5d883e0bedcac5082ecf3afa"])
+        field_schema.update(
+            pattern="^[0-9a-fA-F]{24}$",
+            examples=["5f365bedcf31136279a97d19", "5d883e0bedcac5082ecf3afa"],
+        )
 
     @classmethod
     def validate(cls, v: Any) -> Any:
@@ -27,12 +29,12 @@ class PyObjectId(ObjectId):
 
 class PyDecimal(Decimal128):
     @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
+    def __get_validators__(cls) -> "CallableGenerator":
         yield cls.validate
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        field_schema.update(type='number', format='json-number')
+        field_schema.update(type="number", format="json-number")
 
     @classmethod
     def validate(cls, v: Union[float, int, Decimal]) -> Any:

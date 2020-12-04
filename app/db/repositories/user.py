@@ -1,11 +1,14 @@
 from typing import List
 
+from pymongo import UpdateOne
+
 from app import settings
 from app.db.repositories.base import BaseRepository
 from app.exceptions.db import EntityDoesNotExist
-from app.models.types import PyObjectId
 from app.models.domain.users import UserInDB
-from app.models.schemas.users import UserInUpdateCash, UserInUpdate, UserInCreate, UserInCache
+from app.models.enums import UserStatusEnum
+from app.models.schemas.users import UserInCache, UserInCreate, UserInUpdate
+from app.models.types import PyObjectId
 
 
 class UserRepository(BaseRepository):
@@ -18,6 +21,7 @@ class UserRepository(BaseRepository):
     EntityDoesNotExist
         用户不存在时触发
     """
+
     COLLECTION_NAME = settings.db.collections.user
 
     async def create_user(self, user_in_create: UserInCreate) -> UserInDB:
@@ -38,29 +42,32 @@ class UserRepository(BaseRepository):
         return [UserInDB(**user) async for user in self.collection.find({})]
 
     async def get_user_list_to_cache(self) -> List[UserInCache]:
-        return [UserInCache(**user) async for user in self.collection.find({})]
+        return [
+            UserInCache(**user)
+            async for user in self.collection.find(
+                {"status": {"$ne": UserStatusEnum.TERMINATED}}
+            )
+        ]
 
     async def update_user(self, user: UserInUpdate) -> None:
-        await self.collection.update_one({"_id": user.id}, {"$set": user.dict(exclude={"id"})})
+        await self.collection.update_one(
+            {"_id": user.id}, {"$set": user.dict(exclude={"id"})}
+        )
 
-    async def update_user_by_id(
-        self,
-        capital: float,
-        assets: float,
-        cash: float,
-        securities: float,
-        commission: float,
-        tas: float,
-        slippage: float,
-        desc: str = ""
-    ):
-        pass
+    async def terminate_user(self, user_id: PyObjectId) -> None:
+        await self.collection.update_one(
+            {"_id": user_id}, {"$set": {"status": UserStatusEnum.TERMINATED}}
+        )
 
-    async def process_update_user_cash(self, user: UserInUpdateCash) -> None:
-        await self.collection.update_one({"_id": user.id}, {"$set": {"cash": user.cash}})
+    async def bulk_update(self, options: List[UpdateOne]) -> None:
+        await self.collection.bulk_write(options)
 
-    async def process_update_user(self, user: UserInUpdate, exclude: list = None) -> None:
+    async def process_update_user(
+        self, user: UserInUpdate, exclude: list = None
+    ) -> None:
         exclude_field = ["id"]
         if exclude:
             exclude_field.extend(exclude)
-        await self.collection.update_one({"_id": user.id}, {"$set": user.dict(exclude=set(exclude_field))})
+        await self.collection.update_one(
+            {"_id": user.id}, {"$set": user.dict(exclude=set(exclude_field))}
+        )

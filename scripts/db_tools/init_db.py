@@ -24,11 +24,19 @@ async def init_db():
         client = AsyncIOMotorClient(settings.db.url)
         await create_collection(client, settings.db.collections.user)
         await create_collection(client, settings.db.collections.order)
-        await client[settings.db.name][settings.db.collections.order].create_index("entrust_id")
+        await client[settings.db.name][settings.db.collections.order].create_index(
+            "entrust_id"
+        )
         await create_collection(client, settings.db.collections.position)
-        await client[settings.db.name][settings.db.collections.position].create_index("user")
-        await client[settings.db.name][settings.db.collections.position].create_index("symbol")
-        await client[settings.db.name][settings.db.collections.position].create_index("exchange")
+        await client[settings.db.name][settings.db.collections.position].create_index(
+            "user"
+        )
+        await client[settings.db.name][settings.db.collections.position].create_index(
+            "symbol"
+        )
+        await client[settings.db.name][settings.db.collections.position].create_index(
+            "exchange"
+        )
         await create_collection(client, settings.db.collections.user_assets_record)
         await create_collection(client, settings.db.collections.statement)
         click.echo("初始化数据库完成.")

@@ -14,5 +14,5 @@ cli.add_command(sync_data.sync_user_assets)
 cli.add_command(sync_data.sync_statement)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()

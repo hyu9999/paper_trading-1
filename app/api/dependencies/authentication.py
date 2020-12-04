@@ -9,18 +9,25 @@ from starlette.exceptions import HTTPException
 from app import settings
 from app.api.dependencies.database import get_repository
 from app.core import jwt
-from app.exceptions.db import EntityDoesNotExist
-from app.models.types import PyObjectId
-from app.models.domain.users import UserInDB
 from app.db.repositories.user import UserRepository
-from app.exceptions.http import InvalidAuthTokenPrefix, AuthHeaderNotFound, InvalidAuthToken, WrongTokenFormat, \
-    InvalidAuthMode, InvalidUserID
+from app.exceptions.db import EntityDoesNotExist
+from app.exceptions.http import (
+    AuthHeaderNotFound,
+    InvalidAuthMode,
+    InvalidAuthToken,
+    InvalidAuthTokenPrefix,
+    InvalidUserID,
+    WrongTokenFormat,
+)
+from app.models.domain.users import UserInDB
+from app.models.types import PyObjectId
 
 HEADER_KEY = "Authorization"
 
 
 class RWAPIKeyHeader(APIKeyHeader):
     """获取请求头的鉴权字段."""
+
     async def __call__(
         self,
         request: requests.Request,

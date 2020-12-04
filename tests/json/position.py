@@ -8,5 +8,5 @@ position_in_create_json = {
     "cost": "10",
     "current_price": "10",
     "profit": "0",
-    "first_buy_date": get_utc_now()
+    "first_buy_date": get_utc_now(),
 }

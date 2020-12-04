@@ -1,5 +1,4 @@
 from starlette import status
-
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -15,8 +14,13 @@ class _HTTPException(Exception):
 
     @classmethod
     async def handler(cls, request: Request, exc: Exception) -> JSONResponse:
-        return JSONResponse(status_code=exc.__dict__.get("status_code") or cls.status_code,
-                            content={"code": cls.code, "detail": exc.__dict__.get("detail") or cls.detail})
+        return JSONResponse(
+            status_code=exc.__dict__.get("status_code") or cls.status_code,
+            content={
+                "code": cls.code,
+                "detail": exc.__dict__.get("detail") or cls.detail,
+            },
+        )
 
 
 class InvalidUserID(_HTTPException):
@@ -49,9 +53,9 @@ class InvalidAuthMode(_HTTPException):
     detail = "无效的认证模式"
 
 
-class InsufficientAccountFunds(_HTTPException):
+class OrderFailed(_HTTPException):
     code = 10021
-    detail = "账户资金不足"
+    detail = "下单失败"
 
 
 class InvalidOrderExchange(_HTTPException):

@@ -1,6 +1,6 @@
 import time
-from typing import Optional
 from datetime import timedelta
+from typing import Optional
 
 import jwt
 import pytest
@@ -13,7 +13,9 @@ jwt_content = {"id": "test_id"}
 
 @pytest.fixture
 def token():
-    token = create_jwt_token(jwt_content=jwt_content, expires_delta=timedelta(seconds=2))
+    token = create_jwt_token(
+        jwt_content=jwt_content, expires_delta=timedelta(seconds=2)
+    )
     return token
 
 
@@ -23,7 +25,9 @@ def invalid_token(token: str):
 
 
 def test_create_jwt_token(settings: Dynaconf):
-    token = create_jwt_token(jwt_content=jwt_content, expires_delta=timedelta(minutes=1))
+    token = create_jwt_token(
+        jwt_content=jwt_content, expires_delta=timedelta(minutes=1)
+    )
     content = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
     assert content["id"] == jwt_content["id"]
 
@@ -33,10 +37,12 @@ def test_create_jwt_token(settings: Dynaconf):
     [
         ("", 0, pytest.lazy_fixture("token")),
         ("无法解码该JWT Token.", 0, pytest.lazy_fixture("invalid_token")),
-        ("该Token已过期.", 3, pytest.lazy_fixture("token"))
-    ]
+        ("该Token已过期.", 3, pytest.lazy_fixture("token")),
+    ],
 )
-def test_decode_jwt_token(expect_exception_message: Optional[Exception], time_sleep: int, jwt_token: str):
+def test_decode_jwt_token(
+    expect_exception_message: Optional[Exception], time_sleep: int, jwt_token: str
+):
     time.sleep(time_sleep)
     exp = ""
     try:

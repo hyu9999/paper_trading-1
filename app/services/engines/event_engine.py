@@ -1,6 +1,6 @@
 import asyncio
-from typing import Callable, TypeVar, Coroutine
 from collections import defaultdict
+from typing import Callable, Coroutine, TypeVar
 
 from pydantic import BaseModel
 
@@ -49,6 +49,7 @@ class EventEngine:
     Hello Event.
     >>> await event_engine.shutdown()
     """
+
     def __init__(self) -> None:
         self._handlers = defaultdict(list)
         self._event_queue = asyncio.Queue()
@@ -59,8 +60,11 @@ class EventEngine:
             event = await self._event_queue.get()
             if event == EXIT_ENGINE_EVENT:
                 continue
-            [asyncio.create_task(handler(event.payload)) for handler in self._handlers[event.type_]
-             if event.type_ in self._handlers]
+            [
+                asyncio.create_task(handler(event.payload))
+                for handler in self._handlers[event.type_]
+                if event.type_ in self._handlers
+            ]
 
     async def startup(self) -> None:
         asyncio.create_task(self.main())

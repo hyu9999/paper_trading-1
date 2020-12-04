@@ -3,13 +3,19 @@ from typing import Optional
 
 import pytest
 from bson import ObjectId
-from fastapi import FastAPI, Depends
-from httpx import AsyncClient
 from dynaconf import Dynaconf
+from fastapi import Depends, FastAPI
+from httpx import AsyncClient
 
 from app.api.dependencies.authentication import get_current_user_authorizer
-from app.exceptions.http import AuthHeaderNotFound, _HTTPException, WrongTokenFormat, InvalidAuthTokenPrefix, \
-    InvalidAuthToken, InvalidUserID
+from app.exceptions.http import (
+    AuthHeaderNotFound,
+    InvalidAuthToken,
+    InvalidAuthTokenPrefix,
+    InvalidUserID,
+    WrongTokenFormat,
+    _HTTPException,
+)
 from app.models.domain.users import UserInDB
 
 pytestmark = pytest.mark.asyncio
@@ -27,7 +33,7 @@ random_object_id = ObjectId()
         ({"Authorization": "INVALID TOKEN"}, InvalidAuthTokenPrefix),
         ({"Authorization": "Token TOKEN"}, InvalidAuthToken),
         ({"Authorization": f"Token {random_object_id}"}, InvalidUserID),
-        ({}, None)
+        ({}, None),
     ],
 )
 async def test_get_current_user(

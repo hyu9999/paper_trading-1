@@ -1,15 +1,20 @@
 from typing import Callable
 
-from loguru import logger
 from fastapi import FastAPI
 from hq2redis import HQ2Redis
+from loguru import logger
 
 from app import settings, state
 from app.core.logging import init_logger
-from app.db.events import connect_to_db, close_db_connection, connect_to_redis, close_redis_connection
+from app.db.events import (
+    close_db_connection,
+    close_redis_connection,
+    connect_to_db,
+    connect_to_redis,
+)
 from app.exceptions.events import register_exceptions
 from app.schedulers import load_jobs_with_lock, stop_jobs
-from app.services.events import start_engine, close_engine
+from app.services.events import close_engine, start_engine
 
 
 async def connect_to_quotes_api():
@@ -37,6 +42,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         await connect_to_quotes_api()
         await start_engine()
         await load_jobs_with_lock()
+
     return start_app
 
 
@@ -48,4 +54,5 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
         await close_redis_connection()
         await close_db_connection()
         await close_quotes_api_conn()
+
     return stop_app

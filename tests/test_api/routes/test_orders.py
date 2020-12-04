@@ -1,8 +1,8 @@
 import pytest
 from fastapi import FastAPI
+from httpx import AsyncClient
 from pytest_mock import MockerFixture
 from starlette import status
-from httpx import AsyncClient
 
 from app.models.domain.orders import OrderInDB
 
@@ -23,15 +23,22 @@ TEST_ORDER_1 = {
     "order",
     [TEST_ORDER_1],
 )
-async def test_user_can_create_order(app: FastAPI, authorized_client: AsyncClient, order: dict) -> None:
-    response = await authorized_client.request("POST", app.url_path_for("orders:create-order"), json=order)
+async def test_user_can_create_order(
+    app: FastAPI, authorized_client: AsyncClient, order: dict
+) -> None:
+    response = await authorized_client.request(
+        "POST", app.url_path_for("orders:create-order"), json=order
+    )
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["entrust_id"]
 
 
-async def test_user_can_get_order(app: FastAPI, authorized_client: AsyncClient, order_buy_type: OrderInDB):
+async def test_user_can_get_order(
+    app: FastAPI, authorized_client: AsyncClient, order_buy_type: OrderInDB
+):
     response_200 = await authorized_client.request(
-        "GET", app.url_path_for("orders:get-order", entrust_id=str(order_buy_type.entrust_id))
+        "GET",
+        app.url_path_for("orders:get-order", entrust_id=str(order_buy_type.entrust_id)),
     )
     assert response_200.status_code == status.HTTP_200_OK
     entrust_id = str(order_buy_type.entrust_id)[::-1]
@@ -58,10 +65,15 @@ async def test_user_can_delete_entrust_order(
     order_buy_type_status_not_done: OrderInDB,
     mocker: MockerFixture,
 ):
-    mocker.patch("app.services.engines.market_engine.china_a_market.ChinaAMarket.put", mock_put)
+    mocker.patch(
+        "app.services.engines.market_engine.china_a_market.ChinaAMarket.put", mock_put
+    )
     response_200 = await authorized_client.request(
-        "DELETE", app.url_path_for("orders:delete-entrust-order",
-                                   entrust_id=str(order_buy_type_status_not_done.entrust_id))
+        "DELETE",
+        app.url_path_for(
+            "orders:delete-entrust-order",
+            entrust_id=str(order_buy_type_status_not_done.entrust_id),
+        ),
     )
     assert response_200.status_code == status.HTTP_200_OK
     entrust_id = str(order_buy_type_status_not_done.entrust_id)[::-1]

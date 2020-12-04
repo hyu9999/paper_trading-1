@@ -9,6 +9,7 @@ from app.models.types import PyDecimal, PyObjectId
 
 class Position(Stock):
     """持仓股票"""
+
     volume: int = Field(..., description="持仓量")
     available_volume: int = Field(..., description="可用量")
     cost: PyDecimal = Field(..., description="持仓成本")

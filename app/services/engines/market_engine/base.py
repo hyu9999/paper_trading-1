@@ -4,23 +4,23 @@ from hq2redis import HQ2Redis
 from hq2redis.exceptions import EntityNotFound
 
 from app.exceptions.service import InvalidExchange
-from app.models.schemas.statement import StatementInCreateEvent
-from app.models.types import PyDecimal
 from app.models.base import get_utc_now
 from app.models.domain.orders import OrderInDB
+from app.models.enums import OrderStatusEnum, OrderTypeEnum, PriceTypeEnum
 from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus
-from app.models.enums import OrderTypeEnum, PriceTypeEnum, OrderStatusEnum
+from app.models.schemas.statement import StatementInCreateEvent
+from app.models.types import PyDecimal
 from app.services.engines.base import BaseEngine
-from app.services.engines.user_engine import UserEngine
+from app.services.engines.event_constants import (
+    EXIT_ENGINE_EVENT,
+    ORDER_UPDATE_EVENT,
+    ORDER_UPDATE_STATUS_EVENT,
+    STATEMENT_CREATE_EVENT,
+    UNFREEZE_EVENT,
+)
 from app.services.engines.event_engine import Event, EventEngine
 from app.services.engines.market_engine.entrust_orders import EntrustOrders
-from app.services.engines.event_constants import (
-    ORDER_UPDATE_EVENT,
-    EXIT_ENGINE_EVENT,
-    ORDER_UPDATE_STATUS_EVENT,
-    UNFREEZE_EVENT,
-    STATEMENT_CREATE_EVENT,
-)
+from app.services.engines.user_engine import UserEngine
 
 
 class BaseMarket(BaseEngine):
@@ -32,16 +32,18 @@ class BaseMarket(BaseEngine):
         订单指定的交易所不在于市场引擎规定的交易所列表中时触发
     """
 
-    OPEN_MARKET_TIME = None   # 开市时间
+    OPEN_MARKET_TIME = None  # 开市时间
     CLOSE_MARKET_TIME = None  # 闭市时间
     TRADING_PERIOD = None
 
-    def __init__(self, event_engine: EventEngine, user_engine: UserEngine, quotes_api: HQ2Redis) -> None:
+    def __init__(
+        self, event_engine: EventEngine, user_engine: UserEngine, quotes_api: HQ2Redis
+    ) -> None:
         super().__init__()
         self.event_engine = event_engine
         self.user_engine = user_engine
-        self.market_name = None         # 交易市场名称
-        self.exchange_symbols = None    # 交易市场标识
+        self.market_name = None  # 交易市场名称
+        self.exchange_symbols = None  # 交易市场标识
         self.quotes_api = quotes_api
         self._entrust_orders = EntrustOrders()
         self._matchmaking_active = False
@@ -72,7 +74,9 @@ class BaseMarket(BaseEngine):
 
     async def put(self, order: OrderInDB) -> None:
         self.exchange_validation(order)
-        payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.NOT_DONE)
+        payload = OrderInUpdateStatus(
+            entrust_id=order.entrust_id, status=OrderStatusEnum.NOT_DONE
+        )
         event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
         await self.event_engine.put(event)
         await self.write_log(f"收到新的委托订单[{order.order_type}]: `{order.entrust_id}`.")
@@ -94,7 +98,9 @@ class BaseMarket(BaseEngine):
                 except KeyError:
                     await self.write_log(f"取消委托订单 `{order.entrust_id}` 失败, 该委托订单已处理.")
                     continue
-                payload = OrderInUpdateStatus(entrust_id=order.entrust_id, status=OrderStatusEnum.CANCELED)
+                payload = OrderInUpdateStatus(
+                    entrust_id=order.entrust_id, status=OrderStatusEnum.CANCELED
+                )
                 update_order_status_event = Event(ORDER_UPDATE_STATUS_EVENT, payload)
                 await self.event_engine.put(update_order_status_event)
                 unfreeze_event = Event(UNFREEZE_EVENT, order)
@@ -159,13 +165,20 @@ class BaseMarket(BaseEngine):
             securities_diff, costs = await self.user_engine.create_position(order)
         else:
             securities_diff, costs = await self.user_engine.reduce_position(order)
-        order.status = OrderStatusEnum.ALL_FINISHED.value if order.volume == order.traded_volume \
+        order.status = (
+            OrderStatusEnum.ALL_FINISHED.value
+            if order.volume == order.traded_volume
             else OrderStatusEnum.PART_FINISHED.value
+        )
         order_in_update_payload = OrderInUpdate(**dict(order))
         user = await self.user_engine.user_repo.get_user_by_id(order.user)
-        order_in_update_payload.position_change = PyDecimal(securities_diff / user.assets.to_decimal())
+        order_in_update_payload.position_change = PyDecimal(
+            securities_diff / user.assets.to_decimal()
+        )
         await self.event_engine.put(Event(ORDER_UPDATE_EVENT, order_in_update_payload))
-        statement_in_create = StatementInCreateEvent(costs=costs, order=order, securities_diff=securities_diff)
+        statement_in_create = StatementInCreateEvent(
+            costs=costs, order=order, securities_diff=securities_diff
+        )
         await self.event_engine.put(Event(STATEMENT_CREATE_EVENT, statement_in_create))
 
     def exchange_validation(self, order: OrderInDB) -> None:

@@ -1,17 +1,17 @@
 import asyncio
-from typing import Union
 from collections import OrderedDict, deque
+from typing import Union
 
-from app.models.enums import OrderTypeEnum
 from app.models.domain.orders import OrderInDB
-from app.models.enums import EntrustOrdersMode
+from app.models.enums import EntrustOrdersModeEnum, OrderTypeEnum
 from app.services.engines.event_engine import Event
 
 
 class EntrustOrders(OrderedDict):
-    def __init__(self, mode: EntrustOrdersMode = EntrustOrdersMode.TIME_PRIORITY):
+    def __init__(
+        self, mode: EntrustOrdersModeEnum = EntrustOrdersModeEnum.TIME_PRIORITY
+    ):
         super().__init__()
-        # Futures.
         self._waiters = deque()
         self.mode = mode
         self.loop = asyncio.get_event_loop()
@@ -38,7 +38,11 @@ class EntrustOrders(OrderedDict):
 
     async def put(self, item: Union[OrderInDB, Event]) -> None:
         if isinstance(item, OrderInDB):
-            key = f"{item.entrust_id}_cancel" if item.order_type == OrderTypeEnum.CANCEL else str(item.entrust_id)
+            key = (
+                f"{item.entrust_id}_cancel"
+                if item.order_type == OrderTypeEnum.CANCEL
+                else str(item.entrust_id)
+            )
             self[key] = item
         else:
             self["event"] = item

@@ -1,5 +1,5 @@
-from typing import List, Optional
 from datetime import date, datetime
+from typing import List, Optional
 
 from bson import Decimal128
 
@@ -8,9 +8,19 @@ from app.db.repositories.base import BaseRepository
 from app.exceptions.db import EntityDoesNotExist
 from app.models.base import get_utc_now
 from app.models.domain.orders import OrderInDB
+from app.models.enums import (
+    ExchangeEnum,
+    OrderStatusEnum,
+    OrderTypeEnum,
+    PriceTypeEnum,
+    TradeTypeEnum,
+)
+from app.models.schemas.orders import (
+    OrderInUpdate,
+    OrderInUpdateFrozen,
+    OrderInUpdateStatus,
+)
 from app.models.types import PyDecimal, PyObjectId
-from app.models.schemas.orders import OrderInUpdate, OrderInUpdateStatus, OrderInUpdateFrozen
-from app.models.enums import ExchangeEnum, OrderTypeEnum, PriceTypeEnum, TradeTypeEnum, OrderStatusEnum
 
 
 class OrderRepository(BaseRepository):
@@ -23,6 +33,7 @@ class OrderRepository(BaseRepository):
     EntityDoesNotExist
         订单不存在时触发
     """
+
     COLLECTION_NAME = settings.db.collections.order
 
     async def create_order(
@@ -43,28 +54,47 @@ class OrderRepository(BaseRepository):
         frozen_stock_volume: int = None,
         frozen_amount: PyDecimal = None,
     ) -> OrderInDB:
-        order = OrderInDB(symbol=symbol, user=user_id, exchange=exchange, volume=volume, price=price,
-                          order_type=order_type, price_type=price_type, trade_type=trade_type, amount=amount,
-                          entrust_id=entrust_id or PyObjectId(), order_date=get_utc_now(), status=status,
-                          sold_price=sold_price, frozen_stock_volume=frozen_stock_volume, frozen_amount=frozen_amount)
+        order = OrderInDB(
+            symbol=symbol,
+            user=user_id,
+            exchange=exchange,
+            volume=volume,
+            price=price,
+            order_type=order_type,
+            price_type=price_type,
+            trade_type=trade_type,
+            amount=amount,
+            entrust_id=entrust_id or PyObjectId(),
+            order_date=get_utc_now(),
+            status=status,
+            sold_price=sold_price,
+            frozen_stock_volume=frozen_stock_volume,
+            frozen_amount=frozen_amount,
+        )
         order_row = await self.collection.insert_one(order.dict(exclude={"id"}))
         order.id = order_row.inserted_id
         return order
 
     async def get_order_by_entrust_id(self, entrust_id: PyObjectId) -> OrderInDB:
-        order_row = await self.collection.find_one({
-            "entrust_id": entrust_id,
-            "order_type": {"$nin": [OrderTypeEnum.CANCEL.value]}
-        })
+        order_row = await self.collection.find_one(
+            {
+                "entrust_id": entrust_id,
+                "order_type": {"$nin": [OrderTypeEnum.CANCEL.value]},
+            }
+        )
         if order_row:
             return OrderInDB(**order_row)
         raise EntityDoesNotExist(f"委托订单`{entrust_id}`不存在.")
 
-    async def get_cancel_order_by_entrust_id(self, entrust_id: PyObjectId) -> Optional[OrderInDB]:
-        order_row = await self.collection.find_one({
-            "entrust_id": entrust_id,
-            "order_type": {"$in": [OrderTypeEnum.CANCEL.value]}
-        })
+    async def get_cancel_order_by_entrust_id(
+        self, entrust_id: PyObjectId
+    ) -> Optional[OrderInDB]:
+        order_row = await self.collection.find_one(
+            {
+                "entrust_id": entrust_id,
+                "order_type": {"$in": [OrderTypeEnum.CANCEL.value]},
+            }
+        )
         if order_row:
             return OrderInDB(**order_row)
         return None
@@ -94,18 +124,11 @@ class OrderRepository(BaseRepository):
         if not (start_date or end_date):
             date_query = None
         elif start_date and end_date:
-            date_query = {
-                "$gte": start_date,
-                "$lt": end_date
-            }
+            date_query = {"$gte": start_date, "$lt": end_date}
         elif start_date and not end_date:
-            date_query = {
-                "$gte": start_date
-            }
+            date_query = {"$gte": start_date}
         else:
-            date_query = {
-                "$lte": end_date
-            }
+            date_query = {"$lte": end_date}
         if date_query:
             query.update({"order_date": date_query})
         order_rows = self.collection.find(query)
@@ -117,14 +140,16 @@ class OrderRepository(BaseRepository):
     async def process_update_order(self, order: OrderInUpdate) -> None:
         await self.collection.update_many(
             {"entrust_id": order.entrust_id},
-            {"$set": order.dict(exclude={"entrust_id"})}
+            {"$set": order.dict(exclude={"entrust_id"})},
         )
 
     async def process_update_order_frozen(self, order: OrderInUpdateFrozen) -> None:
         await self.collection.update_many(
             {"entrust_id": order.entrust_id},
-            {"$set": order.dict(exclude={"entrust_id"})}
+            {"$set": order.dict(exclude={"entrust_id"})},
         )
 
     async def process_update_order_status(self, order: OrderInUpdateStatus) -> None:
-        await self.collection.update_many({"entrust_id": order.entrust_id}, {"$set": {"status": order.status}})
+        await self.collection.update_many(
+            {"entrust_id": order.entrust_id}, {"$set": {"status": order.status}}
+        )

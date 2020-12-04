@@ -1,7 +1,7 @@
 import datetime
 
-from bson import ObjectId, Decimal128
-from pydantic import BaseModel, BaseConfig
+from bson import Decimal128, ObjectId
+from pydantic import BaseConfig, BaseModel
 
 
 def convert_datetime_to_str(dt: datetime.datetime) -> str:
@@ -10,6 +10,7 @@ def convert_datetime_to_str(dt: datetime.datetime) -> str:
 
 class RWModel(BaseModel):
     """模型基类."""
+
     class Config(BaseConfig):
         allow_population_by_field_name = True
         json_encoders = {

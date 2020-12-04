@@ -1,14 +1,14 @@
-from typing import Dict
 from datetime import timedelta
+from typing import Dict
 
 import jwt
 from jwt.exceptions import DecodeError, ExpiredSignatureError
 
 from app import settings
 from app.models.base import get_utc_now
-from app.models.types import PyObjectId
-from app.models.schemas.jwt import JWTMeta
 from app.models.enums import JWTSubjectEnum
+from app.models.schemas.jwt import JWTMeta
+from app.models.types import PyObjectId
 
 
 def create_jwt_token(
@@ -19,7 +19,9 @@ def create_jwt_token(
     to_encode = jwt_content.copy()
     expire = get_utc_now() + expires_delta
     to_encode.update(JWTMeta(exp=expire, subject=JWTSubjectEnum.ACCESS.value).dict())
-    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm).decode()
+    return jwt.encode(
+        to_encode, settings.secret_key, algorithm=settings.algorithm
+    ).decode()
 
 
 def create_access_token_for_user(user_id: PyObjectId) -> str:
@@ -31,7 +33,9 @@ def create_access_token_for_user(user_id: PyObjectId) -> str:
 
 def get_user_id_from_token(token: str) -> str:
     try:
-        return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])["id"]
+        return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])[
+            "id"
+        ]
     except DecodeError as decode_error:
         raise ValueError("无法解码该JWT Token.") from decode_error
     except ExpiredSignatureError as expired_signature_error:

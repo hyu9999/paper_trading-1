@@ -6,10 +6,10 @@ from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from app import settings
-from app.models.domain.users import UserInDB
 from app.models.domain.orders import OrderInDB
 from app.models.domain.position import PositionInDB
 from app.models.domain.user_assets_records import UserAssetsRecordInDB
+from app.models.domain.users import UserInDB
 from scripts.utils import coro
 
 
@@ -22,8 +22,7 @@ async def insert_v1_data():
 
     db_tag_mapping = {1: "用户", 2: "用户资产时点数据", 3: "持仓", 4: "订单"}
     db_tag_num = click.prompt(
-        f"请输入要插入的V1数据类型序号\n{db_tag_mapping}\n(请先插入用户数据)",
-        type=int
+        f"请输入要插入的V1数据类型序号\n{db_tag_mapping}\n(请先插入用户数据)", type=int
     )
     if db_tag_num not in db_tag_mapping.keys():
         click.echo("请输入正确的序号.")
@@ -63,9 +62,7 @@ async def insert_v1_data():
         for v1_conn_name in v1_collection_names:
             v1_account_conn = v1_database[v1_conn_name]
             v1_user = await v1_account_conn.find_one()
-            insert_info = {
-                "v1_row_id": str(v1_user.get("_id"))
-            }
+            insert_info = {"v1_row_id": str(v1_user.get("_id"))}
             try:
                 user = UserInDB(
                     assets=str(v1_user.get("assets")),
@@ -75,7 +72,7 @@ async def insert_v1_data():
                     commission=str(v1_user.get("cost")),
                     tax_rate=str(v1_user.get("tax")),
                     slippage=str(v1_user.get("slippoint")),
-                    desc=v1_user.get("account_info")
+                    desc=v1_user.get("account_info"),
                 )
                 row = await v2_account_db_conn.insert_one(user.dict(exclude={"id"}))
             except Exception as e:
@@ -94,15 +91,15 @@ async def insert_v1_data():
 
     elif db_tag_num == 2:
         # 用户资产时点数据表
-        v2_account_record_db_conn = v2_database[settings.db.collections.user_assets_record]
+        v2_account_record_db_conn = v2_database[
+            settings.db.collections.user_assets_record
+        ]
         click.echo("插入用户资产时点数据到V2数据库中...")
         for v1_conn_name in v1_collection_names:
             v1_account_record_conn = v1_database[v1_conn_name]
             v1_user_records = v1_account_record_conn.find()
             async for v1_user_record in v1_user_records:
-                insert_info = {
-                    "v1_row_id": str(v1_user_record.get("_id"))
-                }
+                insert_info = {"v1_row_id": str(v1_user_record.get("_id"))}
                 mapping_dict = user_mapping.get(v1_conn_name)
                 if not mapping_dict:
                     insert_info["status"] = "Error"
@@ -119,16 +116,20 @@ async def insert_v1_data():
                     find_count += 1
                     continue
                 try:
-                    check_date = datetime.strptime(str(v1_user_record.get("check_date")), "%Y%m%d")
+                    check_date = datetime.strptime(
+                        str(v1_user_record.get("check_date")), "%Y%m%d"
+                    )
                     user_record = UserAssetsRecordInDB(
                         user=v2_user_id,
                         assets=str(v1_user_record.get("assets", 0)),
                         cash=str(v1_user_record.get("available", 0)),
                         securities=str(v1_user_record.get("market_value", 0)),
                         date=check_date,
-                        check_time=check_date
+                        check_time=check_date,
                     )
-                    row = await v2_account_record_db_conn.insert_one(user_record.dict(exclude={"id"}))
+                    row = await v2_account_record_db_conn.insert_one(
+                        user_record.dict(exclude={"id"})
+                    )
                 except Exception as e:
                     insert_info["status"] = "Error"
                     insert_info["error_msg"] = str(e)
@@ -147,9 +148,7 @@ async def insert_v1_data():
             v1_position_conn = v1_database[v1_conn_name]
             v1_position_list = v1_position_conn.find()
             async for v1_position in v1_position_list:
-                insert_info = {
-                    "v1_row_id": str(v1_position.get("_id"))
-                }
+                insert_info = {"v1_row_id": str(v1_position.get("_id"))}
                 mapping_dict = user_mapping.get(v1_conn_name)
                 if not mapping_dict:
                     insert_info["status"] = "Error"
@@ -167,9 +166,17 @@ async def insert_v1_data():
                     continue
                 try:
                     first_buy_date_str = v1_position.get("first_buy_date")
-                    first_buy_date = datetime.strptime(first_buy_date_str, "%Y%m%d") if first_buy_date_str else None
+                    first_buy_date = (
+                        datetime.strptime(first_buy_date_str, "%Y%m%d")
+                        if first_buy_date_str
+                        else None
+                    )
                     last_sell_date_str = v1_position.get("last_sell_date")
-                    last_sell_date = datetime.strptime(last_sell_date_str, "%Y%m%d") if first_buy_date_str else None
+                    last_sell_date = (
+                        datetime.strptime(last_sell_date_str, "%Y%m%d")
+                        if first_buy_date_str
+                        else None
+                    )
                     position_in_db = PositionInDB(
                         symbol=v1_position.get("code"),
                         exchange=v1_position.get("exchange"),
@@ -182,7 +189,9 @@ async def insert_v1_data():
                         current_price=str(v1_position.get("now_price")),
                         profit=str(v1_position.get("profit")),
                     )
-                    row = await v2_position_db_conn.insert_one(position_in_db.dict(exclude={"id"}))
+                    row = await v2_position_db_conn.insert_one(
+                        position_in_db.dict(exclude={"id"})
+                    )
                 except Exception as e:
                     insert_info["conn_name"] = v1_conn_name
                     insert_info["status"] = "Error"
@@ -202,9 +211,7 @@ async def insert_v1_data():
             v1_order_conn = v1_database[v1_conn_name]
             v1_orders = v1_order_conn.find()
             async for v1_order in v1_orders:
-                insert_info = {
-                    "v1_row_id": str(v1_order.get("_id"))
-                }
+                insert_info = {"v1_row_id": str(v1_order.get("_id"))}
                 mapping_dict = user_mapping.get(v1_conn_name)
                 if not mapping_dict:
                     insert_info["status"] = "Error"
@@ -239,7 +246,9 @@ async def insert_v1_data():
                     trade_price = str(trade_price_str) if trade_price_str else None
 
                     trade_status_str = v1_order.get("status")
-                    trade_status = "已拒单" if trade_status_str == "拒单" else trade_status_str
+                    trade_status = (
+                        "已拒单" if trade_status_str == "拒单" else trade_status_str
+                    )
 
                     order_date_str = v1_order.get("order_date")
                     if len(order_date_str) > 8:
@@ -261,9 +270,11 @@ async def insert_v1_data():
                         traded_volume=v1_order.get("traded", 0),
                         status=trade_status,
                         order_date=order_date,
-                        position_change=str(v1_order.get("pos_change"))
+                        position_change=str(v1_order.get("pos_change")),
                     )
-                    row = await order_db_v2_conn.insert_one(order_in_db.dict(exclude={"id"}))
+                    row = await order_db_v2_conn.insert_one(
+                        order_in_db.dict(exclude={"id"})
+                    )
                 except Exception as e:
                     insert_info["conn_name"] = v1_conn_name
                     insert_info["status"] = "Error"
@@ -271,16 +282,24 @@ async def insert_v1_data():
                 else:
                     insert_info["status"] = "Success"
                     insert_info["inserted_id"] = str(row.inserted_id)
-                    order_mapping.append({
-                        "v1_order_id": v1_order.get("order_id"),
-                        "v2_order_id": str(order_in_db.entrust_id)
-                    })
+                    order_mapping.append(
+                        {
+                            "v1_order_id": v1_order.get("order_id"),
+                            "v2_order_id": str(order_in_db.entrust_id),
+                        }
+                    )
                 finally:
                     insert_logs.append(insert_info)
                     find_count += 1
 
     client.close()
-    success_count = len([insert_log for insert_log in insert_logs if insert_log.get("status") == "Success"])
+    success_count = len(
+        [
+            insert_log
+            for insert_log in insert_logs
+            if insert_log.get("status") == "Success"
+        ]
+    )
     click.echo(f"共找到{find_count}条{db_tag}数据，成功插入{success_count}条.")
     with open(log_file_path, "w", encoding="utf-8") as f:
         json.dump(insert_logs, f, ensure_ascii=False, indent=4)

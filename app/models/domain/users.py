@@ -2,9 +2,10 @@ from typing import Optional
 
 from pydantic import Field
 
-from app.models.types import PyDecimal
 from app.models.base import DBModelMixin
 from app.models.domain.rwmodel import RWModel
+from app.models.enums import UserStatusEnum
+from app.models.types import PyDecimal
 
 
 class User(RWModel):
@@ -20,7 +21,9 @@ class User(RWModel):
 
 class UserInDB(DBModelMixin, User):
     """用户"""
+
     securities: PyDecimal = Field(..., description="证券资产")
     commission: PyDecimal = Field(..., description="佣金")
     tax_rate: PyDecimal = Field(..., description="税点")
     slippage: PyDecimal = Field(..., description="滑点")
+    status: Optional[UserStatusEnum] = Field(None, description="用户状态")
