@@ -169,7 +169,9 @@ class UserEngine(BaseEngine):
                 user_id=payload.user, symbol=payload.symbol, exchange=payload.exchange
             )
             position.available_volume += payload.frozen_stock_volume
-            await self.position_cache.set_position(position)
+            await self.position_cache.set_position(
+                position, include={"available_volume"}
+            )
 
     async def pre_trade_validation(
         self,
@@ -309,6 +311,7 @@ class UserEngine(BaseEngine):
         # 清仓
         if volume == 0:
             await self.position_cache.delete_position(position)
+        # 减仓
         else:
             current_price = order.sold_price
             # 持仓利润 = (现交易价格 - 原持仓记录的价格) * 原持仓数量 + 原持仓利润 - 交易佣金 - 印花税
@@ -417,7 +420,10 @@ class UserEngine(BaseEngine):
             ) - sum(statement.costs.total.to_decimal() for statement in statement_list)
             new_position.profit = PyDecimal(profit)
             new_position_list.append(new_position)
-        await self.position_cache.set_position_many(new_position_list)
+        include = {"current_price", "profit"}
+        if is_update_volume:
+            include.add("available_volume")
+        await self.position_cache.set_position_many(new_position_list, include=include)
 
     async def liquidate_user_profit(
         self, user: UserInCache, is_refresh_frozen_amount: bool = False
@@ -436,6 +442,8 @@ class UserEngine(BaseEngine):
         new_user.assets = PyDecimal(user.cash.to_decimal() + securities)
         if securities != Decimal(0):
             new_user.securities = PyDecimal(securities)
+        include = {"assets", "securities"}
         if is_refresh_frozen_amount:
             new_user.frozen_amount = PyDecimal("0")
-        await self.user_cache.set_user(new_user, exclude={"cash", "frozen_amount"})
+            include.add("frozen_amount")
+        await self.user_cache.set_user(new_user, include=include)

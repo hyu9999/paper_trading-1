@@ -28,13 +28,10 @@ class UserCache(BaseCache):
         include: Optional[set] = None,
         exclude: Optional[set] = None,
     ) -> None:
-        if include:
-            json = jsonable_encoder(user, include=include)
-        elif exclude:
-            json = jsonable_encoder(user, exclude=exclude)
-        else:
-            json = jsonable_encoder(user)
-        await self._cache.hmset_dict(self.USER_KEY.format(user_id=user.id), json)
+        await self._cache.hmset_dict(
+            self.USER_KEY.format(user_id=user.id),
+            jsonable_encoder(user, include=include, exclude=exclude),
+        )
 
     async def set_user_many(self, user_list: List[UserInCache]) -> None:
         pipeline = self._cache.pipeline()

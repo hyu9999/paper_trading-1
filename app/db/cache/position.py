@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi.encoders import jsonable_encoder
 
@@ -15,17 +15,27 @@ class PositionCache(BaseCache):
     POSITION_KEY = "position_{user}.{symbol}.{exchange}"  # REDIS KEY
     POSITION_KEY_PREFIX = "position_"
 
-    async def set_position(self, position: PositionInCache) -> None:
+    async def set_position(
+        self,
+        position: PositionInCache,
+        include: Optional[set] = None,
+        exclude: Optional[set] = None,
+    ) -> None:
         await self._cache.hmset_dict(
             self.POSITION_KEY.format(
                 user=position.user,
                 symbol=position.symbol,
                 exchange=position.exchange,
             ),
-            jsonable_encoder(position),
+            jsonable_encoder(position, include=include, exclude=exclude),
         )
 
-    async def set_position_many(self, position_list: List[PositionInCache]) -> None:
+    async def set_position_many(
+        self,
+        position_list: List[PositionInCache],
+        include: Optional[set] = None,
+        exclude: Optional[set] = None,
+    ) -> None:
         pipeline = self._cache.pipeline()
         [
             pipeline.hmset_dict(
@@ -34,7 +44,7 @@ class PositionCache(BaseCache):
                     symbol=position.symbol,
                     exchange=position.exchange,
                 ),
-                jsonable_encoder(position),
+                jsonable_encoder(position, include=include, exclude=exclude),
             )
             for position in position_list
         ]
