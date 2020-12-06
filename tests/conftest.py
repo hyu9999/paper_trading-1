@@ -1,5 +1,7 @@
 import asyncio
+import itertools
 
+import aioredis
 import pytest
 from asgi_lifespan import LifespanManager
 from dynaconf import Dynaconf
@@ -10,7 +12,10 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from app import settings as base_settings
 from app.core import jwt
+from app.db.cache.position import PositionCache
+from app.db.cache.user import UserCache
 from app.db.repositories.order import OrderRepository
+from app.db.repositories.position import PositionRepository
 from app.db.repositories.user import UserRepository
 from app.models.domain.orders import OrderInDB
 from app.models.domain.users import UserInDB
@@ -33,6 +38,36 @@ def mock(session_mocker):
         return_value=True,
     )
     session_mocker.patch("app.core.event.load_jobs_with_lock", mock_load_jobs_with_lock)
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def load_data(
+    db: AsyncIOMotorDatabase, user_cache: UserCache, position_cache: PositionCache
+):
+    position_repo = PositionRepository(db)
+    user_repo = UserRepository(db)
+    if await user_cache.is_reload:
+        user_list = await user_repo.get_user_list_to_cache()
+        await user_cache.set_user_many(user_list)
+        position_list = await asyncio.gather(
+            *(
+                position_repo.get_positions_by_user_id_to_cache(user.id)
+                for user in user_list
+            )
+        )
+        position_in_cache_list = list(itertools.chain.from_iterable(position_list))
+        if position_in_cache_list:
+            await position_cache.set_position_many(position_in_cache_list)
+
+
+@pytest.fixture
+async def user_engine(
+    event_engine: EventEngine, db: AsyncIOMotorDatabase, quotes_api: HQ2Redis
+) -> UserEngine:
+    user_engine = UserEngine(event_engine, db, quotes_api)
+    await user_engine.startup()
+    yield user_engine
+    await user_engine.shutdown()
 
 
 @pytest.yield_fixture(scope="session")
@@ -82,6 +117,32 @@ async def db(settings: Dynaconf) -> AsyncIOMotorDatabase:
     )
     yield client[settings.db.name]
     client.close()
+
+
+@pytest.fixture(scope="session")
+async def user_cache(settings: Dynaconf) -> UserCache:
+    user_redis_pool = await aioredis.create_redis_pool(
+        f"redis://{settings.redis.host}:{settings.redis.port}/{settings.redis.user_db}?encoding=utf-8"
+    )
+    yield UserCache(user_redis_pool)
+    try:
+        user_redis_pool.close()
+    except aioredis.errors.ConnectionForcedCloseError:
+        pass
+    await user_redis_pool.user_redis_pool.wait_closed()
+
+
+@pytest.fixture(scope="session")
+async def position_cache(settings: Dynaconf) -> aioredis.Redis:
+    position_redis_pool = await aioredis.create_redis_pool(
+        f"redis://{settings.redis.host}:{settings.redis.port}/{settings.redis.position_db}?encoding=utf-8"
+    )
+    yield PositionCache(position_redis_pool)
+    try:
+        position_redis_pool.close()
+    except aioredis.errors.ConnectionForcedCloseError:
+        pass
+    await position_redis_pool.user_redis_pool.wait_closed()
 
 
 @pytest.fixture(scope="session")
