@@ -1,3 +1,5 @@
+import itertools
+from collections import AsyncIterable
 from typing import List
 
 from aioredis import Redis
@@ -5,15 +7,25 @@ from aioredis import Redis
 
 class BaseCache:
     DB = None
-    PAGE_SIZE = 500
 
     def __init__(self, redis_pool: Redis) -> None:
         assert redis_pool.db == self.DB, "请传入正确的Redis连接池."
         self._cache = redis_pool
 
+    async def scan_iter(self, match: str = None, count: int = None) -> AsyncIterable:
+        cursor = "0"
+        while cursor != 0:
+            cursor, keys = await self._cache.scan(
+                cursor=cursor, match=match, count=count
+            )
+            yield keys
+
     async def get_keys(self, match: str = None) -> List[str]:
-        _, keys = await self._cache.scan(cursor=0, match=match, count=self.PAGE_SIZE)
-        return keys
+        return list(
+            itertools.chain.from_iterable(
+                [keys async for keys in self.scan_iter(match=match)]
+            )
+        )
 
     async def delete_key(self, key: str) -> None:
         await self._cache.delete(key)

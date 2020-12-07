@@ -71,6 +71,9 @@ sync_*_log.json
 user_mapping.json
 order_mapping.json
 
-# lock file
+# Ignore lock file
 scheduler.lock
 
+# Ignore dir
+.tests
+result.html
