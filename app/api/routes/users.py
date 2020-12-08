@@ -15,7 +15,7 @@ from app.exceptions.http import InvalidUserID
 from app.models.domain.users import UserInDB
 from app.models.schemas.http import HttpMessage
 from app.models.schemas.users import ListOfUserInResponse, UserInCache
-from app.models.types import PyDecimal, PyObjectId
+from app.models.types import PyObjectId
 
 router = APIRouter()
 
@@ -34,11 +34,6 @@ async def get_user(
         user = await user_cache.get_user_by_id(user_id)
     except EntityDoesNotExist:
         raise InvalidUserID
-    # 总资产 = 资产 + 被冻结资金
-    if user.frozen_amount:
-        user.assets = PyDecimal(
-            user.assets.to_decimal() + user.frozen_amount.to_decimal()
-        )
     return user
 
 

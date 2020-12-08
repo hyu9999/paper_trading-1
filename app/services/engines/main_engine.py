@@ -156,7 +156,11 @@ class MainEngine(BaseEngine):
     async def load_entrust_orders(self):
         """加载当日未完成的委托订单."""
         entrust_orders = await self.order_repo.get_orders(
-            status=[OrderStatusEnum.NOT_DONE, OrderStatusEnum.PART_FINISHED],
+            status=[
+                OrderStatusEnum.NOT_DONE,
+                OrderStatusEnum.SUBMITTING,
+                OrderStatusEnum.PART_FINISHED,
+            ],
             start_date=get_utc_now().date(),
             end_date=get_utc_now().date(),
         )

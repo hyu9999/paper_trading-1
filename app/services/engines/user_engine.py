@@ -35,6 +35,8 @@ from app.services.engines.event_constants import (
     POSITION_CREATE_EVENT,
     POSITION_UPDATE_EVENT,
     UNFREEZE_EVENT,
+    USER_UPDATE_ASSETS_EVENT,
+    USER_UPDATE_AVAILABLE_CASH_EVENT,
     USER_UPDATE_EVENT,
 )
 from app.services.engines.event_engine import Event, EventEngine
@@ -136,9 +138,23 @@ class UserEngine(BaseEngine):
         )
         await self.event_engine.register(MARKET_CLOSE_EVENT, self.process_market_close)
         await self.event_engine.register(UNFREEZE_EVENT, self.process_unfreeze)
+        await self.event_engine.register(
+            USER_UPDATE_AVAILABLE_CASH_EVENT, self.process_user_update_available_cash
+        )
+        await self.event_engine.register(
+            USER_UPDATE_ASSETS_EVENT, self.process_user_update_assets
+        )
 
     async def process_user_update(self, payload: UserInCache) -> None:
         await self.user_cache.set_user(payload)
+
+    async def process_user_update_available_cash(self, payload: UserInCache) -> None:
+        await self.user_cache.set_user(payload, include={"available_cash"})
+
+    async def process_user_update_assets(self, payload: UserInCache) -> None:
+        await self.user_cache.set_user(
+            payload, include={"cash", "securities", "assets"}
+        )
 
     async def process_position_create(self, payload: PositionInCache) -> None:
         await self.position_cache.set_position(payload)
@@ -157,13 +173,10 @@ class UserEngine(BaseEngine):
         """解除预先冻结的资金或持仓股票数量."""
         if payload.frozen_amount:
             user = await self.user_cache.get_user_by_id(payload.user)
-            user.cash = PyDecimal(
-                payload.frozen_amount.to_decimal() + user.cash.to_decimal()
+            user.available_cash = PyDecimal(
+                payload.frozen_amount.to_decimal() + user.available_cash.to_decimal()
             )
-            user.frozen_amount = PyDecimal(
-                user.frozen_amount.to_decimal() - payload.frozen_amount.to_decimal()
-            )
-            await self.user_cache.set_user(user, include={"cash", "frozen_amount"})
+            await self.user_cache.set_user(user, include={"available_cash"})
         if payload.frozen_stock_volume:
             position = await self.position_cache.get_position(
                 user_id=payload.user, symbol=payload.symbol, exchange=payload.exchange
@@ -196,12 +209,11 @@ class UserEngine(BaseEngine):
             * (1 + user.commission.to_decimal())
         )
         # 若用户现金可以满足订单需求
-        if user.cash.to_decimal() >= cash_needs:
-            # 冻结订单需要的现金
-            frozen_cash = PyDecimal(user.cash.to_decimal() - cash_needs)
-            user.cash = frozen_cash
-            user.frozen_amount = PyDecimal(cash_needs)
-            event = Event(USER_UPDATE_EVENT, user)
+        if user.available_cash.to_decimal() >= cash_needs:
+            user.available_cash = PyDecimal(
+                user.available_cash.to_decimal() - cash_needs
+            )
+            event = Event(USER_UPDATE_AVAILABLE_CASH_EVENT, user)
             await self.event_engine.put(event)
             return cash_needs
         else:
@@ -359,18 +371,10 @@ class UserEngine(BaseEngine):
         """订单成交后更新用户信息."""
         user = await self.user_cache.get_user_by_id(order.user)
         if order.order_type == OrderTypeEnum.BUY:
-            # 可用现金 = 原现金 + 预先冻结的现金 - 证券市值 - 减实际花费的现金
-            cash = (
-                user.cash.to_decimal()
-                + order.frozen_amount.to_decimal()
-                - securities_diff
-                - costs.total.to_decimal()
-            )
+            # 现金 = 原现金 + - 证券市值 - 减手续费
+            cash = user.cash.to_decimal() - securities_diff - costs.total.to_decimal()
             # 证券资产 = 原证券资产 + 证券资产的变化值
             securities = user.securities.to_decimal() + securities_diff
-            user.frozen_amount = PyDecimal(
-                user.frozen_amount.to_decimal() - order.frozen_amount.to_decimal()
-            )
         else:
             # 可用现金 = 原现金 + 证券资产变化值 - 手续费
             cash = user.cash.to_decimal() + securities_diff - costs.total.to_decimal()
@@ -389,7 +393,7 @@ class UserEngine(BaseEngine):
         user.cash = PyDecimal(cash)
         user.securities = PyDecimal(securities or "0")
         user.assets = PyDecimal(assets)
-        await self.event_engine.put(Event(USER_UPDATE_EVENT, user))
+        await self.event_engine.put(Event(USER_UPDATE_ASSETS_EVENT, user))
 
     async def liquidate_user_position(
         self, user: UserInCache, is_update_volume: int = False
@@ -444,6 +448,6 @@ class UserEngine(BaseEngine):
             new_user.securities = PyDecimal(securities)
         include = {"assets", "securities"}
         if is_refresh_frozen_amount:
-            new_user.frozen_amount = PyDecimal("0")
-            include.add("frozen_amount")
+            new_user.available_cash = new_user.cash
+            include.add("available_cash")
         await self.user_cache.set_user(new_user, include=include)

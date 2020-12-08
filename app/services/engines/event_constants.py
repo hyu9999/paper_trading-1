@@ -10,6 +10,8 @@ ORDER_UPDATE_FROZEN_EVENT = "order_update_frozen_event"  # 更新订单冻结相
 STATEMENT_CREATE_EVENT = "statement_create_event"  # 创建交割单
 
 USER_UPDATE_EVENT = "user_update_event"  # 更新用户信息
+USER_UPDATE_AVAILABLE_CASH_EVENT = "user_update_available_cash_event"  # 更新用户可用现金
+USER_UPDATE_ASSETS_EVENT = "user_update_assets_event"  # 更新用户资产
 
 POSITION_CREATE_EVENT = "holding_stock_create_event"  # 新建持仓股票
 POSITION_UPDATE_EVENT = "position_update_event"  # 更新持仓股票

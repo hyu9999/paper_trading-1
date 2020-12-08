@@ -48,7 +48,13 @@ class UserInCache(RWSchema):
     capital: PyDecimal = Field(..., description="初始资产")
     assets: PyDecimal = Field(..., description="总资产")
     cash: PyDecimal = Field(..., description="现金")
+    available_cash: Optional[PyDecimal] = Field(None, description="可用现金")
     securities: PyDecimal = Field(..., description="证券资产")
     commission: PyDecimal = Field(..., description="佣金")
     tax_rate: PyDecimal = Field(..., description="税点")
-    frozen_amount: Optional[PyDecimal] = Field("0", description="冻结资金")
+
+    @validator("available_cash", pre=True, always=True)
+    def set_available_cash_default(cls, v, values):
+        if v is None:
+            v = values["cash"]
+        return v
