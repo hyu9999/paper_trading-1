@@ -153,7 +153,7 @@ class UserEngine(BaseEngine):
 
     async def process_user_update_assets(self, payload: UserInCache) -> None:
         await self.user_cache.set_user(
-            payload, include={"cash", "securities", "assets"}
+            payload, include={"cash", "securities", "assets", "available_cash"}
         )
 
     async def process_position_create(self, payload: PositionInCache) -> None:
@@ -373,6 +373,13 @@ class UserEngine(BaseEngine):
         if order.order_type == OrderTypeEnum.BUY:
             # 现金 = 原现金 + - 证券市值 - 减手续费
             cash = user.cash.to_decimal() - securities_diff - costs.total.to_decimal()
+            available_cash = (
+                user.available_cash.to_decimal()
+                + order.frozen_amount.to_decimal()
+                - securities_diff
+                - costs.total.to_decimal()
+            )
+            user.available_cash = PyDecimal(available_cash)
             # 证券资产 = 原证券资产 + 证券资产的变化值
             securities = user.securities.to_decimal() + securities_diff
         else:
