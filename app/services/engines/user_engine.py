@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import itertools
 from decimal import Decimal
 from typing import Tuple, Union
@@ -417,11 +416,10 @@ class UserEngine(BaseEngine):
                 await self.write_log(f"未找到股票{position.stock_code}的行情信息.")
                 continue
             current_price = quotes.current
-            new_position = copy.copy(position)
-            new_position.current_price = PyDecimal(current_price)
+            position.current_price = PyDecimal(current_price)
             # 更新可用股票数量
             if is_update_volume:
-                new_position.available_volume = position.volume
+                position.available_volume = position.volume
             statement_list = await self.statement_repo.get_statement_list_by_symbol(
                 user_id, position.symbol
             )
@@ -429,8 +427,8 @@ class UserEngine(BaseEngine):
             profit = (current_price - position.cost.to_decimal()) * Decimal(
                 position.volume
             ) - sum(statement.costs.total.to_decimal() for statement in statement_list)
-            new_position.profit = PyDecimal(profit)
-            new_position_list.append(new_position)
+            position.profit = PyDecimal(profit)
+            new_position_list.append(position)
         include = {"current_price", "profit"}
         if is_update_volume:
             include.add("available_volume")
@@ -450,12 +448,11 @@ class UserEngine(BaseEngine):
                 for position in position_list
             ]
         )
-        new_user = copy.copy(user)
-        new_user.assets = PyDecimal(user.cash.to_decimal() + securities)
+        user.assets = PyDecimal(user.cash.to_decimal() + securities)
         if securities != Decimal(0):
-            new_user.securities = PyDecimal(securities)
+            user.securities = PyDecimal(securities)
         include = {"assets", "securities"}
         if is_refresh_frozen_amount:
-            new_user.available_cash = new_user.cash
+            user.available_cash = user.cash
             include.add("available_cash")
-        await self.user_cache.set_user(new_user, include=include)
+        await self.user_cache.set_user(user, include=include)
