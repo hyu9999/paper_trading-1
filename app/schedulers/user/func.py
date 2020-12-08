@@ -14,11 +14,11 @@ async def sync_user_assets_task():
     user_engine = state.engine.user_engine
     start_time = datetime.combine(date.today(), market_class.OPEN_MARKET_TIME)
     end_time = datetime.combine(date.today(), market_class.CLOSE_MARKET_TIME)
+    users = await user_cache.get_all_user()
     while start_time < datetime.now() < end_time:
-        users = await user_cache.get_all_user()
         await asyncio.gather(
-            *[user_engine.liquidate_user_position(user) for user in users]
+            *[user_engine.liquidate_user_position(user.id) for user in users]
         )
         await asyncio.gather(
-            *[user_engine.liquidate_user_profit(user) for user in users]
+            *[user_engine.liquidate_user_profit(user.id) for user in users]
         )

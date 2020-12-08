@@ -28,7 +28,7 @@ from app.models.enums import OrderTypeEnum, TradeTypeEnum
 from app.models.schemas.orders import OrderInCreate
 from app.models.schemas.position import PositionInCache
 from app.models.schemas.users import UserInCache
-from app.models.types import PyDecimal
+from app.models.types import PyDecimal, PyObjectId
 from app.services.engines.base import BaseEngine
 from app.services.engines.event_constants import (
     MARKET_CLOSE_EVENT,
@@ -165,8 +165,8 @@ class UserEngine(BaseEngine):
     async def process_market_close(self, *args) -> None:
         users = await self.user_cache.get_all_user()
         for user in users:
-            await self.liquidate_user_position(user, is_update_volume=True)
-            await self.liquidate_user_profit(user, is_refresh_frozen_amount=True)
+            await self.liquidate_user_position(user.id, is_update_volume=True)
+            await self.liquidate_user_profit(user.id, is_refresh_frozen_amount=True)
         await self.load_redis_data_to_db()
 
     async def process_unfreeze(self, payload: OrderInDB) -> None:
@@ -403,11 +403,11 @@ class UserEngine(BaseEngine):
         await self.event_engine.put(Event(USER_UPDATE_ASSETS_EVENT, user))
 
     async def liquidate_user_position(
-        self, user: UserInCache, is_update_volume: int = False
+        self, user_id: PyObjectId, is_update_volume: int = False
     ) -> None:
         """清算用户持仓数据."""
         position_list = await self.position_cache.get_position_by_user_id(
-            user_id=user.id
+            user_id=user_id
         )
         new_position_list = []
         for position in position_list:
@@ -423,7 +423,7 @@ class UserEngine(BaseEngine):
             if is_update_volume:
                 new_position.available_volume = position.volume
             statement_list = await self.statement_repo.get_statement_list_by_symbol(
-                user.id, position.symbol
+                user_id, position.symbol
             )
             # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
             profit = (current_price - position.cost.to_decimal()) * Decimal(
@@ -437,11 +437,12 @@ class UserEngine(BaseEngine):
         await self.position_cache.set_position_many(new_position_list, include=include)
 
     async def liquidate_user_profit(
-        self, user: UserInCache, is_refresh_frozen_amount: bool = False
+        self, user_id: PyObjectId, is_refresh_frozen_amount: bool = False
     ) -> None:
         """清算用户个人数据."""
+        user = await self.user_cache.get_user_by_id(user_id)
         position_list = await self.position_cache.get_position_by_user_id(
-            user_id=user.id
+            user_id=user_id
         )
         securities = sum(
             [
