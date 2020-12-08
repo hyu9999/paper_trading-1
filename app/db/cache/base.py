@@ -1,4 +1,3 @@
-import itertools
 from collections import AsyncIterable
 from typing import List
 
@@ -21,11 +20,12 @@ class BaseCache:
             yield keys
 
     async def get_keys(self, match: str = None) -> List[str]:
-        return list(
-            itertools.chain.from_iterable(
-                [keys async for keys in self.scan_iter(match=match)]
-            )
-        )
+        # return list(
+        #     itertools.chain.from_iterable(
+        #         [keys async for keys in self.scan_iter(match=match)]
+        #     )
+        # )
+        return await self._cache.keys(match)
 
     async def delete_key(self, key: str) -> None:
         await self._cache.delete(key)
