@@ -280,18 +280,13 @@ class UserEngine(BaseEngine):
             await self.event_engine.put(Event(POSITION_CREATE_EVENT, new_position))
         else:
             volume = position.volume + order.traded_volume
-            # 持仓成本 = ((原持仓数 * 原持仓成本) + 总花费) / 持仓总量
+            # 持仓成本 = (原持仓数 * 原持仓成本) + 总花费 / 持仓总量
             cost = (
-                (Decimal(position.volume) * position.cost.to_decimal()) + amount
+                Decimal(position.volume) * position.cost.to_decimal() + amount
             ) / volume
             available_volume = position.available_volume + order_available_volume
-            statement_list = await self.statement_repo.get_statement_list_by_symbol(
-                order.user, position.symbol
-            )
-            # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
-            profit = (quotes.current - cost) * Decimal(volume) - sum(
-                statement.costs.total.to_decimal() for statement in statement_list
-            )
+            # 持仓利润 = (现价 - 成本价) * 持仓数量
+            profit = (quotes.current - cost) * Decimal(volume)
             position.volume = volume
             position.available_volume = available_volume
             position.current_price = quotes.current
@@ -322,23 +317,14 @@ class UserEngine(BaseEngine):
         volume = position.volume - order.traded_volume
         # 行情
         quotes = await self.quotes_api.get_stock_ticks(order.stock_code)
+        # 原持仓成本
         old_spent = Decimal(position.volume) * position.cost.to_decimal()
-        new_spent = (
-            Decimal(order.traded_volume)
-            * order.sold_price.to_decimal()
-            * (Decimal(1) - user.commission.to_decimal() - user.tax_rate.to_decimal())
-        )
         # 清仓
         if volume == 0:
-            # 持仓成本 = 总成本 / 总数量
-            cost = (old_spent + new_spent) / (position.volume + order.traded_volume)
-            statement_list = await self.statement_repo.get_statement_list_by_symbol(
-                order.user, position.symbol
-            )
-            # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
-            profit = (quotes.current - cost) * Decimal(volume) - sum(
-                statement.costs.total.to_decimal() for statement in statement_list
-            )
+            # 持仓成本 = (原总成本 + 佣金 + 税) / 数量
+            cost = (old_spent + commission + tax) / order.traded_volume
+            # 持仓利润 = (现价 - 成本) * 持仓量
+            profit = (quotes.current - cost) * order.traded_volume
             position.volume = 0
             position.available_volume = 0
             position.current_price = PyDecimal(quotes.current)
@@ -354,15 +340,10 @@ class UserEngine(BaseEngine):
                 + order.frozen_stock_volume
                 - order.traded_volume
             )
-            # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
-            cost = (old_spent - new_spent) / volume
-            statement_list = await self.statement_repo.get_statement_list_by_symbol(
-                order.user, position.symbol
-            )
+            # 持仓成本 = (原总成本 + 佣金 + 税) / 剩余数量
+            cost = (old_spent + commission + tax) / volume
             # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
-            profit = (quotes.current - cost) * Decimal(volume) - sum(
-                statement.costs.total.to_decimal() for statement in statement_list
-            )
+            profit = (quotes.current - cost) * Decimal(volume)
             position.volume = volume
             position.available_volume = available_volume
             position.current_price = PyDecimal(quotes.current)
@@ -428,13 +409,10 @@ class UserEngine(BaseEngine):
             # 更新可用股票数量
             if is_update_volume:
                 position.available_volume = position.volume
-            statement_list = await self.statement_repo.get_statement_list_by_symbol(
-                user_id, position.symbol
-            )
-            # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
+            # 持仓利润 = (现价 - 成本价) * 持仓数量
             profit = (current_price - position.cost.to_decimal()) * Decimal(
                 position.volume
-            ) - sum(statement.costs.total.to_decimal() for statement in statement_list)
+            )
             position.profit = PyDecimal(profit)
             new_position_list.append(position)
         include = {"current_price", "profit"}
