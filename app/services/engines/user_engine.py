@@ -340,8 +340,11 @@ class UserEngine(BaseEngine):
                 + order.frozen_stock_volume
                 - order.traded_volume
             )
-            # 持仓成本 = (原总成本 + 佣金 + 税) / 剩余数量
-            cost = (old_spent + commission + tax) / volume
+            # 持仓成本 = ((原总成本 + 佣金 + 税) - (订单交易价 * 订单成交数量)) / 剩余数量
+            cost = (
+                (old_spent + commission + tax)
+                - (order.sold_price.to_decimal() * Decimal(order.traded_volume))
+            ) / volume
             # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
             profit = (quotes.current - cost) * Decimal(volume)
             position.volume = volume
