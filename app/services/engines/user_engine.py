@@ -324,7 +324,7 @@ class UserEngine(BaseEngine):
         else:
             # 订单利润
             order_profit = (
-                (order.sold_price.to_decimal() - position.cost)
+                (order.sold_price.to_decimal() - position.cost.to_decimal())
                 * Decimal(order.traded_volume)
                 - commission
                 - tax
