@@ -1,6 +1,3 @@
-from typing import Callable
-
-from fastapi import FastAPI
 from hq2redis import HQ2Redis
 from loguru import logger
 
@@ -12,7 +9,6 @@ from app.db.events import (
     connect_to_db,
     connect_to_redis,
 )
-from app.exceptions.events import register_exceptions
 from app.schedulers import load_jobs_with_lock, stop_jobs
 from app.services.events import close_engine, start_engine
 
@@ -33,26 +29,19 @@ async def close_quotes_api_conn():
     await state.quotes_api.shutdown()
 
 
-def create_start_app_handler(app: FastAPI) -> Callable:
-    async def start_app() -> None:
-        await init_logger()
-        await connect_to_db()
-        await connect_to_redis()
-        await register_exceptions(app)
-        await connect_to_quotes_api()
-        await start_engine()
-        await load_jobs_with_lock()
-
-    return start_app
+async def start_app() -> None:
+    await init_logger()
+    await connect_to_db()
+    await connect_to_redis()
+    await connect_to_quotes_api()
+    await start_engine()
+    await load_jobs_with_lock()
 
 
-def create_stop_app_handler(app: FastAPI) -> Callable:
-    @logger.catch
-    async def stop_app() -> None:
-        await stop_jobs()
-        await close_engine()
-        await close_redis_connection()
-        await close_db_connection()
-        await close_quotes_api_conn()
-
-    return stop_app
+@logger.catch
+async def stop_app() -> None:
+    await stop_jobs()
+    await close_engine()
+    await close_redis_connection()
+    await close_db_connection()
+    await close_quotes_api_conn()

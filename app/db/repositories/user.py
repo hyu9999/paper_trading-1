@@ -61,13 +61,3 @@ class UserRepository(BaseRepository):
 
     async def bulk_update(self, options: List[UpdateOne]) -> None:
         await self.collection.bulk_write(options)
-
-    async def process_update_user(
-        self, user: UserInUpdate, exclude: list = None
-    ) -> None:
-        exclude_field = ["id"]
-        if exclude:
-            exclude_field.extend(exclude)
-        await self.collection.update_one(
-            {"_id": user.id}, {"$set": user.dict(exclude=set(exclude_field))}
-        )

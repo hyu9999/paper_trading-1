@@ -3,23 +3,33 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app import settings
 from app.api import router
-from app.core.event import create_start_app_handler, create_stop_app_handler
+from app.core.events import start_app, stop_app
+from app.exceptions.events import register_exceptions
 
-app = FastAPI(
-    title=settings.project_name,
-    description=settings.description,
-    version=settings.version,
-)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def get_application() -> FastAPI:
 
-app.add_event_handler("startup", create_start_app_handler(app))
-app.add_event_handler("shutdown", create_stop_app_handler(app))
+    application = FastAPI(
+        title=settings.project_name,
+        description=settings.description,
+        version=settings.version,
+    )
 
-app.include_router(router, prefix=settings.api_prefix)
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    application.add_event_handler("startup", start_app)
+    application.add_event_handler("startup", register_exceptions(application))
+    application.add_event_handler("shutdown", stop_app)
+
+    application.include_router(router, prefix=settings.api_prefix)
+
+    return application
+
+
+app = get_application()

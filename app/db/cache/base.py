@@ -1,4 +1,4 @@
-from collections import AsyncIterable
+from collections.abc import AsyncIterable
 from typing import List
 
 from aioredis import Redis
