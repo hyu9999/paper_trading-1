@@ -145,21 +145,21 @@ class UserEngine(BaseEngine):
         )
 
     async def process_user_update(self, payload: UserInCache) -> None:
-        await self.user_cache.set_user(payload)
+        await self.user_cache.update_user(payload)
 
     async def process_user_update_available_cash(self, payload: UserInCache) -> None:
-        await self.user_cache.set_user(payload, include={"available_cash"})
+        await self.user_cache.update_user(payload, include={"available_cash"})
 
     async def process_user_update_assets(self, payload: UserInCache) -> None:
-        await self.user_cache.set_user(
+        await self.user_cache.update_user(
             payload, include={"cash", "securities", "assets", "available_cash"}
         )
 
     async def process_position_create(self, payload: PositionInCache) -> None:
-        await self.position_cache.set_position(payload)
+        await self.position_cache.update_position(payload)
 
     async def process_position_update(self, payload: PositionInCache) -> None:
-        await self.position_cache.set_position(payload)
+        await self.position_cache.update_position(payload)
 
     async def process_market_close(self, *args) -> None:
         users = await self.user_cache.get_all_user()
@@ -175,13 +175,13 @@ class UserEngine(BaseEngine):
             user.available_cash = PyDecimal(
                 payload.frozen_amount.to_decimal() + user.available_cash.to_decimal()
             )
-            await self.user_cache.set_user(user, include={"available_cash"})
+            await self.user_cache.update_user(user, include={"available_cash"})
         if payload.frozen_stock_volume:
             position = await self.position_cache.get_position(
                 user_id=payload.user, symbol=payload.symbol, exchange=payload.exchange
             )
             position.available_volume += payload.frozen_stock_volume
-            await self.position_cache.set_position(
+            await self.position_cache.update_position(
                 position, include={"available_volume"}
             )
 
@@ -430,7 +430,9 @@ class UserEngine(BaseEngine):
         include = {"current_price", "profit"}
         if is_update_volume:
             include.add("available_volume")
-        await self.position_cache.set_position_many(new_position_list, include=include)
+        await self.position_cache.update_position_many(
+            new_position_list, include=include
+        )
 
     async def liquidate_user_profit(
         self, user_id: PyObjectId, is_refresh_frozen_amount: bool = False
@@ -453,4 +455,4 @@ class UserEngine(BaseEngine):
         if is_refresh_frozen_amount:
             user.available_cash = user.cash
             include.add("available_cash")
-        await self.user_cache.set_user(user, include=include)
+        await self.user_cache.update_user(user, include=include)

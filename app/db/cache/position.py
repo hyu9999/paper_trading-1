@@ -30,6 +30,41 @@ class PositionCache(BaseCache):
             jsonable_encoder(position, include=include, exclude=exclude),
         )
 
+    async def update_position(
+        self,
+        position: PositionInCache,
+        include: Optional[set] = None,
+        exclude: Optional[set] = None,
+    ):
+        key = self.POSITION_KEY.format(
+            user=position.user,
+            symbol=position.symbol,
+            exchange=position.exchange,
+        )
+        if await self._cache.exists(key):
+            await self._cache.hmset_dict(
+                key, jsonable_encoder(position, include=include, exclude=exclude)
+            )
+
+    async def update_position_many(
+        self,
+        position_list: List[PositionInCache],
+        include: Optional[set] = None,
+        exclude: Optional[set] = None,
+    ):
+        pipeline = self._cache.pipeline()
+        for position in position_list:
+            key = self.POSITION_KEY.format(
+                user=position.user,
+                symbol=position.symbol,
+                exchange=position.exchange,
+            )
+            if await self._cache.exists(key):
+                pipeline.hmset_dict(
+                    key, jsonable_encoder(position, include=include, exclude=exclude)
+                )
+        await pipeline.execute()
+
     async def set_position_many(
         self,
         position_list: List[PositionInCache],
@@ -37,7 +72,7 @@ class PositionCache(BaseCache):
         exclude: Optional[set] = None,
     ) -> None:
         pipeline = self._cache.pipeline()
-        [
+        for position in position_list:
             pipeline.hmset_dict(
                 self.POSITION_KEY.format(
                     user=position.user,
@@ -46,8 +81,6 @@ class PositionCache(BaseCache):
                 ),
                 jsonable_encoder(position, include=include, exclude=exclude),
             )
-            for position in position_list
-        ]
         await pipeline.execute()
 
     async def get_position_by_user_id(
@@ -79,8 +112,6 @@ class PositionCache(BaseCache):
 
     async def delete_position_by_user(self, user_id: PyObjectId) -> None:
         pipeline = self._cache.pipeline()
-        [
+        for key in await self.get_keys(f"{self.POSITION_KEY_PREFIX}{user_id}*"):
             pipeline.delete(key)
-            for key in await self.get_keys(f"{self.POSITION_KEY_PREFIX}{user_id}*")
-        ]
         await pipeline.execute()

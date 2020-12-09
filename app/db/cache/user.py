@@ -22,6 +22,19 @@ class UserCache(BaseCache):
             await self._cache.set(self.IS_RELOAD_KEY, "0")
         return is_reload
 
+    async def update_user(
+        self,
+        user: UserInCache,
+        include: Optional[set] = None,
+        exclude: Optional[set] = None,
+    ) -> None:
+        key = self.USER_KEY.format(user_id=user.id)
+        if await self._cache.exists(key):
+            await self._cache.hmset_dict(
+                self.USER_KEY.format(user_id=user.id),
+                jsonable_encoder(user, include=include, exclude=exclude),
+            )
+
     async def set_user(
         self,
         user: UserInCache,
@@ -35,12 +48,10 @@ class UserCache(BaseCache):
 
     async def set_user_many(self, user_list: List[UserInCache]) -> None:
         pipeline = self._cache.pipeline()
-        [
+        for user in user_list:
             pipeline.hmset_dict(
                 self.USER_KEY.format(user_id=user.id), jsonable_encoder(user)
             )
-            for user in user_list
-        ]
         await pipeline.execute()
 
     async def get_user_by_id(self, user_id: PyObjectId) -> UserInCache:
@@ -51,8 +62,6 @@ class UserCache(BaseCache):
 
     async def get_all_user(self) -> List[UserInCache]:
         pipeline = self._cache.pipeline()
-        [
+        for user_id in await self.get_keys(self.USER_KEY_PREFIX + "*"):
             pipeline.hgetall(user_id)
-            for user_id in await self.get_keys(self.USER_KEY_PREFIX + "*")
-        ]
         return [UserInCache(**user) for user in await pipeline.execute()]
