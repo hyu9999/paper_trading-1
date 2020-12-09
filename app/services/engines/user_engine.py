@@ -322,7 +322,6 @@ class UserEngine(BaseEngine):
         volume = position.volume - order.traded_volume
         # 行情
         quotes = await self.quotes_api.get_stock_ticks(order.stock_code)
-        # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
         old_spent = Decimal(position.volume) * position.cost.to_decimal()
         new_spent = (
             Decimal(order.traded_volume)
@@ -331,7 +330,8 @@ class UserEngine(BaseEngine):
         )
         # 清仓
         if volume == 0:
-            cost = (old_spent - new_spent) / (position.volume + order.traded_volume)
+            # 持仓成本 = 总成本 / 总数量
+            cost = (old_spent + new_spent) / (position.volume + order.traded_volume)
             statement_list = await self.statement_repo.get_statement_list_by_symbol(
                 order.user, position.symbol
             )
@@ -354,6 +354,7 @@ class UserEngine(BaseEngine):
                 + order.frozen_stock_volume
                 - order.traded_volume
             )
+            # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
             cost = (old_spent - new_spent) / volume
             statement_list = await self.statement_repo.get_statement_list_by_symbol(
                 order.user, position.symbol
