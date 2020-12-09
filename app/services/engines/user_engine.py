@@ -386,15 +386,7 @@ class UserEngine(BaseEngine):
             cash = user.cash.to_decimal() + amount
             available_cash = user.available_cash.to_decimal() + amount
             # 证券资产 = 原证券资产 - 证券资产的变化值
-            user_position = await self.position_repo.get_positions_by_user_id(
-                user_id=user.id
-            )
-            securities = sum(
-                [
-                    position.current_price.to_decimal() * Decimal(position.volume)
-                    for position in user_position
-                ]
-            )
+            securities = user.securities.to_decimal() - securities_diff
         # 总资产 = 现金 + 证券资产
         assets = cash + securities
         user.cash = PyDecimal(cash)

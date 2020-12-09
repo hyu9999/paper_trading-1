@@ -87,10 +87,8 @@ class PositionCache(BaseCache):
         self, user_id: PyObjectId
     ) -> List[PositionInCache]:
         pipeline = self._cache.pipeline()
-        [
+        for key in await self.get_keys(f"{self.POSITION_KEY_PREFIX}{user_id}*"):
             pipeline.hgetall(key)
-            for key in await self.get_keys(f"{self.POSITION_KEY_PREFIX}{user_id}*")
-        ]
         return [PositionInCache(**position) for position in await pipeline.execute()]
 
     async def get_position(
