@@ -329,16 +329,16 @@ class UserEngine(BaseEngine):
             * order.sold_price.to_decimal()
             * (Decimal(1) - user.commission.to_decimal() - user.tax_rate.to_decimal())
         )
-        cost = (old_spent - new_spent) / volume
-        statement_list = await self.statement_repo.get_statement_list_by_symbol(
-            order.user, position.symbol
-        )
-        # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
-        profit = (quotes.current - cost) * Decimal(volume) - sum(
-            statement.costs.total.to_decimal() for statement in statement_list
-        )
         # 清仓
         if volume == 0:
+            cost = (old_spent - new_spent) / (position.volume + order.traded_volume)
+            statement_list = await self.statement_repo.get_statement_list_by_symbol(
+                order.user, position.symbol
+            )
+            # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
+            profit = (quotes.current - cost) * Decimal(volume) - sum(
+                statement.costs.total.to_decimal() for statement in statement_list
+            )
             position.volume = 0
             position.available_volume = 0
             position.current_price = PyDecimal(quotes.current)
@@ -353,6 +353,14 @@ class UserEngine(BaseEngine):
                 position.available_volume
                 + order.frozen_stock_volume
                 - order.traded_volume
+            )
+            cost = (old_spent - new_spent) / volume
+            statement_list = await self.statement_repo.get_statement_list_by_symbol(
+                order.user, position.symbol
+            )
+            # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
+            profit = (quotes.current - cost) * Decimal(volume) - sum(
+                statement.costs.total.to_decimal() for statement in statement_list
             )
             position.volume = volume
             position.available_volume = available_volume
