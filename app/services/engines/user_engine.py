@@ -212,8 +212,7 @@ class UserEngine(BaseEngine):
             user.available_cash = PyDecimal(
                 user.available_cash.to_decimal() - cash_needs
             )
-            event = Event(USER_UPDATE_AVAILABLE_CASH_EVENT, user)
-            await self.event_engine.put(event)
+            await self.user_cache.update_user(user, include={"available_cash"})
             return cash_needs
         else:
             raise InsufficientFunds
@@ -233,8 +232,9 @@ class UserEngine(BaseEngine):
         else:
             if position.available_volume >= order.volume:
                 position.available_volume -= order.volume
-                event = Event(POSITION_UPDATE_EVENT, position)
-                await self.event_engine.put(event)
+                await self.position_cache.update_position(
+                    position, include={"available_volume"}
+                )
                 return order.volume
             raise NotEnoughAvailablePositions
 
@@ -285,8 +285,13 @@ class UserEngine(BaseEngine):
                 (Decimal(position.volume) * position.cost.to_decimal()) + amount
             ) / volume
             available_volume = position.available_volume + order_available_volume
-            # 持仓利润 = 原利润 + 订单交易利润
-            profit = position.profit.to_decimal() + order_profit
+            statement_list = await self.statement_repo.get_statement_list_by_symbol(
+                order.user, position.symbol
+            )
+            # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
+            profit = (quotes.current - cost) * Decimal(volume) - sum(
+                statement.costs.total.to_decimal() for statement in statement_list
+            )
             position.volume = volume
             position.available_volume = available_volume
             position.current_price = quotes.current
@@ -322,15 +327,6 @@ class UserEngine(BaseEngine):
             await self.position_cache.delete_position(position)
         # 减仓
         else:
-            # 订单利润
-            order_profit = (
-                (order.sold_price.to_decimal() - position.cost.to_decimal())
-                * Decimal(order.traded_volume)
-                - commission
-                - tax
-            )
-            # 持仓利润 = 原持仓利润 + 订单利润
-            profit = position.profit.to_decimal() + order_profit
             # 可用持仓 = 原持仓数 + 冻结的股票数量 - 交易成功的股票数量
             available_volume = (
                 position.available_volume
@@ -349,6 +345,13 @@ class UserEngine(BaseEngine):
                 )
             )
             cost = (old_spent - new_spent) / volume
+            statement_list = await self.statement_repo.get_statement_list_by_symbol(
+                order.user, position.symbol
+            )
+            # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
+            profit = (quotes.current - cost) * Decimal(volume) - sum(
+                statement.costs.total.to_decimal() for statement in statement_list
+            )
             position.volume = volume
             position.available_volume = available_volume
             position.current_price = PyDecimal(quotes.current)
