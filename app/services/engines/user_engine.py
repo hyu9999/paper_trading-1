@@ -322,9 +322,30 @@ class UserEngine(BaseEngine):
         volume = position.volume - order.traded_volume
         # 行情
         quotes = await self.quotes_api.get_stock_ticks(order.stock_code)
+        # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
+        old_spent = Decimal(position.volume) * position.cost.to_decimal()
+        new_spent = (
+            Decimal(order.traded_volume)
+            * order.sold_price.to_decimal()
+            * (Decimal(1) - user.commission.to_decimal() - user.tax_rate.to_decimal())
+        )
+        cost = (old_spent - new_spent) / volume
+        statement_list = await self.statement_repo.get_statement_list_by_symbol(
+            order.user, position.symbol
+        )
+        # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
+        profit = (quotes.current - cost) * Decimal(volume) - sum(
+            statement.costs.total.to_decimal() for statement in statement_list
+        )
         # 清仓
         if volume == 0:
-            await self.position_cache.delete_position(position)
+            position.volume = 0
+            position.available_volume = 0
+            position.current_price = PyDecimal(quotes.current)
+            position.cost = PyDecimal(cost)
+            position.profit = PyDecimal(profit)
+            event = Event(POSITION_UPDATE_EVENT, position)
+            await self.event_engine.put(event)
         # 减仓
         else:
             # 可用持仓 = 原持仓数 + 冻结的股票数量 - 交易成功的股票数量
@@ -332,25 +353,6 @@ class UserEngine(BaseEngine):
                 position.available_volume
                 + order.frozen_stock_volume
                 - order.traded_volume
-            )
-            # 持仓成本 = ((原持仓量 * 原持仓价) - (订单交易量 * 订单交易价 * 交易费率)) / 持仓数量
-            old_spent = Decimal(position.volume) * position.cost.to_decimal()
-            new_spent = (
-                Decimal(order.traded_volume)
-                * order.sold_price.to_decimal()
-                * (
-                    Decimal(1)
-                    - user.commission.to_decimal()
-                    - user.tax_rate.to_decimal()
-                )
-            )
-            cost = (old_spent - new_spent) / volume
-            statement_list = await self.statement_repo.get_statement_list_by_symbol(
-                order.user, position.symbol
-            )
-            # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
-            profit = (quotes.current - cost) * Decimal(volume) - sum(
-                statement.costs.total.to_decimal() for statement in statement_list
             )
             position.volume = volume
             position.available_volume = available_volume
@@ -404,6 +406,9 @@ class UserEngine(BaseEngine):
         )
         new_position_list = []
         for position in position_list:
+            if is_update_volume and position.volume == 0:
+                await self.position_cache.delete_position(position)
+                continue
             try:
                 quotes = await self.quotes_api.get_stock_ticks(position.stock_code)
             except EntityNotFound:
