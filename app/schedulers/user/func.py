@@ -17,8 +17,8 @@ async def sync_user_assets_task():
     users = await user_cache.get_all_user()
     while start_time < datetime.now() < end_time:
         await asyncio.gather(
-            *[user_engine.liquidate_user_position(user.id) for user in users]
+            *(user_engine.liquidate_user_position(user.id) for user in users)
         )
         await asyncio.gather(
-            *[user_engine.liquidate_user_profit(user.id) for user in users]
+            *(user_engine.liquidate_user_profit(user.id) for user in users)
         )

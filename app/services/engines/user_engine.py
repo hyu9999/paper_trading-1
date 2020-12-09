@@ -156,7 +156,7 @@ class UserEngine(BaseEngine):
         )
 
     async def process_position_create(self, payload: PositionInCache) -> None:
-        await self.position_cache.update_position(payload)
+        await self.position_cache.set_position(payload)
 
     async def process_position_update(self, payload: PositionInCache) -> None:
         await self.position_cache.update_position(payload)
