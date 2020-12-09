@@ -379,12 +379,12 @@ class UserEngine(BaseEngine):
                 + order.frozen_amount.to_decimal()
                 - amount
             )
-            user.available_cash = PyDecimal(available_cash)
             # 证券资产 = 原证券资产 + 证券资产的变化值
             securities = user.securities.to_decimal() + securities_diff
         else:
             # 可用现金 = 原现金 + 收益
             cash = user.cash.to_decimal() + amount
+            available_cash = user.available_cash.to_decimal() + amount
             # 证券资产 = 原证券资产 - 证券资产的变化值
             user_position = await self.position_repo.get_positions_by_user_id(
                 user_id=user.id
@@ -400,6 +400,7 @@ class UserEngine(BaseEngine):
         user.cash = PyDecimal(cash)
         user.securities = PyDecimal(securities or "0")
         user.assets = PyDecimal(assets)
+        user.available_cash = PyDecimal(available_cash)
         await self.event_engine.put(Event(USER_UPDATE_ASSETS_EVENT, user))
 
     async def liquidate_user_position(

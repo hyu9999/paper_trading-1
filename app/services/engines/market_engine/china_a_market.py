@@ -26,7 +26,6 @@ class ChinaAMarket(BaseMarket):
 
     @classmethod
     def is_trading_time(cls) -> bool:
-        return True
         current_time = datetime.today().time()
         for period in cls.TRADING_PERIOD:
             if period["start"] <= current_time <= period["end"]:
