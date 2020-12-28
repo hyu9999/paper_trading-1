@@ -7,7 +7,12 @@ from app.db.repositories.base import BaseRepository
 from app.exceptions.db import EntityDoesNotExist
 from app.models.domain.users import UserInDB
 from app.models.enums import UserStatusEnum
-from app.models.schemas.users import UserInCache, UserInCreate, UserInUpdate
+from app.models.schemas.users import (
+    UserInCache,
+    UserInCreate,
+    UserInUpdate,
+    UserInUpdateCash,
+)
 from app.models.types import PyObjectId
 
 
@@ -52,6 +57,13 @@ class UserRepository(BaseRepository):
     async def update_user(self, user: UserInUpdate) -> None:
         await self.collection.update_one(
             {"_id": user.id}, {"$set": user.dict(exclude={"id"})}
+        )
+
+    async def update_user_cash(
+        self, user_id: PyObjectId, user_in_update: UserInUpdateCash
+    ) -> None:
+        await self.collection.update_one(
+            {"_id": user_id}, {"$set": {"cash": user_in_update.cash}}
         )
 
     async def terminate_user(self, user_id: PyObjectId) -> None:

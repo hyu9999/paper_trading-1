@@ -43,6 +43,16 @@ class UserInUpdate(RWSchema):
     securities: PyDecimal = Field(0.00, description="证券资产")
 
 
+class UserInUpdateCash(RWSchema):
+    cash: PyDecimal = Field(..., description="现金")
+
+    @validator("cash")
+    def validate_cash(self, v):
+        if v.to_decimal() < 0:
+            raise ValueError("用户取款金额超出账户可用金额.")
+        return v
+
+
 class UserInCache(RWSchema):
     id: PyObjectId = Field(..., alias="_id")
     capital: PyDecimal = Field(..., description="初始资产")
