@@ -89,9 +89,11 @@ async def update_cash(
         await user_cache.set_user(user_in_cache)
     diff = user_in_update.cash.to_decimal() - user_in_cache.available_cash.to_decimal()
     user_in_cache.available_cash = PyDecimal(
-        user_in_cache.available_cash.to_decimal() - diff
+        user_in_cache.available_cash.to_decimal() + diff
     )
-    user_in_cache.cash = PyDecimal(user_in_cache.cash.to_decimal() - diff)
-    await user_cache.update_user(user_in_cache, include={"cash", "available_cash"})
-    await engine.user_engine.liquidate_user_profit(user_in_cache.id)
+    user_in_cache.cash = PyDecimal(user_in_cache.cash.to_decimal() + diff)
+    user_in_cache.assets = PyDecimal(user_in_cache.assets.to_decimal() + diff)
+    await user_cache.update_user(
+        user_in_cache, include={"cash", "available_cash", "assets"}
+    )
     return user_in_cache
