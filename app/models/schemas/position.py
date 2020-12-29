@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import Field, validator
+from pydantic import Field, PositiveInt, validator
 
 from app.models.base import get_utc_now
 from app.models.domain.position import Position, PositionInDB
@@ -12,6 +12,11 @@ from app.models.types import PyDecimal, PyObjectId
 
 class PositionInCreate(RWSchema, Position):
     user: PyObjectId = Field(..., description="用户ID")
+
+
+class PositionInManualCreate(RWSchema, Stock):
+    volume: PositiveInt = Field(..., description="持仓数量")
+    cost: PyDecimal = Field(..., description="成本价")
 
 
 class PositionInResponse(RWSchema, PositionInDB):

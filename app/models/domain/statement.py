@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from bson import Decimal128
 from pydantic import Field, PositiveInt, validator
@@ -27,7 +28,7 @@ class Costs(RWModel):
 class Statement(Stock):
     """交割单."""
 
-    entrust_id: PyObjectId = Field(..., description="委托单ID")
+    entrust_id: Optional[PyObjectId] = Field(..., description="委托单ID")
     user: PyObjectId = Field(..., description="账户")
     trade_category: TradeCategoryEnum = Field(..., description="交易类别")
     volume: PositiveInt = Field(..., description="成交数量")
