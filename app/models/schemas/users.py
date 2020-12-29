@@ -47,7 +47,7 @@ class UserInUpdateCash(RWSchema):
     cash: PyDecimal = Field(..., description="现金")
 
     @validator("cash")
-    def validate_cash(self, v):
+    def validate_cash(cls, v):
         if v.to_decimal() < 0:
             raise ValueError("用户取款金额超出账户可用金额.")
         return v

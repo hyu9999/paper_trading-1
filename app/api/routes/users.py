@@ -76,26 +76,22 @@ async def update_cash(
     user: UserInDB = Depends(get_current_user_authorizer()),
     user_in_update: UserInUpdateCash = Body(...),
     engine: MainEngine = Depends(get_engine),
-    user_repo: UserRepository = Depends(get_repository(UserRepository)),
     user_cache: UserCache = Depends(get_user_cache),
 ) -> UserInCache:
     """修改用户可用现金(出金入金)."""
     if not engine.market_engine.is_trading_time():
         raise NotTradingTime
-    await user_repo.update_user_cash(user.id, user_in_update)
     try:
         user_in_cache = await user_cache.get_user_by_id(user.id)
     except EntityDoesNotExist:
         user_in_cache = UserInCache(**user.dict())
-        user_in_cache.cash = user_in_cache.available_cash = user_in_update.cash
-        await user_cache.set_user(user_in_cache)
     else:
-        frozen = (
-            user_in_cache.cash.to_decimal() - user_in_cache.available_cash.to_decimal()
-        )
-        user_in_cache.available_cash = user_in_update.cash
-        user_in_cache.cash = PyDecimal(
-            user_in_cache.available_cash.to_decimal() + frozen
-        )
-        await user_cache.update_user(user_in_cache, include={"cash", "available_cash"})
+        await user_cache.set_user(user_in_cache)
+    diff = user_in_update.cash.to_decimal() - user_in_cache.available_cash.to_decimal()
+    user_in_cache.available_cash = PyDecimal(
+        user_in_cache.available_cash.to_decimal() - diff
+    )
+    user_in_cache.cash = PyDecimal(user_in_cache.cash.to_decimal() - diff)
+    await user_cache.update_user(user_in_cache, include={"cash", "available_cash"})
+    await engine.user_engine.liquidate_user_profit(user_in_cache.id)
     return user_in_cache
