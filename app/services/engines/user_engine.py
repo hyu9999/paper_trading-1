@@ -345,7 +345,7 @@ class UserEngine(BaseEngine):
                 (old_spent + commission + tax)
                 - (order.sold_price.to_decimal() * Decimal(order.traded_volume))
             ) / volume
-            # 持仓利润 = 现价 * 持仓数量 - 该持仓交易总费用
+            # 持仓利润 = (现价 - 持仓例如) * 持仓数量
             profit = (quotes.current - cost) * Decimal(volume)
             position.volume = volume
             position.available_volume = available_volume

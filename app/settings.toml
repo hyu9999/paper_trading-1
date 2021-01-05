@@ -32,6 +32,7 @@ quotes_max_retry = 3
     order = "orders"
     position = "position"
     statement = "statement"
+    dividend_records = "dividend_records"
 
     # 日志
     [default.log]
