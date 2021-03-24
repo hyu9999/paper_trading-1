@@ -1,9 +1,9 @@
 from typing import List
 
 from fastapi import APIRouter, Body, Depends
+from hq2redis.reader import get_security_price
 from starlette import status
 
-from app import state
 from app.api.dependencies.authentication import get_current_user_authorizer
 from app.api.dependencies.database import get_position_cache, get_repository
 from app.db.cache.position import PositionCache
@@ -65,7 +65,7 @@ async def manual_import_position(
         deal_time=get_utc_now(),
     )
     await statement_repo.create_statement(statement_in_db)
-    quotes = await state.quotes_api.get_stock_ticks(position_in_create.stock_code)
+    security = await get_security_price(position_in_create.stock_code)
     # 创建持仓
     position_in_create = PositionInCreate(
         symbol=position_in_create.symbol,
@@ -74,9 +74,9 @@ async def manual_import_position(
         volume=position_in_create.volume,
         available_volume=position_in_create.volume,
         cost=position_in_create.cost,
-        current_price=PyDecimal(quotes.current),
+        current_price=PyDecimal(security.current),
         profit=PyDecimal(
-            (quotes.current - position_in_create.cost.to_decimal())
+            (security.current - position_in_create.cost.to_decimal())
             * position_in_create.volume
         ),
         first_buy_date=get_utc_now(),

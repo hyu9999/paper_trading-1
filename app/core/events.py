@@ -18,8 +18,8 @@ async def connect_to_quotes_api():
         redis_host=settings.redis.host,
         redis_port=settings.redis.port,
         redis_db=settings.redis.hq_db,
-        jq_data_password=settings.jqdata_password,
-        jq_data_user=settings.jqdata_user,
+        jqdata_password=settings.jqdata_password,
+        jqdata_user=settings.jqdata_user,
     )
     await quotes_api.startup()
     state.quotes_api = quotes_api

@@ -51,69 +51,94 @@ async def sync_dividend_data_task():
     dividend_records_repository = DividendRecordsRepository(db=db)
     statement_repository = StatementRepository(db=db)
     today_date = datetime.combine(datetime.today().date(), datetime.min.time())
-    sql = """SELECT * FROM zvt.dividend_detail WHERE code={code} AND dividend_date='{today_date}';"""
+    cash_sql = """SELECT * FROM zvt.dividend_detail WHERE code={code} AND dividend_date='{today_date}';"""
+    stock_sql = """SELECT * FROM zvt.dividend_detail WHERE code={code} AND dividend_pay_date='{today_date}';"""
     for user in users:
         user_position_list = await position_cache.get_position_by_user_id(user.id)
         for user_position in user_position_list:
-            df = pd.read_sql(
-                sql.format(code=user_position.symbol, today_date=today_date), engine
+            cash_df = pd.read_sql(
+                cash_sql.format(code=user_position.symbol, today_date=today_date),
+                engine,
             )
-            if df.empty:
-                continue
-            volume = 0
-            statement_list = await statement_repository.get_statement_list_by_symbol(
-                user_id=user.id, symbol=user_position.symbol
-            )
-            df_record = df.to_dict("records")[-1]
-            for statement in statement_list:
-                if statement.deal_time <= df_record["record_date"].replace(
-                    tzinfo=timezone.utc
-                ):
-                    if statement.trade_category == TradeCategoryEnum.BUY:
-                        volume += statement.volume
-                    else:
-                        volume -= statement.volume
-            if volume <= 0:
-                continue
+            user_cache_include = position_cache_include = set()
             dividend_record = DividendRecordsInDB(
                 user=user.id,
                 symbol=user_position.symbol,
                 exchange=user_position.exchange,
             )
-            user_cache_include = position_cache_include = set()
             # 现金红利
-            if df_record.get("dividend_per_share_before_tax"):
-                dividend_cash = Decimal(
-                    round(df_record["dividend_per_share_before_tax"], 2)
-                ) * Decimal(volume)
-                dividend_record.cash = PyDecimal(dividend_cash)
-                # 更新用户现金
-                user.cash = PyDecimal(user.cash.to_decimal() + dividend_cash)
-                user_cache_include.add("cash")
-                # 持仓成本 = 总花费 / 持仓数量
-                #         = (原总花费 - 现金红利) / 持仓数量
-                cost = (
-                    Decimal(user_position.volume) * user_position.cost.to_decimal()
-                    - dividend_cash
-                ) / Decimal(user_position.volume)
-                # 更新持仓成本
-                user_position.cost = PyDecimal(cost)
-                position_cache_include.add("cost")
+            if not cash_df.empty:
+                df_record = cash_df.to_dict("records")[-1]
+                volume = 0
+                statement_list = (
+                    await statement_repository.get_statement_list_by_symbol(
+                        user_id=user.id, symbol=user_position.symbol
+                    )
+                )
+                for statement in statement_list:
+                    if statement.deal_time <= df_record["record_date"].replace(
+                        tzinfo=timezone.utc
+                    ):
+                        if statement.trade_category == TradeCategoryEnum.BUY:
+                            volume += statement.volume
+                        else:
+                            volume -= statement.volume
+                if volume <= 0:
+                    continue
+                if df_record.get("dividend_per_share_before_tax"):
+                    dividend_cash = Decimal(
+                        round(df_record["dividend_per_share_before_tax"], 2)
+                    ) * Decimal(volume)
+                    dividend_record.cash = PyDecimal(dividend_cash)
+                    # 更新用户现金
+                    user.cash = PyDecimal(user.cash.to_decimal() + dividend_cash)
+                    user_cache_include.add("cash")
+                    # 持仓成本 = 总花费 / 持仓数量
+                    #         = (原总花费 - 现金红利) / 持仓数量
+                    cost = (
+                        Decimal(user_position.volume) * user_position.cost.to_decimal()
+                        - dividend_cash
+                    ) / Decimal(user_position.volume)
+                    # 更新持仓成本
+                    user_position.cost = PyDecimal(cost)
+                    position_cache_include.add("cost")
             # 股票红利
-            if df_record.get("share_bonus_per_share"):
-                dividend_volume = int(
-                    round(df_record["dividend_per_share_before_tax"], 2) * volume
+            stock_df = pd.read_sql(
+                stock_sql.format(code=user_position.symbol, today_date=today_date),
+                engine,
+            )
+            if not stock_df.empty:
+                df_record = cash_df.to_dict("records")[-1]
+                volume = 0
+                statement_list = (
+                    await statement_repository.get_statement_list_by_symbol(
+                        user_id=user.id, symbol=user_position.symbol
+                    )
                 )
-                dividend_record.volume = dividend_volume
-                # 持仓成本 = 总花费 / 持仓数量
-                #         = 原总花费 / (持仓数量 + 股票红利)
-                cost = (
-                    Decimal(user_position.volume)
-                    * user_position.cost.to_decimal()
-                    / (user_position.volume + dividend_volume)
-                )
-                user_position.cost = PyDecimal(cost)
-                position_cache_include.add("cost")
+                for statement in statement_list:
+                    if statement.deal_time <= df_record["record_date"].replace(
+                        tzinfo=timezone.utc
+                    ):
+                        if statement.trade_category == TradeCategoryEnum.BUY:
+                            volume += statement.volume
+                        else:
+                            volume -= statement.volume
+                if volume <= 0:
+                    continue
+                if df_record.get("share_bonus_per_share"):
+                    dividend_volume = int(
+                        round(df_record["dividend_per_share_before_tax"], 2) * volume
+                    )
+                    dividend_record.volume = dividend_volume
+                    # 持仓成本 = 总花费 / 持仓数量
+                    #         = 原总花费 / (持仓数量 + 股票红利)
+                    cost = (
+                        Decimal(user_position.volume)
+                        * user_position.cost.to_decimal()
+                        / (user_position.volume + dividend_volume)
+                    )
+                    user_position.cost = PyDecimal(cost)
+                    position_cache_include.add("cost")
             await user_cache.update_user(user, include=user_cache_include)
             await position_cache.update_position(
                 user_position, include=position_cache_include

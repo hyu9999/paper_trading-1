@@ -1,7 +1,7 @@
 import asyncio
 
-from hq2redis import HQ2Redis
-from hq2redis.exceptions import EntityNotFound
+from hq2redis import SecurityNotFoundError
+from hq2redis.reader import get_security_ticks
 
 from app.exceptions.service import InvalidExchange
 from app.models.base import get_utc_now
@@ -36,15 +36,12 @@ class BaseMarket(BaseEngine):
     CLOSE_MARKET_TIME = None  # 闭市时间
     TRADING_PERIOD = None
 
-    def __init__(
-        self, event_engine: EventEngine, user_engine: UserEngine, quotes_api: HQ2Redis
-    ) -> None:
+    def __init__(self, event_engine: EventEngine, user_engine: UserEngine) -> None:
         super().__init__()
         self.event_engine = event_engine
         self.user_engine = user_engine
         self.market_name = None  # 交易市场名称
         self.exchange_symbols = None  # 交易市场标识
-        self.quotes_api = quotes_api
         self._entrust_orders = EntrustOrders()
         self._matchmaking_active = False
 
@@ -108,8 +105,8 @@ class BaseMarket(BaseEngine):
                 await self.write_log(f"取消委托订单 `{order.entrust_id}` 成功.")
             else:
                 try:
-                    quotes = await self.quotes_api.get_stock_ticks(order.stock_code)
-                except EntityNotFound:
+                    quotes = await get_security_ticks(order.stock_code)
+                except SecurityNotFoundError:
                     await self.write_log(f"未找到股票 `{order.stock_code}` 的行情信息.")
                     continue
                 if order.order_type == OrderTypeEnum.BUY:

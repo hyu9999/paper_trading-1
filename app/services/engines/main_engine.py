@@ -1,6 +1,5 @@
 from typing import Type
 
-from hq2redis import HQ2Redis
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app import settings
@@ -39,7 +38,6 @@ class MainEngine(BaseEngine):
     def __init__(
         self,
         db: AsyncIOMotorDatabase,
-        quotes_api: HQ2Redis,
         event_engine: Type[EventEngine] = None,
     ) -> None:
         super().__init__()
@@ -48,10 +46,9 @@ class MainEngine(BaseEngine):
         self.log_engine = LogEngine(self.event_engine)
         self.order_repo = OrderRepository(db)
         self.statement_repo = StatementRepository(db)
-        self.quotes_api = quotes_api
-        self.user_engine = UserEngine(self.event_engine, self.db, quotes_api)
+        self.user_engine = UserEngine(self.event_engine, self.db)
         self.market_engine = MARKET_NAME_MAPPING[settings.service.market](
-            self.event_engine, self.user_engine, quotes_api
+            self.event_engine, self.user_engine
         )
 
     async def startup(self) -> None:

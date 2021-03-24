@@ -1,7 +1,5 @@
 from datetime import datetime, time
 
-from hq2redis import HQ2Redis
-
 from app.services.engines.event_engine import EventEngine
 from app.services.engines.market_engine.base import BaseMarket
 from app.services.engines.user_engine import UserEngine
@@ -17,10 +15,8 @@ class ChinaAMarket(BaseMarket):
         {"start": time(13, 0), "end": CLOSE_MARKET_TIME},
     ]
 
-    def __init__(
-        self, event_engine: EventEngine, user_engine: UserEngine, quotes_api: HQ2Redis
-    ) -> None:
-        super().__init__(event_engine, user_engine, quotes_api)
+    def __init__(self, event_engine: EventEngine, user_engine: UserEngine) -> None:
+        super().__init__(event_engine, user_engine)
         self.market_name = "中国A股"  # 交易市场名称
         self.exchange_symbols = ["SH", "SZ"]  # 交易市场标识
 

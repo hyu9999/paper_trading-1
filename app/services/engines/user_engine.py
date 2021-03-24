@@ -3,8 +3,8 @@ import itertools
 from decimal import Decimal
 from typing import Tuple, Union
 
-from hq2redis import HQ2Redis
-from hq2redis.exceptions import EntityNotFound
+from hq2redis.exceptions import SecurityNotFoundError
+from hq2redis.reader import get_security_price
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import DeleteOne, UpdateOne
 
@@ -58,11 +58,9 @@ class UserEngine(BaseEngine):
         self,
         event_engine: EventEngine,
         db: AsyncIOMotorDatabase,
-        quotes_api: HQ2Redis,
     ) -> None:
         super().__init__()
         self.event_engine = event_engine
-        self.quotes_api = quotes_api
         self.user_repo = UserRepository(db)
         self.position_repo = PositionRepository(db)
         self.user_cache = UserCache(state.user_redis_pool)
@@ -246,7 +244,7 @@ class UserEngine(BaseEngine):
             order.traded_volume if order.trade_type == TradeTypeEnum.T0 else 0
         )
         # 行情
-        quotes = await self.quotes_api.get_stock_ticks(order.stock_code)
+        quotes = await get_security_price(order.stock_code)
         # 订单证券市值
         securities_order = Decimal(order.traded_volume) * order.sold_price.to_decimal()
         # 证券资产变化值
@@ -316,7 +314,7 @@ class UserEngine(BaseEngine):
         )
         volume = position.volume - order.traded_volume
         # 行情
-        quotes = await self.quotes_api.get_stock_ticks(order.stock_code)
+        quotes = await get_security_price(order.stock_code)
         # 原持仓成本
         old_spent = Decimal(position.volume) * position.cost.to_decimal()
         # 清仓
@@ -403,11 +401,11 @@ class UserEngine(BaseEngine):
                 await self.position_cache.delete_position(position)
                 continue
             try:
-                quotes = await self.quotes_api.get_stock_ticks(position.stock_code)
-            except EntityNotFound:
+                security = await get_security_price(position.stock_code)
+            except SecurityNotFoundError:
                 await self.write_log(f"未找到股票{position.stock_code}的行情信息.")
                 continue
-            current_price = quotes.current
+            current_price = security.current
             position.current_price = PyDecimal(current_price)
             # 更新可用股票数量
             if is_update_volume:

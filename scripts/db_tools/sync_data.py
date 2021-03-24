@@ -4,6 +4,7 @@ from decimal import Decimal
 import click
 from bson import ObjectId
 from hq2redis import HQ2Redis
+from hq2redis.reader import get_security_price
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -28,8 +29,8 @@ async def sync_user_assets():
         redis_host=settings.redis.host,
         redis_port=settings.redis.port,
         redis_db=settings.redis.hq_db,
-        jq_data_password=settings.jqdata_password,
-        jq_data_user=settings.jqdata_user,
+        jqdata_password=settings.jqdata_password,
+        jqdata_user=settings.jqdata_user,
     )
     await quotes_api.startup()
     async_user_assets_log_file = "sync_user_assets_log.json"
@@ -41,10 +42,8 @@ async def sync_user_assets():
             continue
         market_value = 0
         for row in user_position:
-            quotes = await quotes_api.get_stock_ticks(
-                f"{row['symbol']}.{row['exchange']}"
-            )
-            market_value += quotes.current * Decimal(row["volume"])
+            security = await get_security_price(f"{row['symbol']}.{row['exchange']}")
+            market_value += security.current * Decimal(row["volume"])
         assets = PyDecimal(market_value + user["cash"].to_decimal())
         securities = PyDecimal(market_value)
         user_in_db = UserInUpdate(

@@ -7,17 +7,15 @@ from app.api.dependencies.database import (
     get_repository,
     get_user_cache,
 )
-from app.api.dependencies.state import get_engine
 from app.db.cache.position import PositionCache
 from app.db.cache.user import UserCache
 from app.db.repositories.user import UserRepository
 from app.exceptions.db import EntityDoesNotExist
-from app.exceptions.http import InvalidUserID, NotTradingTime
+from app.exceptions.http import InvalidUserID
 from app.models.domain.users import UserInDB
 from app.models.schemas.http import HttpMessage
 from app.models.schemas.users import ListOfUserInResponse, UserInCache, UserInUpdateCash
 from app.models.types import PyDecimal, PyObjectId
-from app.services.engines.main_engine import MainEngine
 
 router = APIRouter()
 
@@ -75,12 +73,9 @@ async def terminate(
 async def update_cash(
     user: UserInDB = Depends(get_current_user_authorizer()),
     user_in_update: UserInUpdateCash = Body(...),
-    engine: MainEngine = Depends(get_engine),
     user_cache: UserCache = Depends(get_user_cache),
 ) -> UserInCache:
     """修改用户可用现金(出金入金)."""
-    if not engine.market_engine.is_trading_time():
-        raise NotTradingTime
     try:
         user_in_cache = await user_cache.get_user_by_id(user.id)
     except EntityDoesNotExist:
