@@ -6,6 +6,7 @@ from typing import Tuple, Union
 from hq2redis.exceptions import SecurityNotFoundError
 from hq2redis.reader import get_security_price
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pydantic import ValidationError
 from pymongo import DeleteOne, UpdateOne
 
 from app import state
@@ -405,7 +406,7 @@ class UserEngine(BaseEngine):
                 continue
             try:
                 security = await get_security_price(position.stock_code)
-            except SecurityNotFoundError:
+            except (SecurityNotFoundError, ValidationError):
                 await self.write_log(f"未找到股票{position.stock_code}的行情信息.")
                 continue
             current_price = security.current
