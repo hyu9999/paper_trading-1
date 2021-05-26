@@ -10,7 +10,7 @@ quotes_max_retry = 3
 
     # 数据库相关配置
     [default.db]
-    host = "127.0.0.1"
+    host = "host.docker.internal"
     port = 27017
     url = "@format mongodb://{env[DYNACONF_DB_USER]}:{env[DYNACONF_DB_PASSWORD]}@{this.DB.HOST}:{this.DB.PORT}"
     name = "paper_trading"
@@ -19,7 +19,7 @@ quotes_max_retry = 3
 
     # Redis
     [default.redis]
-    host = "127.0.0.1"
+    host = "host.docker.internal"
     port = 6379
     hq_db = 15                      # 行情
     user_db = 9                     # 用户

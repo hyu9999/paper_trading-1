@@ -1,20 +1,30 @@
-FROM python:3.7-buster
+FROM python:3.7-slim
 
-EXPOSE 5000
-WORKDIR /app
+ENV PYTHONPATH=/application \
+    MAX_WORKERS=1
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends netcat vim && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+WORKDIR /application
 
-COPY poetry.lock pyproject.toml ./
-RUN pip install poetry==1.1 && \
-    poetry config virtualenvs.in-project true && \
-    poetry install --no-dev
+# Install dependencies
+RUN apt-get update \
+    && pip install poetry "uvicorn[standard]" gunicorn --no-cache-dir \
+    && apt-get clean autoclean \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /var/cache/apt/archives/*.deb
 
-COPY . ./
 
-RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
-    && echo "Asia/Shanghai" > /etc/timezone
+COPY pyproject.toml ./
 
-CMD poetry run uvicorn --host=0.0.0.0 app.main:app
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-dev --no-interaction --no-ansi
+
+# Copy files
+COPY ./app ./app
+
+COPY ./scripts/start.sh .
+RUN chmod +x ./start.sh
+
+COPY ./conf/gunicorn_conf.py .
+
+CMD ["./start.sh"]

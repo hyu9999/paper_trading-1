@@ -1,23 +1,32 @@
-version: "3"
+version: "3.9"
 
 services:
-  mongo:
-    image: "mongo:4.4.0"
-    ports:
-      - 27017:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DYNACONF_DB_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${DYNACONF_DB_PASSWORD}
-  redis:
-    image: "redis:alpine"
   app:
-    build: .
-    restart: on-failure
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     ports:
-      - "5000:5000"
+      - 8080:80
+    depends_on:
+      - mongodb
+      - redis
     env_file:
       - .env
-    depends_on:
-      - mongo
-      - redis
-    command: ['make', "server"]
+    restart: on-failure
+
+  mongodb:
+    image: mongo:latest
+    restart: unless-stopped
+    volumes:
+      - pt-data:/data/mongo
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    volumes:
+      - pt-data:/data/redis
+    env_file:
+      - .env
+
+volumes:
+  pt-data:

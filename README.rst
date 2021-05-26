@@ -56,12 +56,12 @@ MongoDB4.4^
 Docker 部署
 -----------
 
-需要安装Docker和Docker-Compose来运行下方的代码，运行之前需要像上面的步骤一样克隆项目和配置本地环境变量。
+首先安装Docker，修改.env文件
 
-.. code-block:: shell
-
-    $ docker-compose up -d db
-    $ docker-compose up -d app
+# 打包容器镜像
+$ docker build -t paper-trading .
+# 运行容器
+$ docker run -dp 5000:80 --env-file=./.env --name pt paper-trading
 
 然后应用将在本地运行。
 

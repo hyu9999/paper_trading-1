@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from app.schedulers.user.func import sync_dividend_data_task, sync_user_assets_task
+from app.schedulers.user.func import sync_user_assets_task
 
 sync_user_assets_task_config = {
     "func": sync_user_assets_task,
@@ -25,22 +25,6 @@ sync_user_assets_in_init_task_config = {
         "trigger": "cron",
         "day_of_week": "0-4",
         "next_run_time": datetime.now() + timedelta(seconds=2),
-        "timezone": "Asia/Shanghai",
-        "replace_existing": True,
-        "misfire_grace_time": 900,
-    },
-}
-
-
-sync_dividend_data_task_config = {
-    "func": sync_dividend_data_task,
-    "cron": {
-        "id": "同步分红数据",
-        "trigger": "cron",
-        "day_of_week": "0-4",
-        "hour": 15,
-        "minute": 10,
-        "second": 0,
         "timezone": "Asia/Shanghai",
         "replace_existing": True,
         "misfire_grace_time": 900,
