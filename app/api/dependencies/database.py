@@ -10,7 +10,7 @@ from app.db.utils import codec_option
 def get_repository(repo_type: Type[BaseRepository]) -> Callable:
     def _get_repo() -> BaseRepository:
         return repo_type(
-            state.db_client.get_database(settings.db.name, codec_options=codec_option)
+            state.db_client.get_database(settings.MONGO_DB, codec_options=codec_option)
         )
 
     return _get_repo

@@ -21,13 +21,13 @@ from scripts.utils import coro
 async def sync_user_assets():
     """根据持仓同步用户资产数据."""
     client = AsyncIOMotorClient(settings.db.url)
-    database = client.get_database(settings.db.name)
+    database = client.get_database(settings.MONGO_DB)
     account_db_conn = database[settings.db.collections.user]
     position_db_conn = database[settings.db.collections.position]
     users = account_db_conn.find()
     quotes_api = HQ2Redis(
-        redis_host=settings.redis.host,
-        redis_port=settings.redis.port,
+        redis_host=settings.redis_host,
+        redis_port=settings.redis_port,
         redis_db=settings.redis.hq_db,
         jqdata_password=settings.jqdata_password,
         jqdata_user=settings.jqdata_user,
@@ -71,7 +71,7 @@ async def sync_user_assets():
 async def sync_statement():
     """根据委托单同步交割单."""
     client = AsyncIOMotorClient(settings.db.url)
-    database = client.get_database(settings.db.name)
+    database = client.get_database(settings.MONGO_DB)
     order_db_conn = database[settings.db.collections.order]
     statement_db_conn = database[settings.db.collections.statement]
     user_db_conn = database[settings.db.collections.user]

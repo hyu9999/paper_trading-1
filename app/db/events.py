@@ -24,10 +24,10 @@ async def close_db_connection() -> None:
 async def connect_to_redis() -> None:
     logger.info("连接Redis中...")
     state.user_redis_pool = await aioredis.create_redis_pool(
-        f"redis://{settings.redis.host}:{settings.redis.port}/{settings.redis.user_db}?encoding=utf-8"
+        f"redis://{settings.redis_host}:{settings.redis_port}/{settings.redis.user_db}?encoding=utf-8"
     )
     state.position_redis_pool = await aioredis.create_redis_pool(
-        f"redis://{settings.redis.host}:{settings.redis.port}/{settings.redis.position_db}?encoding=utf-8"
+        f"redis://{settings.redis_host}:{settings.redis_port}/{settings.redis.position_db}?encoding=utf-8"
     )
     logger.info("Redis已连接.")
 

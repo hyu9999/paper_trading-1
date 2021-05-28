@@ -18,7 +18,7 @@ from scripts.utils import coro
 async def insert_v1_data():
     """插入V1版本的数据."""
     client = AsyncIOMotorClient(settings.db.url)
-    v2_database = client.get_database(settings.db.name)
+    v2_database = client.get_database(settings.MONGO_DB)
 
     db_tag_mapping = {1: "用户", 2: "用户资产时点数据", 3: "持仓", 4: "订单"}
     db_tag_num = click.prompt(

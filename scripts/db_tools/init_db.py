@@ -9,7 +9,7 @@ from scripts.utils import coro
 async def create_collection(db: AsyncIOMotorClient, collection_name: str):
     """创建表."""
     try:
-        await db[settings.db.name].create_collection(collection_name)
+        await db[settings.MONGO_DB].create_collection(collection_name)
     except CollectionInvalid as e:
         click.echo(e)
     else:
@@ -24,17 +24,17 @@ async def init_db():
         client = AsyncIOMotorClient(settings.db.url)
         await create_collection(client, settings.db.collections.user)
         await create_collection(client, settings.db.collections.order)
-        await client[settings.db.name][settings.db.collections.order].create_index(
+        await client[settings.MONGO_DB][settings.db.collections.order].create_index(
             "entrust_id"
         )
         await create_collection(client, settings.db.collections.position)
-        await client[settings.db.name][settings.db.collections.position].create_index(
+        await client[settings.MONGO_DB][settings.db.collections.position].create_index(
             "user"
         )
-        await client[settings.db.name][settings.db.collections.position].create_index(
+        await client[settings.MONGO_DB][settings.db.collections.position].create_index(
             "symbol"
         )
-        await client[settings.db.name][settings.db.collections.position].create_index(
+        await client[settings.MONGO_DB][settings.db.collections.position].create_index(
             "exchange"
         )
         await create_collection(client, settings.db.collections.user_assets_record)

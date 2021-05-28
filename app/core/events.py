@@ -15,8 +15,8 @@ from app.services.events import close_engine, start_engine
 
 async def connect_to_quotes_api():
     quotes_api = HQ2Redis(
-        redis_host=settings.redis.host,
-        redis_port=settings.redis.port,
+        redis_host=settings.redis_host,
+        redis_port=settings.redis_port,
         redis_db=settings.redis.hq_db,
         jqdata_password=settings.jqdata_password,
         jqdata_user=settings.jqdata_user,

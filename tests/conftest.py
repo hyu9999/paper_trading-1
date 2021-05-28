@@ -26,8 +26,8 @@ async def db(settings: Dynaconf) -> Database:
         maxPoolSize=settings.db.max_connections,
         minPoolSize=settings.db.min_connections,
     )
-    yield client.get_database(settings.db.name)
-    await client.drop_database(settings.db.name)
+    yield client.get_database(settings.MONGO_DB)
+    await client.drop_database(settings.MONGO_DB)
     client.close()
 
 
