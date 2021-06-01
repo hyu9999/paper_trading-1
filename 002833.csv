@@ -1,6 +1,0 @@
-﻿,id,entity_id,timestamp,provider,code,report_date,announce_date,record_date,dividend_date,dividend,announce_date_general_meeting,announce_date_dividend_implementation,last_trading_day_b_shares,dividend_per_share_after_tax,dividend_per_share_before_tax,dividend_plan_progress,dividend_pay_date,share_bonus_per_share,per_share_conversion_ratio
-0,stock_sz_002833_2017-06-06,stock_sz_002833,2017-06-06,emquantapi,002833,2016-12-31,2017-04-21,2017-06-05,2017-06-06,10?0?0?1.6?,,2017-05-27,,0.144,0.16,????,2017-06-06,0.0,0.0
-1,stock_sz_002833_2018-05-22,stock_sz_002833,2018-05-22,emquantapi,002833,2017-12-31,2018-04-18,2018-05-21,2018-05-22,10?2.4?,,2018-05-15,,0.216,0.24,????,2018-05-22,,
-2,stock_sz_002833_2019-05-29,stock_sz_002833,2019-05-29,emquantapi,002833,2018-12-31,2019-04-27,2019-05-28,2019-05-29,10?3?,,2019-05-23,,0.27,0.3,????,2019-05-29,,
-3,stock_sz_002833_2020-06-02,stock_sz_002833,2020-06-02,emquantapi,002833,2019-12-31,2020-04-28,2020-06-01,2020-06-02,10?6?6?,,2020-05-27,,0.54,0.6,????,2020-06-02,,0.6
-4,stock_sz_002833_2021-06-03,stock_sz_002833,2021-06-03,emquantapi,002833,2020-12-31,2021-04-30,2021-06-02,2021-06-03,10?4?8?,,2021-05-28,,0.72,0.8,????,2021-06-03,,0.4
