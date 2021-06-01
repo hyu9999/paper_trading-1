@@ -16,7 +16,6 @@ quotes_max_retry = 3
 
     # Redis
     [default.redis]
-    port = 6379
     hq_db = 15                      # 行情
     user_db = 9                     # 用户
     position_db = 8                 # 持仓

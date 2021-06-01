@@ -3,6 +3,7 @@ from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from app import settings, state
+from app.db.utils import codec_option
 
 
 async def connect_to_db() -> None:
@@ -11,6 +12,9 @@ async def connect_to_db() -> None:
         settings.db.url,
         maxPoolSize=settings.db.max_connections,
         minPoolSize=settings.db.min_connections,
+    )
+    state.db = state.db_client.get_database(
+        settings.MONGO_DB, codec_options=codec_option
     )
     logger.info("数据库已连接.")
 

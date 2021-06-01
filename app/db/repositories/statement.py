@@ -4,6 +4,7 @@ from typing import List
 from app import settings
 from app.db.repositories.base import BaseRepository
 from app.models.domain.statement import StatementInDB
+from app.models.enums import TradeCategoryEnum
 from app.models.types import PyObjectId
 
 
@@ -36,6 +37,8 @@ class StatementRepository(BaseRepository):
         user_id: PyObjectId = None,
         start_date: date = None,
         end_date: date = None,
+        trade_category: List[TradeCategoryEnum] = None,
+        symbol: str = None,
     ) -> List[StatementInDB]:
         query = {}
         if user_id:
@@ -54,5 +57,9 @@ class StatementRepository(BaseRepository):
             date_query = {"$lte": end_date}
         if date_query:
             query.update({"deal_time": date_query})
+        if trade_category:
+            query["trade_category"] = {"$in": [tc.value for tc in trade_category]}
+        if symbol:
+            query["symbol"] = symbol
         statement_rows = self.collection.find(query).sort("deal_time")
         return [StatementInDB(**statement) async for statement in statement_rows]

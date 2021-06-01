@@ -31,6 +31,8 @@ class TradeCategoryEnum(str, Enum):
 
     BUY = "buy"  # 证券买入
     SELL = "sell"  # 证券卖出
+    DIVIDEND = "dividend"  # 分红
+    TAX = "tax"  # 扣税
 
 
 @unique

@@ -38,7 +38,13 @@ def app() -> FastAPI:
     return get_application()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
+async def initialized_app(app: FastAPI) -> FastAPI:
+    async with LifespanManager(app):
+        yield app
+
+
+@pytest.fixture
 async def client(db: Database, app: FastAPI) -> AsyncClient:
     async with LifespanManager(app):
         async with AsyncClient(
