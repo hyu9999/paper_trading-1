@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from bson import Decimal128
-from pydantic import Field, PositiveInt, validator
+from pydantic import Field, validator
 
 from app.models.base import DBModelMixin
 from app.models.domain.rwmodel import RWModel
@@ -31,7 +31,7 @@ class Statement(Stock):
     entrust_id: Optional[PyObjectId] = Field(..., description="委托单ID")
     user: PyObjectId = Field(..., description="账户")
     trade_category: TradeCategoryEnum = Field(..., description="交易类别")
-    volume: PositiveInt = Field(..., description="成交数量")
+    volume: int = Field(..., description="成交数量")
     sold_price: PyDecimal = Field(..., description="成交价格")
     amount: PyDecimal = Field(..., description="发生金额")
     costs: Costs = Field(..., description="费用")
