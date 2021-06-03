@@ -12,7 +12,6 @@ from app.schedulers.liquidation.func import (
     dividend_flow2pt,
     liquidate_dividend_by_position,
     liquidate_dividend_task,
-    liquidate_dividend_tax_task,
     update_position_by_flow,
     update_position_cost,
     update_user_by_flow,
@@ -157,13 +156,9 @@ async def test_update_position_by_flow(stkeffect, fundeffect, pay_date):
 
 
 @pytest.mark.parametrize(
-    "tax, cost", [(Decimal(-100), Decimal(99)), (Decimal(-10), Decimal("99.9"))]
+    "tax, cost", [(Decimal(-100), Decimal("101")), (Decimal(-10), Decimal("100.1"))]
 )
 async def test_update_position_cost(tax, cost):
     new_position = deepcopy(position)
     rv = await update_position_cost(new_position, tax)
     assert rv.cost.to_decimal() == cost
-
-
-async def test_liquidate_dividend_tax_task(initialized_app):
-    await liquidate_dividend_tax_task()

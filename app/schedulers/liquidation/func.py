@@ -1,5 +1,5 @@
 import datetime
-from decimal import Decimal, getcontext
+from decimal import Decimal
 from typing import List
 
 from dividend_utils.dividend import get_xdr_price
@@ -119,7 +119,7 @@ async def liquidate_dividend_tax_task():
         flow_list = await statement_repo.get_statement_list(
             trade_category=[TradeCategoryEnum.SELL, TradeCategoryEnum.BUY],
             symbol=order.symbol,
-            end_date=get_utc_now() - datetime.timedelta(days=1),
+            end_date=(get_utc_now() - datetime.timedelta(days=1)).date(),
         )
         tax_flow = liquidate_dividend_tax(
             dividend_detail,
@@ -181,9 +181,8 @@ async def update_position_by_flow(
 
 async def update_position_cost(position: PositionInCache, tax: Decimal):
     """更新持仓成本."""
-    getcontext().prec = 3
     tax_cost = abs(tax) / position.volume
-    cost = position.cost.to_decimal() - tax_cost
+    cost = position.cost.to_decimal() + tax_cost
     position.cost = PyDecimal(cost)
     return position
 
