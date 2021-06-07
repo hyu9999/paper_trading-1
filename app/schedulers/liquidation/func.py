@@ -120,7 +120,6 @@ async def liquidate_dividend_tax_task():
         flow_list = await statement_repo.get_statement_list(
             trade_category=[TradeCategoryEnum.SELL, TradeCategoryEnum.BUY],
             symbol=order.symbol,
-            end_date=(get_utc_now() - datetime.timedelta(days=1)).date(),
         )
         tax_flow = liquidate_dividend_tax(
             dividend_detail,
