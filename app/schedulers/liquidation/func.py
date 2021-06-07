@@ -81,6 +81,7 @@ def ptflow2dividend(flow: StatementInDB) -> Flow:
         ttype=flow.deal_time.date(),
         stkeffect=flow.volume,
         fundeffect=flow.amount.to_decimal(),
+        ts=flow.deal_time.timestamp(),
     )
 
 

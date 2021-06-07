@@ -19,9 +19,9 @@ aioredis = "^1.3.1"
 ujson = "^3.2.0"
 apscheduler = "^3.6.3"
 hq2redis = {url = "https://cxan.jinchongzi.com/packages/hq2redis/hq2redis-0.4.7.tar.gz#md5=600c5bca65fd2fc28af217afe3216baa"}
-zvt = {path = "zvt-1.0.8.tar.gz"}
+zvt = {url = "https://cxan.jinchongzi.com/packages/zvt/zvt-1.0.9.tar.gz#md5=40f07c27964f907bacc6f94a23d8a357"}
 mysqlclient = "^2.0.3"
-dividend-utils = {path = "dividend_utils-0.1.0.tar.gz"}
+dividend-utils = {url = "https://cxan.jinchongzi.com/packages/dividend_utils/dividend_utils-0.1.0.tar.gz#md5=a1869f26f2b080f86d9229642d5c9c8a"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

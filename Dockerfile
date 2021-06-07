@@ -7,17 +7,25 @@ WORKDIR /application
 
 # Install dependencies
 RUN apt-get update \
+    && apt-get -y --no-install-recommends install gcc libmariadb-dev-compat libmariadb-dev \
     && pip install poetry "uvicorn[standard]" gunicorn --no-cache-dir \
-    && apt-get clean autoclean \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -f /var/cache/apt/archives/*.deb
+    && rm -rf /var/lib/apt/lists/*
 
 
 COPY pyproject.toml ./
 
 RUN poetry config virtualenvs.create false \
     && poetry install --no-dev --no-interaction --no-ansi
+
+# Install zvt
+python -c "from zvt.api import *"
+echo "{\"data_path\": \"/root/zvt-home/data\"," > /root/zvt-home/config.json
+echo "\"db_engine\": \"mysql\"," >> /root/zvt-home/config.json
+echo "\"mysql_username\": \"$ZVT_USERNAME\"," >> /root/zvt-home/config.json
+echo "\"mysql_password\": \"$ZVT_PASSWORD\"," >> /root/zvt-home/config.json
+echo "\"mysql_server_address\": \"$ZVT_HOST\"," >> /root/zvt-home/config.json
+echo "\"mysql_server_port\": $ZVT_PORT," >> /root/zvt-home/config.json
+echo "\"db_name\": \"$ZVT_DB\"}" >> /root/zvt-home/config.json
 
 # Copy files
 COPY ./app ./app
