@@ -57,9 +57,10 @@ Docker 部署
 -----------
 
 首先安装Docker，修改.env文件
-
+# 在.env文件设置好环境变量后写入环境变量到当前环境
+$ export $(grep -v '^#' .env | xargs -d '\n')
 # 打包容器镜像
-$ docker build -t paper-trading .
+$ docker build -t paper-trading --build-arg ZVT_USERNAME --build-arg ZVT_PASSWORD --build-arg ZVT_HOST --build-arg ZVT_PORT --build-arg ZVT_DB .
 # 运行容器
 $ docker run -dp 5000:80 --env-file=./.env --name pt paper-trading
 
