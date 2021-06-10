@@ -264,7 +264,7 @@ python-dateutil = ">=2.8.1,<3.0.0"
 
 [package.source]
 type = "url"
-url = "https://cxan.jinchongzi.com/packages/dividend_utils/dividend_utils-0.1.1.tar.gz#md5=269677652573d6c4599e495884d29007"
+url = "https://cxan.jinchongzi.com/packages/dividend_utils/dividend_utils-0.1.1.tar.gz#md5=0775028deb0bc4563914c09550257d0a"
 [[package]]
 name = "docutils"
 version = "0.16"
@@ -385,7 +385,6 @@ pydantic = ">=1.7"
 [package.source]
 type = "url"
 url = "https://cxan.jinchongzi.com/packages/hq2redis/hq2redis-0.4.7.tar.gz#md5=600c5bca65fd2fc28af217afe3216baa"
-
 [[package]]
 name = "html5lib"
 version = "1.0.1"
@@ -1430,11 +1429,10 @@ xlrd = "1.1.0"
 [package.source]
 type = "url"
 url = "https://cxan.jinchongzi.com/packages/zvt/zvt-1.0.9.tar.gz#md5=40f07c27964f907bacc6f94a23d8a357"
-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "63d382d2e93ca128c01a3a2cb2d68a017579985c55f5572067d715e5cb28448d"
+content-hash = "fdb9c9105cd0811d7bddfb3c2ff5647294cd408692fc824c3846a91b65d22524"
 
 [metadata.files]
 aioredis = [
