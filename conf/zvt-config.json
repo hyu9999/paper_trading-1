@@ -1,0 +1,10 @@
+{
+  "data_path": "/root/zvt-home/data",
+
+  "db_engine": "mysql",
+  "mysql_username": "",
+  "mysql_password": "",
+  "mysql_server_address": "",
+  "mysql_server_port": 3306,
+  "db_name": "zvt"
+}
