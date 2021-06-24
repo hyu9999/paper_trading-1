@@ -25,4 +25,8 @@ RUN chmod +x ./start.sh
 
 COPY ./conf/gunicorn_conf.py .
 
+# 设置时区
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo "Asia/Shanghai" > /etc/timezone
+
 CMD ["./start.sh"]
