@@ -33,6 +33,7 @@ quotes_max_retry = 3
     [default.log]
     level = 10                      # 10 = DEBUG
     active = true
+    uvicorn_level = 40
 
     # 服务
     [default.service]

@@ -57,9 +57,13 @@ Docker 部署
 -----------
 
 首先安装Docker，修改.env文件, 修改conf/zvt-config.json
+
 # 打包容器镜像
+
 $ docker build -t paper-trading .
+
 # 运行容器
+
 $ docker run -dp 5000:80 --env-file=./.env --name pt paper-trading
 
 然后应用将在本地运行。

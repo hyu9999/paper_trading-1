@@ -57,4 +57,6 @@ async def init_logger() -> None:
     # 统一设置uvicorn的处理器为loguru
     logging.getLogger("uvicorn").handlers = [InterceptHandler()]
     logging.getLogger("uvicorn.access").handlers = [InterceptHandler()]
+    logging.getLogger("uvicorn").setLevel(settings.log.uvicorn_level)
+
     logger.info("初始化日志管理器完成.")
