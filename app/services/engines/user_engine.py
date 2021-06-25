@@ -164,7 +164,7 @@ class UserEngine(BaseEngine):
         await self.write_log("收盘清算开始...")
         users = await self.user_cache.get_all_user()
         for user in users:
-            await self.write_log(f"正在清算用户`{user.id}`的数据.")
+            await self.write_log(f"正在清算用户`{user.id}`的数据.", level="DEBUG")
             await self.liquidate_user_position(user.id, is_update_volume=True)
             await self.liquidate_user_profit(user.id, is_refresh_frozen_amount=True)
         await self.write_log("收盘清算结束.")
