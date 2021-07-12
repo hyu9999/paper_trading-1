@@ -407,7 +407,7 @@ class UserEngine(BaseEngine):
             try:
                 security = await get_security_price(position.stock_code)
             except (SecurityNotFoundError, ValidationError):
-                await self.write_log(f"未找到股票{position.stock_code}的行情信息.")
+                await self.write_log(f"未找到股票{position.stock_code}的行情信息.", level="DEBUG")
                 continue
             current_price = security.current
             position.current_price = PyDecimal(current_price)
